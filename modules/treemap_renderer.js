@@ -33,7 +33,7 @@ const CONFIG = {
         padding: 0, 
         headerBg: '#171717', 
         headerText: '#ffffff', 
-        borderColor: '#ffffff', // Changed to White
+        borderColor: '#000000', // Changed to Black
         borderWidth: 1
     },
     solution: {
