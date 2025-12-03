@@ -1,4 +1,5 @@
 
+
 import { loadData, saveData } from './utils/localstorage.js';
 import { store } from './modules/data_model.js';
 import { initTreeBuilder } from './modules/tree_builder.js';
@@ -220,16 +221,6 @@ function setupEditorActions() {
                     toast.classList.add('hidden');
                 }, 2500);
             }
-        });
-    }
-
-    // Reset Button
-    const resetBtn = document.getElementById('btn-reset');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-            showConfirmModal("현재 맵의 모든 데이터를 초기화하시겠습니까?", () => {
-                store.resetData();
-            });
         });
     }
 }

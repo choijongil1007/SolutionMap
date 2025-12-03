@@ -1,4 +1,5 @@
 
+
 import { store } from './data_model.js';
 import { showWarningModal, showConfirmModal } from '../utils/modal.js';
 
@@ -58,7 +59,7 @@ function render(data) {
         
         // 1. Domain Wrapper
         const domainEl = document.createElement('div');
-        domainEl.className = "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm transition-all mb-3 card-hover-effect";
+        domainEl.className = "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm transition-all mb-6 card-hover-effect";
         domainEl.dataset.domainName = domainName;
         
         // 2. Domain Header
