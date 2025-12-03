@@ -1,37 +1,37 @@
-
 import { store } from './data_model.js';
 
 let container = null;
 let resizeObserver = null;
 
-// Palette: Grayscale / Monotone based on Rank
-// Rank 0 (Highest Share) -> Darkest
-// Rank N (Lowest Share) -> Lightest
+// Palette: True Grayscale / Neutral
+// Rank 0 (Highest Share) -> Dark Gray (Neutral-800)
+// Rank N (Lowest Share) -> Light Gray (Neutral-200)
 const GRAYSCALE_PALETTE = [
-    '#0f172a', // Slate 900 (Rank 1)
-    '#334155', // Slate 700 (Rank 2)
-    '#475569', // Slate 600 (Rank 3)
-    '#64748b', // Slate 500 (Rank 4)
-    '#94a3b8', // Slate 400 (Rank 5)
-    '#cbd5e1', // Slate 300 (Rank 6+)
+    '#262626', // Neutral 800 (Rank 1) - Dark Gray
+    '#404040', // Neutral 700 (Rank 2)
+    '#525252', // Neutral 600 (Rank 3)
+    '#737373', // Neutral 500 (Rank 4)
+    '#a3a3a3', // Neutral 400 (Rank 5)
+    '#d4d4d4', // Neutral 300 (Rank 6)
+    '#e5e5e5', // Neutral 200 (Rank 7+)
 ];
 
 // Layout Configuration
 const CONFIG = {
     domain: {
-        headerHeight: 36, // Slightly taller for better proportions with thicker border
-        padding: 8,       // More breathing room
-        headerBg: '#1e293b', // Slate-800
-        headerText: '#f8fafc',
-        borderColor: '#475569', // Slate-600 (Much more visible than before)
-        borderWidth: 2    // Thicker border for outer container
+        headerHeight: 38,
+        padding: 8,       
+        headerBg: '#ffffff', // White Background
+        headerText: '#171717', // Neutral-900 (Black) Text
+        borderColor: '#171717', // Neutral-900 (Black) Border
+        borderWidth: 2    
     },
     category: {
-        headerHeight: 28,
+        headerHeight: 30,
         padding: 5, 
-        headerBg: '#e2e8f0', // Slate-200 (Distinct from white body)
-        headerText: '#334155', // Slate-700 (High contrast)
-        borderColor: '#94a3b8', // Slate-400 (Visible mid-tone grey)
+        headerBg: '#171717', // Neutral-900 (Black) Background
+        headerText: '#ffffff', // White Text
+        borderColor: '#525252', // Neutral-600 (Dark Gray) Border
         borderWidth: 1
     },
     solution: {
@@ -125,13 +125,11 @@ function buildHierarchy(data) {
                 value: 0
             };
 
-            // Sort solutions by share descending to assign rank-based colors
-            // Clone array to avoid mutating store data directly during sort
+            // Sort solutions by share descending
             const sortedSolutions = [...solutions].sort((a, b) => b.share - a.share);
 
             sortedSolutions.forEach((sol, index) => {
                 const shareVal = parseFloat(sol.share) || 0;
-                // Ensure non-zero value for layout algo stability
                 const safeVal = shareVal <= 0 ? 0.01 : shareVal;
                 
                 const solNode = {
@@ -139,7 +137,7 @@ function buildHierarchy(data) {
                     type: 'solution',
                     share: shareVal,
                     value: safeVal,
-                    rank: index // Assign rank (0 = 1st, 1 = 2nd, ...)
+                    rank: index 
                 };
                 catNode.children.push(solNode);
                 catNode.value += solNode.value;
@@ -203,7 +201,6 @@ function squarify(children, rect) {
     if (children.length === 0) return [];
 
     const totalValue = children.reduce((sum, c) => sum + c.value, 0);
-    // Squarify still needs to sort by size for the algorithm to work best
     const sortedChildren = [...children].sort((a, b) => b.value - a.value);
     
     const totalArea = width * height;
@@ -342,7 +339,7 @@ function renderNodes(container, layoutItems) {
 }
 
 function applyDomainStyle(el, node) {
-    el.className = "rounded-xl shadow-md flex flex-col overflow-hidden";
+    el.className = "rounded-xl shadow-lg flex flex-col overflow-hidden";
     el.style.border = `${CONFIG.domain.borderWidth}px solid ${CONFIG.domain.borderColor}`;
     el.style.backgroundColor = '#fff';
     el.style.zIndex = 10;
@@ -351,7 +348,7 @@ function applyDomainStyle(el, node) {
     header.style.height = `${CONFIG.domain.headerHeight}px`;
     header.style.backgroundColor = CONFIG.domain.headerBg;
     header.style.color = CONFIG.domain.headerText;
-    header.className = "flex items-center justify-center font-bold text-sm tracking-wide shrink-0 uppercase truncate px-2 border-b border-slate-700";
+    header.className = "flex items-center justify-center font-bold text-base tracking-wide shrink-0 uppercase truncate px-2 border-b-2 border-slate-900";
     header.textContent = node.name;
     el.appendChild(header);
 }
@@ -366,7 +363,7 @@ function applyCategoryStyle(el, node) {
     header.style.height = `${CONFIG.category.headerHeight}px`;
     header.style.backgroundColor = CONFIG.category.headerBg;
     header.style.color = CONFIG.category.headerText;
-    header.className = "flex items-center justify-center font-semibold text-xs shrink-0 truncate px-1 tracking-tight border-b border-slate-300";
+    header.className = "flex items-center justify-center font-semibold text-xs shrink-0 truncate px-1 tracking-tight";
     header.textContent = node.name;
     el.appendChild(header);
 }
@@ -374,23 +371,20 @@ function applyCategoryStyle(el, node) {
 function applySolutionStyle(el, node) {
     el.style.zIndex = 30;
     
-    // Determine color based on Rank (0-based index)
-    // Clamp to the last color in palette if rank exceeds palette length
+    // Determine color based on Rank
     const rank = node.rank || 0;
     const colorIndex = Math.min(rank, GRAYSCALE_PALETTE.length - 1);
     const bg = GRAYSCALE_PALETTE[colorIndex];
 
     el.style.backgroundColor = bg;
     
-    // Text contrast logic:
-    // If rank is high (lighter color, index >= 4), use dark text.
-    // Otherwise use white text.
-    if (colorIndex >= 4) {
-        el.style.color = '#0f172a'; // Slate 900
-        el.style.textShadow = 'none';
-    } else {
+    // Contrast check: Darker backgrounds (lower index) need white text
+    if (colorIndex <= 3) {
         el.style.color = '#ffffff'; 
         el.style.textShadow = '0 1px 2px rgba(0,0,0,0.1)';
+    } else {
+        el.style.color = '#171717'; // Neutral-900
+        el.style.textShadow = 'none';
     }
 
     el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default group rounded-sm shadow-sm";
