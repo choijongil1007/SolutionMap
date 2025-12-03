@@ -4,21 +4,14 @@ import { store } from './data_model.js';
 let container = null;
 let resizeObserver = null;
 
-// Palette: Chromatic (Distinct & Vibrant)
-// Used by rank order (1st = Blue, 2nd = Emerald, etc.)
+// Palette: Custom User Palette
+// Used by rank order (1st, 2nd, 3rd...)
 const CHROMATIC_PALETTE = [
-    '#3b82f6', // Blue 500
-    '#10b981', // Emerald 500
-    '#8b5cf6', // Violet 500
-    '#f59e0b', // Amber 500
-    '#f43f5e', // Rose 500
-    '#06b6d4', // Cyan 500
-    '#ec4899', // Pink 500
-    '#84cc16', // Lime 500
-    '#f97316', // Orange 500
-    '#6366f1', // Indigo 500
-    '#14b8a6', // Teal 500
-    '#e11d48', // Red 600
+    '#4C6EF5', // Blue
+    '#0CA678', // Green
+    '#FFA94D', // Orange
+    '#F06595', // Pink
+    '#7950F2'  // Purple
 ];
 
 // Layout Configuration
