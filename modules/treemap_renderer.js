@@ -31,7 +31,7 @@ const CONFIG = {
         padding: 5, 
         headerBg: '#171717', // Neutral-900 (Black) Background
         headerText: '#ffffff', // White Text
-        borderColor: '#525252', // Neutral-600 (Dark Gray) Border
+        borderColor: '#9CA3AF', // Gray Border (Updated to be more visible)
         borderWidth: 1
     },
     solution: {
