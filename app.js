@@ -1,7 +1,9 @@
+
 import { loadData, saveData } from './utils/localstorage.js';
 import { store } from './modules/data_model.js';
 import { initTreeBuilder } from './modules/tree_builder.js';
 import { initTreemap } from './modules/treemap_renderer.js';
+import { showConfirmModal } from './utils/modal.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Solution Map App initialized.");
@@ -50,9 +52,9 @@ function setupActions() {
     const resetBtn = document.getElementById('btn-reset');
     if (resetBtn) {
         resetBtn.addEventListener('click', () => {
-            if (confirm("정말로 모든 데이터를 삭제하고 초기화하시겠습니까?")) {
+            showConfirmModal("정말로 모든 데이터를 삭제하고 초기화하시겠습니까?", () => {
                 store.resetData();
-            }
+            });
         });
     }
 }

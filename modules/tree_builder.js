@@ -1,4 +1,6 @@
+
 import { store } from './data_model.js';
+import { showWarningModal, showConfirmModal } from '../utils/modal.js';
 
 // State to track which tree nodes are expanded
 const expandedState = new Set();
@@ -565,55 +567,19 @@ function escapeHtml(text) {
 }
 
 function deleteDomain(name) {
-    if (confirm(`'${name}' 대분류를 정말 삭제하시겠습니까?`)) {
+    showConfirmModal(`'${name}' 대분류를 정말 삭제하시겠습니까?`, () => {
         store.deleteDomain(name);
-    }
+    });
 }
 
 function deleteCategory(domain, name) {
-    if (confirm(`'${name}' 중분류를 삭제하시겠습니까?`)) {
+    showConfirmModal(`'${name}' 중분류를 삭제하시겠습니까?`, () => {
         store.deleteCategory(domain, name);
-    }
+    });
 }
 
 function deleteSolution(domain, category, index) {
-    if (confirm("이 솔루션을 삭제하시겠습니까?")) {
+    showConfirmModal("이 솔루션을 삭제하시겠습니까?", () => {
         store.deleteSolution(domain, category, index);
-    }
-}
-
-function showWarningModal(message) {
-    const modal = document.getElementById('warning-modal');
-    const backdrop = document.getElementById('warning-modal-backdrop');
-    const panel = document.getElementById('warning-modal-panel');
-    const msgEl = document.getElementById('warning-modal-message');
-    const closeBtn = document.getElementById('warning-modal-close');
-
-    if (!modal || !backdrop || !panel || !msgEl) {
-        alert(message); // Fallback
-        return;
-    }
-
-    msgEl.textContent = message;
-    modal.classList.remove('hidden');
-
-    // Simple fade-in animation using Tailwind transition classes
-    requestAnimationFrame(() => {
-        backdrop.classList.remove('opacity-0');
-        panel.classList.remove('opacity-0', 'scale-95');
-        panel.classList.add('opacity-100', 'scale-100');
     });
-
-    const close = () => {
-        backdrop.classList.add('opacity-0');
-        panel.classList.remove('opacity-100', 'scale-100');
-        panel.classList.add('opacity-0', 'scale-95');
-        
-        // Wait for transition duration before hiding
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 200);
-    };
-
-    closeBtn.onclick = close;
 }
