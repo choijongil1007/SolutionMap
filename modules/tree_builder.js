@@ -23,24 +23,12 @@ export function initTreeBuilder(elementId) {
     if (addDomainBtn) {
         const newBtn = addDomainBtn.cloneNode(true);
         addDomainBtn.parentNode.replaceChild(newBtn, addDomainBtn);
-        newBtn.addEventListener('click', handleAddDomain);
+        newBtn.addEventListener('click', showAddDomainInput);
     }
 
     store.subscribe((data) => {
         render(data);
     });
-}
-
-function handleAddDomain() {
-    // Keep prompt for Domain (Root level) as requested, or can be inline too. 
-    // User specifically asked for Category and Solution to be inline.
-    // Let's keep domain simple for now as it adds a big block.
-    const name = prompt("새로운 대분류 이름을 입력하세요:");
-    if (name && name.trim()) {
-        const success = store.addDomain(name.trim());
-        if (!success) alert("이미 존재하는 대분류입니다.");
-        else expandedState.add(`d-${name.trim()}`);
-    }
 }
 
 function render(data) {
@@ -53,12 +41,14 @@ function render(data) {
     const domainKeys = Object.keys(data);
 
     if (domainKeys.length === 0) {
-        container.innerHTML = `
-            <div class="flex flex-col items-center justify-center h-40 text-slate-400">
-                <p class="text-sm">데이터가 없습니다.</p>
-                <p class="text-xs mt-1">'대분류 추가' 버튼을 눌러 시작하세요.</p>
-            </div>`;
-        return;
+        // Only show empty message if no temp inputs exist
+        if (document.querySelectorAll('.temp-input-row').length === 0) {
+             container.innerHTML = `
+                <div id="empty-msg" class="flex flex-col items-center justify-center h-40 text-slate-400">
+                    <p class="text-sm">데이터가 없습니다.</p>
+                    <p class="text-xs mt-1">'대분류 추가' 버튼을 눌러 시작하세요.</p>
+                </div>`;
+        }
     }
 
     domainKeys.forEach(domainName => {
@@ -68,7 +58,7 @@ function render(data) {
         // 1. Domain Wrapper
         const domainEl = document.createElement('div');
         domainEl.className = "bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm transition-all mb-3";
-        domainEl.dataset.domainName = domainName; // Identity for logic
+        domainEl.dataset.domainName = domainName;
         
         // 2. Domain Header
         const header = document.createElement('div');
@@ -81,7 +71,6 @@ function render(data) {
             <span class="p-1 rounded-md hover:bg-slate-200 transition-colors">${isExpanded ? ICONS.chevronDown : ICONS.chevronRight}</span>
             <span class="font-bold text-slate-800 text-sm tracking-tight domain-title-text">${escapeHtml(domainName)}</span>
         `;
-        // Toggle expand on click
         titleArea.addEventListener('click', () => toggleExpand(`d-${domainName}`));
 
         // Action Buttons
@@ -108,7 +97,7 @@ function render(data) {
         if (isExpanded) {
             const catContainer = document.createElement('div');
             catContainer.className = "p-2 bg-slate-50/50 space-y-1";
-            catContainer.dataset.domainContent = domainName; // Target for appending inputs
+            catContainer.dataset.domainContent = domainName;
 
             const catKeys = Object.keys(categories);
             
@@ -157,7 +146,7 @@ function render(data) {
                 if (isCatExpanded) {
                     const solContainer = document.createElement('div');
                     solContainer.className = "pl-9 pr-2 pb-2 space-y-1";
-                    solContainer.dataset.solutionContent = `${domainName}-${catName}`; // Target for appending inputs
+                    solContainer.dataset.solutionContent = `${domainName}-${catName}`;
 
                     solutions.forEach((sol, idx) => {
                         const solEl = document.createElement('div');
@@ -202,30 +191,81 @@ function render(data) {
 
 // --- Inline Input Logic ---
 
+function showAddDomainInput() {
+    if (!container) return;
+    removeTempInputs();
+
+    // Remove empty msg if present
+    const emptyMsg = document.getElementById('empty-msg');
+    if (emptyMsg) emptyMsg.remove();
+
+    // Create a row that mimics a Domain Header
+    const row = document.createElement('div');
+    row.className = "temp-input-row bg-white border border-blue-400 rounded-lg p-3 flex items-center gap-2 mb-3 shadow-sm input-slide-down";
+
+    const input = document.createElement('input');
+    input.type = "text";
+    input.className = "flex-1 font-bold text-slate-800 text-sm outline-none placeholder-slate-400";
+    input.placeholder = "새 대분류 이름 입력...";
+    
+    const btnSave = createMiniButton(ICONS.check, "text-green-600 hover:bg-green-50");
+    const btnCancel = createMiniButton(ICONS.x, "text-red-500 hover:bg-red-50");
+
+    const save = () => {
+        const val = input.value.trim();
+        if (val) {
+            if (store.addDomain(val)) {
+                expandedState.add(`d-${val}`); // Auto expand
+                // Render handles UI update
+            } else {
+                alert("이미 존재하는 대분류입니다.");
+                input.focus();
+            }
+        }
+    };
+
+    const cancel = () => {
+        row.remove();
+        if (Object.keys(store.getData()).length === 0) {
+            render(store.getData());
+        }
+    };
+
+    btnSave.onclick = save;
+    btnCancel.onclick = cancel;
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') save();
+        if (e.key === 'Escape') cancel();
+    });
+
+    row.append(input, btnSave, btnCancel);
+    container.appendChild(row);
+    input.focus();
+    
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+}
+
 function showAddCategoryInput(domainName) {
-    // 1. Ensure domain is expanded
     if (!expandedState.has(`d-${domainName}`)) {
         expandedState.add(`d-${domainName}`);
         render(store.getData());
     }
 
-    // 2. Find the container
     const contentBox = document.querySelector(`[data-domain-content="${domainName}"]`);
     if (!contentBox) return;
 
-    // 3. Remove existing temp inputs
     removeTempInputs();
 
-    // 4. Create Input Row
     const row = document.createElement('div');
-    row.className = "temp-input-row flex items-center gap-2 p-2 pl-4 bg-white border border-blue-300 rounded-md shadow-sm animate-in fade-in zoom-in-95 duration-200";
+    row.className = "temp-input-row flex items-center gap-2 p-2 pl-4 bg-white border border-blue-300 rounded-md shadow-sm input-slide-down";
     
     const input = document.createElement('input');
     input.type = "text";
     input.className = "flex-1 text-sm border-none outline-none bg-transparent placeholder-slate-400 font-medium";
     input.placeholder = "중분류 이름 입력...";
     
-    // Buttons
     const btnSave = createMiniButton(ICONS.check, "text-green-600 hover:bg-green-50");
     const btnCancel = createMiniButton(ICONS.x, "text-red-500 hover:bg-red-50");
 
@@ -240,9 +280,7 @@ function showAddCategoryInput(domainName) {
         }
     };
 
-    const cancel = () => {
-        row.remove();
-    };
+    const cancel = () => row.remove();
 
     btnSave.onclick = save;
     btnCancel.onclick = cancel;
@@ -258,30 +296,25 @@ function showAddCategoryInput(domainName) {
 }
 
 function showAddSolutionInput(domainName, categoryName) {
-    // 1. Ensure category is expanded
     const key = `c-${domainName}-${categoryName}`;
     if (!expandedState.has(key)) {
         expandedState.add(key);
         render(store.getData());
     }
 
-    // 2. Find container
     const contentBox = document.querySelector(`[data-solution-content="${domainName}-${categoryName}"]`);
     if (!contentBox) return;
 
     removeTempInputs();
 
-    // 3. Create Input Row
     const row = document.createElement('div');
-    row.className = "temp-input-row flex items-center gap-2 py-1.5 px-2 bg-blue-50/50 border border-blue-300 rounded-md shadow-sm";
+    row.className = "temp-input-row flex items-center gap-2 py-1.5 px-2 bg-blue-50/50 border border-blue-300 rounded-md shadow-sm input-slide-down";
     
-    // Name Input
     const nameInput = document.createElement('input');
     nameInput.type = "text";
     nameInput.className = "flex-1 text-sm border border-slate-300 rounded px-2 py-1 focus:border-blue-500 outline-none";
     nameInput.placeholder = "솔루션명";
 
-    // Share Input
     const shareInput = document.createElement('input');
     shareInput.type = "number";
     shareInput.className = "w-16 text-sm border border-slate-300 rounded px-2 py-1 focus:border-blue-500 outline-none text-right";
@@ -328,25 +361,22 @@ function showAddSolutionInput(domainName, categoryName) {
     nameInput.focus();
 }
 
-// Edit Mode - Inline Replacement
 function showEditCategoryInput(domain, oldName, headerEl) {
     const titleEl = headerEl.querySelector('.cat-title-text');
     const originalText = titleEl.innerText;
     
-    // Replace title with input
     titleEl.innerHTML = '';
     
     const input = document.createElement('input');
     input.value = originalText;
     input.className = "text-sm font-semibold text-slate-700 bg-white border border-blue-400 rounded px-1 outline-none w-full";
-    input.onclick = (e) => e.stopPropagation(); // Prevent toggle expand
+    input.onclick = (e) => e.stopPropagation();
     
     const save = () => {
         const newVal = input.value.trim();
         if (newVal && newVal !== originalText) {
              store.renameCategory(domain, originalText, newVal);
         } else {
-            // Revert
             titleEl.innerText = originalText;
         }
     };
@@ -354,7 +384,7 @@ function showEditCategoryInput(domain, oldName, headerEl) {
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             save();
-            e.stopPropagation(); // Prevent toggle
+            e.stopPropagation();
         }
         if (e.key === 'Escape') {
             titleEl.innerText = originalText;
@@ -398,7 +428,6 @@ function showEditDomainInput(domain, headerEl) {
 }
 
 function showEditSolutionInput(domain, category, index, solData, rowEl) {
-    // Replace entire row content
     rowEl.innerHTML = '';
     rowEl.className = "flex items-center gap-2 py-1.5 px-2 bg-blue-50 border border-blue-300 rounded shadow-sm";
 
@@ -421,13 +450,12 @@ function showEditSolutionInput(domain, category, index, solData, rowEl) {
         if (newName && !isNaN(newShare) && newShare >= 0) {
             store.updateSolution(domain, category, index, newName, newShare);
         } else {
-            // If invalid, revert by re-rendering via store (or we could just cancel)
             render(store.getData());
         }
     };
 
     btnSave.onclick = save;
-    btnCancel.onclick = () => render(store.getData()); // Revert
+    btnCancel.onclick = () => render(store.getData());
 
     const onEnter = (e) => {
         if (e.key === 'Enter') save();
@@ -440,8 +468,6 @@ function showEditSolutionInput(domain, category, index, solData, rowEl) {
     rowEl.append(nameInput, shareInput, btnSave, btnCancel);
     nameInput.focus();
 }
-
-// --- Utils ---
 
 function removeTempInputs() {
     document.querySelectorAll('.temp-input-row').forEach(el => el.remove());
