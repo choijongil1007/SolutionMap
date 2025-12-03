@@ -4,19 +4,16 @@ import { store } from './data_model.js';
 let container = null;
 let resizeObserver = null;
 
-// Palette: Pastel / Soft Tones (Premium SaaS Look)
-// Ordered to be used by rank (1st, 2nd, 3rd...)
-const COLORS = [
-    '#60a5fa', // Blue 400 (Top 1)
-    '#34d399', // Emerald 400 (Top 2)
-    '#f472b6', // Pink 400
-    '#a78bfa', // Violet 400
-    '#fbbf24', // Amber 400
-    '#22d3ee', // Cyan 400
-    '#fb7185', // Rose 400
-    '#94a3b8', // Slate 400
-    '#818cf8', // Indigo 400
-    '#a3e635'  // Lime 400
+// Palette: Grayscale / Monotone based on Rank
+// Rank 0 (Highest Share) -> Darkest
+// Rank N (Lowest Share) -> Lightest
+const GRAYSCALE_PALETTE = [
+    '#0f172a', // Slate 900 (Rank 1)
+    '#334155', // Slate 700 (Rank 2)
+    '#475569', // Slate 600 (Rank 3)
+    '#64748b', // Slate 500 (Rank 4)
+    '#94a3b8', // Slate 400 (Rank 5)
+    '#cbd5e1', // Slate 300 (Rank 6+)
 ];
 
 // Layout Configuration
@@ -377,15 +374,26 @@ function applyCategoryStyle(el, node) {
 function applySolutionStyle(el, node) {
     el.style.zIndex = 30;
     
-    // Use the rank assigned in buildHierarchy to determine color
-    const colorIndex = (node.rank || 0) % COLORS.length;
-    const bg = COLORS[colorIndex];
+    // Determine color based on Rank (0-based index)
+    // Clamp to the last color in palette if rank exceeds palette length
+    const rank = node.rank || 0;
+    const colorIndex = Math.min(rank, GRAYSCALE_PALETTE.length - 1);
+    const bg = GRAYSCALE_PALETTE[colorIndex];
 
     el.style.backgroundColor = bg;
-    el.style.color = '#fff'; 
-    el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default group rounded-sm shadow-sm";
     
-    el.style.textShadow = '0 1px 2px rgba(0,0,0,0.1)';
+    // Text contrast logic:
+    // If rank is high (lighter color, index >= 4), use dark text.
+    // Otherwise use white text.
+    if (colorIndex >= 4) {
+        el.style.color = '#0f172a'; // Slate 900
+        el.style.textShadow = 'none';
+    } else {
+        el.style.color = '#ffffff'; 
+        el.style.textShadow = '0 1px 2px rgba(0,0,0,0.1)';
+    }
+
+    el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default group rounded-sm shadow-sm";
 
     const gap = CONFIG.solution.padding;
     el.style.width = `${Math.max(0, parseFloat(el.style.width) - gap * 2)}px`;
