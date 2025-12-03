@@ -88,56 +88,60 @@ function render(data) {
                     borderColor: '#fff',
                     borderWidth: 1
                 },
-                // Levels configuration to mimic Google Sheets Treemap styling
+                // Levels configuration to enforce strict "Box inside Box" layout
                 levels: [
-                    // Level 0: Domain (e.g., 코어뱅킹)
+                    // Level 0: Domain (e.g., 코어뱅킹) - Outer Box
                     {
                         itemStyle: {
                             borderColor: '#334155',
-                            borderWidth: 1,
-                            gapWidth: 6 // Distinct gap between domains
+                            borderWidth: 2,
+                            gapWidth: 8 // Distinct gap to visually contain categories
                         },
                         upperLabel: {
                             show: true,
-                            height: 32, // Header height
-                            fontSize: 15,
+                            height: 30, // Header height
+                            fontSize: 16,
                             fontWeight: 'bold',
                             color: '#fff',
                             backgroundColor: '#334155', // Dark background for Domain Header
                             align: 'center',
-                            verticalAlign: 'middle'
+                            verticalAlign: 'middle',
+                            formatter: '{b}' // ONLY display name, NO numbers/sums
                         }
                     },
-                    // Level 1: Category (e.g., 운영체제, 데이터베이스)
+                    // Level 1: Category (e.g., 운영체제) - Inner Box
                     {
                         itemStyle: {
                             borderColor: '#cbd5e1',
                             borderWidth: 1,
-                            gapWidth: 3 // Smaller gap between categories
+                            gapWidth: 4 // Gap to visually contain solutions
                         },
                         upperLabel: {
                             show: true,
-                            height: 26, // Slightly smaller header
-                            fontSize: 13,
+                            height: 24, // Slightly smaller header
+                            fontSize: 14,
                             fontWeight: '600',
-                            color: '#1e293b',
+                            color: '#334155',
                             backgroundColor: '#e2e8f0', // Light background for Category Header
                             align: 'center',
-                            verticalAlign: 'middle'
+                            verticalAlign: 'middle',
+                            formatter: '{b}' // ONLY display name, NO numbers/sums
                         }
                     },
-                    // Level 2: Solution (Leaf nodes)
+                    // Level 2: Solution (Leaf nodes) - Content
                     {
                         itemStyle: {
                             gapWidth: 1,
                             borderColorSaturation: 0.7
                         },
                         label: {
-                            position: 'inside', // Text inside the box
-                            formatter: '{b}\n{c}%'
+                            show: true,
+                            position: 'inside', // Text inside the solution block
+                            formatter: '{b}\n{c}%', // Display "Name" and "Share%"
+                            fontSize: 12
                         },
                         upperLabel: {
-                            show: false
+                            show: false // No header for solutions
                         }
                     }
                 ],
