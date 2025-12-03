@@ -17,26 +17,27 @@ const CHROMATIC_PALETTE = [
 
 // Layout Configuration
 const CONFIG = {
-    globalPadding: 32, // Added global padding to prevent full-width stretch
+    globalPadding: 32, 
 
     domain: {
-        headerHeight: 46, // Taller header for the "Bar" look
-        padding: 6,       
+        headerHeight: 46, 
+        padding: 6,
+        marginBottom: 24, // Space between stacked domains       
         headerBg: 'transparent', 
-        headerText: '#171717', // Neutral-900 
-        borderColor: 'transparent', // Removed box border
+        headerText: '#171717', 
+        borderColor: 'transparent', 
         borderWidth: 0    
     },
     category: {
         headerHeight: 32,
-        padding: 0, // Changed to 0 to remove whitespace inside box
-        headerBg: '#171717', // Neutral-900 (Black) Background
-        headerText: '#ffffff', // White Text
-        borderColor: '#000000', // Black Border
+        padding: 0, 
+        headerBg: '#171717', 
+        headerText: '#ffffff', 
+        borderColor: '#ffffff', // Changed to White
         borderWidth: 1
     },
     solution: {
-        padding: 0 // Changed to 0 for completely full look
+        padding: 0 
     }
 };
 
@@ -95,7 +96,7 @@ function render(data) {
 
     if (rootNode.value === 0) return;
 
-    // 2. Calculate Layout (Squarified)
+    // 2. Calculate Layout
     // Apply Global Padding
     const pad = CONFIG.globalPadding;
     const layoutNodes = calculateLayout(rootNode, { 
@@ -173,6 +174,44 @@ function calculateLayout(node, rect) {
 
     let contentRect = { ...rect };
 
+    // --- Special Layout for Root -> Domain (Vertical Stack) ---
+    if (node.type === 'root') {
+        const children = node.children;
+        const totalValue = children.reduce((sum, c) => sum + c.value, 0);
+        
+        // Calculate gaps
+        const gap = CONFIG.domain.marginBottom;
+        const totalGaps = Math.max(0, children.length - 1) * gap;
+        const availableHeight = contentRect.height - totalGaps;
+        
+        let currentY = contentRect.y;
+
+        children.forEach(child => {
+            // Determine height proportional to value
+            // Guard against division by zero if totalValue is 0
+            const ratio = totalValue === 0 ? 0 : child.value / totalValue;
+            const childH = Math.max(0, availableHeight * ratio);
+            
+            const childRect = {
+                x: contentRect.x,
+                y: currentY,
+                width: contentRect.width,
+                height: childH
+            };
+
+            // Recurse
+            const childResults = calculateLayout(child, childRect);
+            childResults.forEach(r => results.push(r));
+
+            // Move cursor
+            currentY += childH + gap;
+        });
+
+        return results;
+    }
+
+    // --- Standard Squarified Layout for Domain -> Category -> Solution ---
+    
     if (node.type === 'domain') {
         contentRect.y += CONFIG.domain.headerHeight;
         contentRect.height -= CONFIG.domain.headerHeight;
