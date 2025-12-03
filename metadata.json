@@ -1,0 +1,5 @@
+{
+  "name": "Solution Map App",
+  "description": "A customized Treemap visualization tool for solution architecture. Users can define Domains, Categories, and Solutions with usage shares, and visualize them using ECharts.",
+  "requestFramePermissions": []
+}
