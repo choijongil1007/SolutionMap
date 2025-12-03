@@ -45,17 +45,6 @@ function render(data) {
     const treemapData = convertToTreemap(data);
 
     const option = {
-        title: {
-            text: 'Solution Architecture Map',
-            left: 'center',
-            top: 10,
-            textStyle: {
-                color: '#64748b',
-                fontSize: 14,
-                fontWeight: 'normal'
-            },
-            show: false // Hidden by default, clean look
-        },
         tooltip: {
             className: 'echarts-tooltip',
             formatter: function (info) {
@@ -77,68 +66,72 @@ function render(data) {
             {
                 name: 'Solution Map',
                 type: 'treemap',
-                // visibleMin: 300, // Removed to ensure small shares are visible
+                width: '100%',
+                height: '100%',
+                roam: false, // Disable zoom/pan for static view
+                nodeClick: false, // Disable drill-down interactions if strictly viewing layout
+                breadcrumb: {
+                    show: false // Hide bottom breadcrumb to keep clean
+                },
                 label: {
                     show: true,
-                    formatter: '{b}',
-                    fontSize: 14,
+                    formatter: '{b}\n{c}%',
+                    fontSize: 13,
                     color: '#fff',
+                    lineHeight: 18,
                     textShadowColor: 'rgba(0,0,0,0.3)',
                     textShadowBlur: 5
                 },
                 itemStyle: {
                     borderColor: '#fff',
-                    borderWidth: 1,
-                    gapWidth: 2
+                    borderWidth: 1
                 },
                 levels: [
+                    // Level 0: 대분류 (Domains)
                     {
                         itemStyle: {
-                            borderColor: '#e2e8f0',
-                            borderWidth: 0,
-                            gapWidth: 0
-                        },
-                        upperLabel: {
-                            show: false
-                        }
-                    },
-                    {
-                        itemStyle: {
-                            borderColor: '#cbd5e1',
-                            borderWidth: 5,
-                            gapWidth: 2
+                            borderColor: '#94a3b8',
+                            borderWidth: 1,
+                            gapWidth: 4 // Gap between Domains
                         },
                         upperLabel: {
                             show: true,
-                            height: 30,
-                            color: '#1e293b',
+                            height: 40,
+                            fontSize: 20, // Bigger font size
                             fontWeight: 'bold',
-                            fontSize: 13
+                            color: '#1e293b',
+                            align: 'center', // Center alignment
+                            verticalAlign: 'middle',
+                            backgroundColor: '#f1f5f9' // Light grey background for header
                         }
                     },
+                    // Level 1: 중분류 (Categories)
                     {
-                        colorSaturation: [0.3, 0.6],
                         itemStyle: {
-                            borderWidth: 2,
+                            borderColor: '#cbd5e1',
+                            borderWidth: 1,
+                            gapWidth: 2 // Gap between Categories
+                        },
+                        upperLabel: {
+                            show: true, // Show category name as header
+                            height: 28,
+                            fontSize: 14,
+                            fontWeight: '600',
+                            color: '#475569',
+                            align: 'left',
+                            padding: [0, 0, 0, 8],
+                            backgroundColor: 'rgba(255, 255, 255, 0.6)' // Semi-transparent header
+                        }
+                    },
+                    // Level 2: 솔루션 (Solutions - Leaves)
+                    {
+                        itemStyle: {
                             gapWidth: 1,
                             borderColorSaturation: 0.7
                         }
                     }
                 ],
-                data: treemapData.children || [],
-                breadcrumb: {
-                    show: true,
-                    height: 30,
-                    bottom: 10,
-                    itemStyle: {
-                        color: '#f1f5f9',
-                        borderColor: '#cbd5e1',
-                        borderWidth: 1,
-                        textStyle: {
-                            color: '#475569'
-                        }
-                    }
-                }
+                data: treemapData.children || []
             }
         ]
     };
