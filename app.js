@@ -85,8 +85,9 @@ function renderHomeList({ maps }) {
         const card = document.createElement('div');
         card.className = "bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group relative card-hover-effect flex flex-col h-40";
         
-        const dateStr = new Date(map.updatedAt).toLocaleDateString('en-US', {
-            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        // Korean Date Format
+        const dateStr = new Date(map.updatedAt).toLocaleDateString('ko-KR', {
+            year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
         });
 
         // Calculate stats
@@ -97,15 +98,15 @@ function renderHomeList({ maps }) {
                 <h3 class="font-bold text-lg text-slate-800 mb-1 line-clamp-1 group-hover:text-blue-600 transition-colors">${escapeHtml(map.title)}</h3>
                 <p class="text-xs text-slate-400 font-medium mb-4">${dateStr}</p>
                 <div class="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 inline-block px-2 py-1 rounded-md border border-slate-100">
-                    <span class="font-bold text-slate-700">${domainCount}</span> Domains
+                    <span class="font-bold text-slate-700">${domainCount}</span>개 대분류
                 </div>
             </div>
             
             <div class="flex items-center justify-end gap-2 mt-auto pt-3 border-t border-slate-50">
-                <button class="btn-edit text-slate-400 hover:text-blue-600 p-1.5 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                <button class="btn-edit text-slate-400 hover:text-blue-600 p-1.5 hover:bg-blue-50 rounded-lg transition-colors" title="수정">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 </button>
-                <button class="btn-delete text-slate-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                <button class="btn-delete text-slate-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors" title="삭제">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
             </div>
@@ -121,7 +122,7 @@ function renderHomeList({ maps }) {
 
         card.querySelector('.btn-delete').addEventListener('click', (e) => {
             e.stopPropagation();
-            showConfirmModal(`Are you sure you want to delete "${map.title}"?`, () => {
+            showConfirmModal(`'${map.title}' 맵을 정말 삭제하시겠습니까?`, () => {
                 store.deleteMap(map.id);
             });
         });
@@ -226,7 +227,7 @@ function setupEditorActions() {
     const resetBtn = document.getElementById('btn-reset');
     if (resetBtn) {
         resetBtn.addEventListener('click', () => {
-            showConfirmModal("Are you sure you want to clear all data in this map?", () => {
+            showConfirmModal("현재 맵의 모든 데이터를 초기화하시겠습니까?", () => {
                 store.resetData();
             });
         });
