@@ -23,16 +23,18 @@ const CHROMATIC_PALETTE = [
 
 // Layout Configuration
 const CONFIG = {
+    globalPadding: 32, // Added global padding to prevent full-width stretch
+
     domain: {
-        headerHeight: 36, 
-        padding: 8,       
-        headerBg: '#ffffff', // White Background
-        headerText: '#171717', // Neutral-900 (Black) Text
-        borderColor: '#171717', // Neutral-900 (Black) Border
-        borderWidth: 2    
+        headerHeight: 46, // Taller header for the "Bar" look
+        padding: 6,       
+        headerBg: 'transparent', 
+        headerText: '#171717', // Neutral-900 
+        borderColor: 'transparent', // Removed box border
+        borderWidth: 0    
     },
     category: {
-        headerHeight: 28,
+        headerHeight: 32,
         padding: 5, 
         headerBg: '#171717', // Neutral-900 (Black) Background
         headerText: '#ffffff', // White Text
@@ -100,7 +102,14 @@ function render(data) {
     if (rootNode.value === 0) return;
 
     // 2. Calculate Layout (Squarified)
-    const layoutNodes = calculateLayout(rootNode, { x: 0, y: 0, width, height });
+    // Apply Global Padding
+    const pad = CONFIG.globalPadding;
+    const layoutNodes = calculateLayout(rootNode, { 
+        x: pad, 
+        y: pad, 
+        width: width - (pad * 2), 
+        height: height - (pad * 2) 
+    });
 
     // 3. Render to DOM
     renderNodes(container, layoutNodes);
@@ -130,13 +139,11 @@ function buildHierarchy(data) {
                 value: 0
             };
 
-            // Sort solutions by share descending to assign rank-based colors
-            // Clone array to avoid mutating store data directly during sort
+            // Sort solutions by share descending
             const sortedSolutions = [...solutions].sort((a, b) => b.share - a.share);
 
             sortedSolutions.forEach((sol, index) => {
                 const shareVal = parseFloat(sol.share) || 0;
-                // Ensure non-zero value for layout algo stability
                 const safeVal = shareVal <= 0 ? 0.01 : shareVal;
                 
                 const solNode = {
@@ -144,7 +151,7 @@ function buildHierarchy(data) {
                     type: 'solution',
                     share: shareVal,
                     value: safeVal,
-                    rank: index // Assign rank (0 = 1st, 1 = 2nd, ...)
+                    rank: index 
                 };
                 catNode.children.push(solNode);
                 catNode.value += solNode.value;
@@ -208,7 +215,6 @@ function squarify(children, rect) {
     if (children.length === 0) return [];
 
     const totalValue = children.reduce((sum, c) => sum + c.value, 0);
-    // Squarify still needs to sort by size for the algorithm to work best
     const sortedChildren = [...children].sort((a, b) => b.value - a.value);
     
     const totalArea = width * height;
@@ -347,16 +353,19 @@ function renderNodes(container, layoutItems) {
 }
 
 function applyDomainStyle(el, node) {
-    el.className = "rounded-xl shadow-md flex flex-col overflow-hidden";
-    el.style.border = `${CONFIG.domain.borderWidth}px solid ${CONFIG.domain.borderColor}`;
-    el.style.backgroundColor = '#fff';
+    // Large Category Bar Style: Transparent container, bottom-bordered header
+    el.className = "flex flex-col"; // No box shadow or border on the container
+    el.style.border = 'none';
+    el.style.backgroundColor = 'transparent';
     el.style.zIndex = 10;
 
     const header = document.createElement('div');
     header.style.height = `${CONFIG.domain.headerHeight}px`;
-    header.style.backgroundColor = CONFIG.domain.headerBg;
+    header.style.backgroundColor = 'transparent';
     header.style.color = CONFIG.domain.headerText;
-    header.className = "flex items-center justify-center font-bold text-sm tracking-wide shrink-0 uppercase truncate px-2 border-b border-slate-700";
+    // Strong bottom border acts as the "Bar"
+    header.style.borderBottom = '3px solid #171717'; 
+    header.className = "flex items-center justify-center font-extrabold text-xl tracking-tight shrink-0 uppercase px-2 mb-1";
     header.textContent = node.name;
     el.appendChild(header);
 }
@@ -371,7 +380,7 @@ function applyCategoryStyle(el, node) {
     header.style.height = `${CONFIG.category.headerHeight}px`;
     header.style.backgroundColor = CONFIG.category.headerBg;
     header.style.color = CONFIG.category.headerText;
-    header.className = "flex items-center justify-center font-semibold text-xs shrink-0 truncate px-1 tracking-tight border-b border-slate-300";
+    header.className = "flex items-center justify-center font-bold text-sm shrink-0 truncate px-1 tracking-tight";
     header.textContent = node.name;
     el.appendChild(header);
 }
@@ -379,14 +388,13 @@ function applyCategoryStyle(el, node) {
 function applySolutionStyle(el, node) {
     el.style.zIndex = 30;
     
-    // Determine color based on Rank (0-based index)
     const rank = node.rank || 0;
     const colorIndex = rank % CHROMATIC_PALETTE.length;
     const bg = CHROMATIC_PALETTE[colorIndex];
 
     el.style.backgroundColor = bg;
     el.style.color = '#ffffff'; 
-    el.style.textShadow = '0 1px 2px rgba(0,0,0,0.1)';
+    el.style.textShadow = '0 1px 2px rgba(0,0,0,0.15)';
     
     el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default group rounded-sm shadow-sm";
 
@@ -401,26 +409,20 @@ function applySolutionStyle(el, node) {
 
     if (w > 30 && h > 24) {
         const nameEl = document.createElement('div');
-        nameEl.className = "font-medium text-xs leading-tight break-words w-full px-0.5 mb-0.5 line-clamp-2";
-        nameEl.style.fontSize = w < 60 ? '10px' : '11px';
+        // Increased font size and weight
+        nameEl.className = "font-bold leading-tight break-words w-full px-0.5 mb-0.5 line-clamp-2";
+        // Adaptive font size: Bigger than before (12px min, 15px max)
+        nameEl.style.fontSize = w < 80 ? '12px' : '15px'; 
         nameEl.textContent = node.name;
         el.appendChild(nameEl);
         
-        if (h > 45) {
+        if (h > 50) {
             const shareEl = document.createElement('div');
-            shareEl.className = "text-[9px] opacity-90 font-mono";
+            shareEl.className = "text-[11px] opacity-90 font-mono font-medium";
             shareEl.textContent = `${node.share}%`;
             el.appendChild(shareEl);
         }
     }
     
     el.title = `${node.name} (${node.share}%)`;
-}
-
-function stringHash(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return hash;
 }
