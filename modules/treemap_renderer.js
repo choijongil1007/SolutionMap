@@ -8,7 +8,8 @@ let resizeObserver = null;
 const COLORS = [
     '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', 
     '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', 
-    '#06b6d4', '#84cc16'
+    '#06b6d4', '#84cc16', '#e11d48', '#0891b2',
+    '#7c3aed', '#db2777', '#ea580c', '#65a30d'
 ];
 
 // Layout Configuration
@@ -122,11 +123,14 @@ function buildHierarchy(data) {
 
             solutions.forEach(sol => {
                 const shareVal = parseFloat(sol.share) || 0;
+                // Ensure non-zero value for layout algo stability
+                const safeVal = shareVal <= 0 ? 0.01 : shareVal;
+                
                 const solNode = {
                     name: sol.name,
                     type: 'solution',
                     share: shareVal,
-                    value: shareVal // Use share as the sizing value
+                    value: safeVal
                 };
                 catNode.children.push(solNode);
                 catNode.value += solNode.value;
@@ -195,8 +199,7 @@ function squarify(children, rect) {
     const totalValue = children.reduce((sum, c) => sum + c.value, 0);
     const sortedChildren = [...children].sort((a, b) => b.value - a.value);
     
-    // Scale factor to convert Value -> Area (pixels)
-    // Area = Value * scale
+    // Scale factor: Value * scale = Area (pixels)
     const totalArea = width * height;
     const scale = totalArea / totalValue;
 
@@ -209,56 +212,58 @@ function squarify(children, rect) {
     
     let currentRow = [];
     
-    // Process a row and add its rects to results
-    const layoutRow = (row, containerDim, isVerticalStacking) => {
-        // row: array of nodes
-        // containerDim: width of the container (if vertical stacking) or height (if horizontal stacking)
-        // isVerticalStacking: true if stacking rows vertically (width is fixed)
-        
-        // Sum of values in this row
+    // Function to layout a "row" of items. 
+    // In Squarified terminology, a "row" is a strip along the short edge.
+    const layoutRow = (row) => {
         const rowValue = row.reduce((s, c) => s + c.value, 0);
         const rowArea = rowValue * scale;
         
-        let rowH, rowW;
+        // Decide direction based on the CURRENT available space
+        const isWide = availableWidth >= availableHeight;
         
-        if (isVerticalStacking) {
-            // Row fills the container width (availableWidth)
-            rowW = availableWidth; 
-            rowH = rowArea / rowW; // Height determined by area
+        if (isWide) {
+            // Container is Wide. We cut a Vertical Strip (Column) from the left.
+            // Height is fixed to availableHeight.
+            const stripH = availableHeight;
+            const stripW = rowArea / stripH; // Derived width
+            
+            let itemY = cursorY;
+            row.forEach(child => {
+                const itemArea = child.value * scale;
+                const itemW = stripW;
+                const itemH = itemArea / itemW;
+                
+                results.push({ 
+                    child, 
+                    rect: { x: cursorX, y: itemY, width: itemW, height: itemH } 
+                });
+                itemY += itemH; // Stack vertically inside the vertical strip
+            });
+            
+            cursorX += stripW;
+            availableWidth -= stripW;
+            
         } else {
-            // Row fills the container height (availableHeight)
-            rowH = availableHeight;
-            rowW = rowArea / rowH; // Width determined by area
-        }
-
-        let itemX = cursorX;
-        let itemY = cursorY;
-
-        row.forEach(child => {
-            const itemArea = child.value * scale;
-            let itemW, itemH;
-
-            if (isVerticalStacking) {
-                 // Items flow horizontally inside this row
-                 itemH = rowH;
-                 itemW = itemArea / itemH;
-                 results.push({ child, rect: { x: itemX, y: itemY, width: itemW, height: itemH } });
-                 itemX += itemW;
-            } else {
-                 // Items flow vertically inside this column
-                 itemW = rowW;
-                 itemH = itemArea / itemW;
-                 results.push({ child, rect: { x: itemX, y: itemY, width: itemW, height: itemH } });
-                 itemY += itemH;
-            }
-        });
-
-        if (isVerticalStacking) {
-            cursorY += rowH;
-            availableHeight -= rowH;
-        } else {
-            cursorX += rowW;
-            availableWidth -= rowW;
+            // Container is Tall. We cut a Horizontal Strip (Row) from the top.
+            // Width is fixed to availableWidth.
+            const stripW = availableWidth;
+            const stripH = rowArea / stripW; // Derived height
+            
+            let itemX = cursorX;
+            row.forEach(child => {
+                const itemArea = child.value * scale;
+                const itemH = stripH;
+                const itemW = itemArea / itemH;
+                
+                results.push({ 
+                    child, 
+                    rect: { x: itemX, y: cursorY, width: itemW, height: itemH } 
+                });
+                itemX += itemW; // Stack horizontally inside the horizontal strip
+            });
+            
+            cursorY += stripH;
+            availableHeight -= stripH;
         }
     };
 
@@ -268,28 +273,23 @@ function squarify(children, rect) {
             return;
         }
 
-        // Determine orientation based on remaining space
         const shortSide = Math.min(availableWidth, availableHeight);
         
-        // Check worst ratio if we add this child to the current row
         const currentWorst = worstRatio(currentRow, shortSide, scale);
         const nextRow = [...currentRow, child];
         const nextWorst = worstRatio(nextRow, shortSide, scale);
 
-        // If adding improves (or doesn't significantly worsen) aspect ratio, add it
+        // Squarified Logic: Add to row if aspect ratio improves (gets lower)
         if (nextWorst <= currentWorst) {
             currentRow.push(child);
         } else {
-            // Otherwise, finalize current row
-            const isVerticalStacking = availableWidth >= availableHeight;
-            layoutRow(currentRow, isVerticalStacking ? availableWidth : availableHeight, isVerticalStacking);
+            layoutRow(currentRow);
             currentRow = [child];
         }
     });
 
     if (currentRow.length > 0) {
-        const isVerticalStacking = availableWidth >= availableHeight;
-        layoutRow(currentRow, isVerticalStacking ? availableWidth : availableHeight, isVerticalStacking);
+        layoutRow(currentRow);
     }
 
     return results;
@@ -297,13 +297,22 @@ function squarify(children, rect) {
 
 /**
  * Calculates worst aspect ratio for a row of items.
- * Uses area calculations to be unit-safe.
+ * w is the length of the fixed side (the short side of the container).
  */
 function worstRatio(row, w, scale) {
     if (row.length === 0) return Infinity;
     
     const rowValue = row.reduce((a, b) => a + b.value, 0);
     const rowArea = rowValue * scale;
+    
+    // s = rowArea
+    // w = fixed side length
+    // For a rectangle in the row with area A:
+    // One side is (rowArea / w). The other side is (A / (rowArea/w)) = (A*w / rowArea).
+    // Aspect Ratio = max(Side1/Side2, Side2/Side1)
+    // Simplified formula from Bruls et al.:
+    // max(w^2 * maxArea / rowArea^2, rowArea^2 / (w^2 * minArea))
+    
     const s2 = rowArea * rowArea;
     const w2 = w * w;
     
@@ -315,7 +324,6 @@ function worstRatio(row, w, scale) {
     const minArea = minVal * scale;
     const maxArea = maxVal * scale;
     
-    // Formula: max(w^2 * maxArea / s^2, s^2 / (w^2 * minArea))
     return Math.max(
         (w2 * maxArea) / s2,
         s2 / (w2 * minArea)
@@ -334,7 +342,7 @@ function renderNodes(container, layoutItems) {
         el.style.height = `${Math.max(0, rect.height)}px`;
         el.style.boxSizing = 'border-box';
         el.style.overflow = 'hidden';
-        el.style.transition = 'all 0.5s ease-out';
+        el.style.transition = 'all 0.4s ease-out'; // Slightly faster transition
 
         if (node.type === 'domain') {
             applyDomainStyle(el, node);
@@ -358,7 +366,7 @@ function applyDomainStyle(el, node) {
     header.style.height = `${CONFIG.domain.headerHeight}px`;
     header.style.backgroundColor = CONFIG.domain.headerBg;
     header.style.color = CONFIG.domain.headerText;
-    header.className = "flex items-center justify-center font-bold text-sm tracking-wide shrink-0 uppercase";
+    header.className = "flex items-center justify-center font-bold text-sm tracking-wide shrink-0 uppercase truncate px-2";
     header.textContent = node.name;
     el.appendChild(header);
 }
@@ -373,7 +381,7 @@ function applyCategoryStyle(el, node) {
     header.style.height = `${CONFIG.category.headerHeight}px`;
     header.style.backgroundColor = CONFIG.category.headerBg;
     header.style.color = CONFIG.category.headerText;
-    header.className = "flex items-center justify-center font-semibold text-xs shrink-0";
+    header.className = "flex items-center justify-center font-semibold text-xs shrink-0 truncate px-1";
     header.textContent = node.name;
     el.appendChild(header);
 }
@@ -386,7 +394,7 @@ function applySolutionStyle(el, node) {
 
     el.style.backgroundColor = bg;
     el.style.color = '#fff';
-    el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default shadow-sm";
+    el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default shadow-sm group";
     
     const gap = CONFIG.solution.padding;
     el.style.width = `${Math.max(0, parseFloat(el.style.width) - gap * 2)}px`;
@@ -397,9 +405,12 @@ function applySolutionStyle(el, node) {
     const w = parseFloat(el.style.width);
     const h = parseFloat(el.style.height);
 
-    if (w > 30 && h > 30) {
+    // Only show text if box is large enough
+    if (w > 30 && h > 24) {
         const nameEl = document.createElement('div');
-        nameEl.className = "font-medium text-xs leading-tight break-words w-full px-1 mb-0.5 line-clamp-2";
+        nameEl.className = "font-medium text-xs leading-tight break-words w-full px-0.5 mb-0.5 line-clamp-2";
+        // Adaptive font size
+        nameEl.style.fontSize = w < 60 ? '10px' : '12px';
         nameEl.textContent = node.name;
         el.appendChild(nameEl);
         
@@ -409,9 +420,9 @@ function applySolutionStyle(el, node) {
             shareEl.textContent = `${node.share}%`;
             el.appendChild(shareEl);
         }
-    } else {
-        el.title = `${node.name} (${node.share}%)`;
     }
+    
+    el.title = `${node.name} (${node.share}%)`;
 }
 
 function stringHash(str) {
