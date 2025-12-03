@@ -22,19 +22,19 @@ const COLORS = [
 // Layout Configuration
 const CONFIG = {
     domain: {
-        headerHeight: 34,
-        padding: 6, 
+        headerHeight: 36, // Slightly taller for better proportions with thicker border
+        padding: 8,       // More breathing room
         headerBg: '#1e293b', // Slate-800
         headerText: '#f8fafc',
-        borderColor: '#cbd5e1', // Slate-300
-        borderWidth: 1
+        borderColor: '#475569', // Slate-600 (Much more visible than before)
+        borderWidth: 2    // Thicker border for outer container
     },
     category: {
         headerHeight: 28,
-        padding: 4, 
-        headerBg: '#f1f5f9', // Slate-100
-        headerText: '#475569', // Slate-600
-        borderColor: '#e2e8f0', // Slate-200
+        padding: 5, 
+        headerBg: '#e2e8f0', // Slate-200 (Distinct from white body)
+        headerText: '#334155', // Slate-700 (High contrast)
+        borderColor: '#94a3b8', // Slate-400 (Visible mid-tone grey)
         borderWidth: 1
     },
     solution: {
@@ -345,7 +345,7 @@ function renderNodes(container, layoutItems) {
 }
 
 function applyDomainStyle(el, node) {
-    el.className = "rounded-xl shadow-sm flex flex-col overflow-hidden";
+    el.className = "rounded-xl shadow-md flex flex-col overflow-hidden";
     el.style.border = `${CONFIG.domain.borderWidth}px solid ${CONFIG.domain.borderColor}`;
     el.style.backgroundColor = '#fff';
     el.style.zIndex = 10;
@@ -354,13 +354,13 @@ function applyDomainStyle(el, node) {
     header.style.height = `${CONFIG.domain.headerHeight}px`;
     header.style.backgroundColor = CONFIG.domain.headerBg;
     header.style.color = CONFIG.domain.headerText;
-    header.className = "flex items-center justify-center font-bold text-sm tracking-wide shrink-0 uppercase truncate px-2";
+    header.className = "flex items-center justify-center font-bold text-sm tracking-wide shrink-0 uppercase truncate px-2 border-b border-slate-700";
     header.textContent = node.name;
     el.appendChild(header);
 }
 
 function applyCategoryStyle(el, node) {
-    el.className = "rounded-lg flex flex-col overflow-hidden";
+    el.className = "rounded-lg flex flex-col overflow-hidden shadow-sm";
     el.style.border = `${CONFIG.category.borderWidth}px solid ${CONFIG.category.borderColor}`;
     el.style.backgroundColor = '#fff';
     el.style.zIndex = 20;
@@ -369,7 +369,7 @@ function applyCategoryStyle(el, node) {
     header.style.height = `${CONFIG.category.headerHeight}px`;
     header.style.backgroundColor = CONFIG.category.headerBg;
     header.style.color = CONFIG.category.headerText;
-    header.className = "flex items-center justify-center font-semibold text-xs shrink-0 truncate px-1 tracking-tight";
+    header.className = "flex items-center justify-center font-semibold text-xs shrink-0 truncate px-1 tracking-tight border-b border-slate-300";
     header.textContent = node.name;
     el.appendChild(header);
 }
@@ -378,16 +378,13 @@ function applySolutionStyle(el, node) {
     el.style.zIndex = 30;
     
     // Use the rank assigned in buildHierarchy to determine color
-    // This ensures 1st place always gets the first color, 2nd place gets the second, etc.
     const colorIndex = (node.rank || 0) % COLORS.length;
     const bg = COLORS[colorIndex];
 
     el.style.backgroundColor = bg;
-    el.style.color = '#fff'; // White text on pastel colors (400 weight usually supports white)
-    el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default group rounded-sm";
+    el.style.color = '#fff'; 
+    el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default group rounded-sm shadow-sm";
     
-    // Add text shadow for better readability on lighter pastels if needed, 
-    // but 400-500 weight usually offers decent contrast for white text.
     el.style.textShadow = '0 1px 2px rgba(0,0,0,0.1)';
 
     const gap = CONFIG.solution.padding;
