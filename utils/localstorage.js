@@ -1,6 +1,4 @@
-const STORAGE_KEY = "solution_map_v3";
-
-const DEFAULT_DATA = {};
+const STORAGE_KEY = "solution_map_v4_db";
 
 export const loadData = () => {
   try {
@@ -11,8 +9,8 @@ export const loadData = () => {
   } catch (e) {
     console.error("Failed to load data from local storage", e);
   }
-  // Return empty object if no data found
-  return {};
+  // Return default structure if no data found
+  return { maps: [] };
 };
 
 export const saveData = (data) => {

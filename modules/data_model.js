@@ -1,127 +1,257 @@
 
 /**
  * DataModelStore
- * Manages the application state and notifies listeners of changes.
+ * Manages the application state (list of maps + current active map) and notifies listeners.
  */
 class DataModelStore {
     constructor() {
-        this.data = {};
-        this.listeners = [];
+        this.state = {
+            maps: [], // Array of { id, title, updatedAt, content: {} }
+            currentMapId: null
+        };
+        // Listeners for active map content changes (Tree/Map renderers)
+        this.contentListeners = [];
+        // Listeners for map list changes (Home screen)
+        this.listListeners = [];
     }
 
     init(initialData) {
-        this.data = initialData;
-        this.notify();
+        if (initialData && Array.isArray(initialData.maps)) {
+            this.state.maps = initialData.maps;
+        } else {
+            this.state.maps = [];
+        }
+        this.notifyList();
     }
 
-    getData() {
-        return this.data;
+    // --- State Accessors ---
+
+    getMaps() {
+        // Sort by updatedAt desc
+        return [...this.state.maps].sort((a, b) => b.updatedAt - a.updatedAt);
     }
+
+    getCurrentMap() {
+        return this.state.maps.find(m => m.id === this.state.currentMapId);
+    }
+
+    // Returns just the 'content' object for the active map (for tree/treemap renderers)
+    getData() {
+        const current = this.getCurrentMap();
+        return current ? current.content : {};
+    }
+
+    // --- Subscription ---
 
     subscribe(listener) {
-        this.listeners.push(listener);
+        this.contentListeners.push(listener);
+    }
+
+    subscribeList(listener) {
+        this.listListeners.push(listener);
     }
 
     notify() {
-        this.listeners.forEach(listener => listener(this.data));
+        // Notify components watching the Active Map's content
+        const data = this.getData();
+        this.contentListeners.forEach(listener => listener(data));
     }
 
-    // --- Actions ---
+    notifyList() {
+        // Notify components watching the Map List (Home Screen)
+        const maps = this.getMaps();
+        this.listListeners.forEach(listener => listener({ maps }));
+    }
+
+    getFullState() {
+        return { maps: this.state.maps };
+    }
+
+    // --- Map Management Actions ---
+
+    createMap(title) {
+        const newMap = {
+            id: crypto.randomUUID(),
+            title: title || "Untitled Map",
+            updatedAt: Date.now(),
+            content: {} 
+        };
+        this.state.maps.push(newMap);
+        this.state.currentMapId = newMap.id;
+        
+        this.notifyList();
+        this.notify();
+        return newMap.id;
+    }
+
+    selectMap(id) {
+        const map = this.state.maps.find(m => m.id === id);
+        if (map) {
+            this.state.currentMapId = id;
+            this.notify();
+        }
+    }
+
+    deleteMap(id) {
+        this.state.maps = this.state.maps.filter(m => m.id !== id);
+        if (this.state.currentMapId === id) {
+            this.state.currentMapId = null;
+        }
+        this.notifyList();
+    }
+
+    updateCurrentMapTitle(newTitle) {
+        const map = this.getCurrentMap();
+        if (map) {
+            map.title = newTitle;
+            map.updatedAt = Date.now();
+            this.notifyList();
+        }
+    }
+
+    saveCurrentMap() {
+        const map = this.getCurrentMap();
+        if (map) {
+            map.updatedAt = Date.now();
+            this.notifyList();
+            return this.getFullState(); // Return full state for LocalStorage
+        }
+        return null;
+    }
+
+    // --- Content Manipulation Actions (Operates on Current Map) ---
+
+    _touch() {
+        const map = this.getCurrentMap();
+        if (map) map.updatedAt = Date.now();
+    }
 
     resetData() {
-        this.data = {};
-        this.notify();
+        const map = this.getCurrentMap();
+        if (map) {
+            map.content = {};
+            this._touch();
+            this.notify();
+        }
     }
 
     addDomain(name) {
-        if (!name || this.data[name]) return false;
-        this.data[name] = {};
+        const map = this.getCurrentMap();
+        if (!map) return false;
+        
+        if (!name || map.content[name]) return false;
+        map.content[name] = {};
+        this._touch();
         this.notify();
         return true;
     }
 
     renameDomain(oldName, newName) {
+        const map = this.getCurrentMap();
+        if (!map) return false;
+
         if (!newName || oldName === newName) return true;
-        if (this.data[newName]) return false; // Duplicate
+        if (map.content[newName]) return false; 
         
-        const content = this.data[oldName];
-        delete this.data[oldName];
-        this.data[newName] = content;
+        const content = map.content[oldName];
+        delete map.content[oldName];
+        map.content[newName] = content;
+        this._touch();
         this.notify();
         return true;
     }
 
     deleteDomain(name) {
-        delete this.data[name];
-        this.notify();
+        const map = this.getCurrentMap();
+        if (map) {
+            delete map.content[name];
+            this._touch();
+            this.notify();
+        }
     }
 
     addCategory(domain, name) {
-        if (!name || !this.data[domain]) return false;
-        if (this.data[domain][name]) return false;
+        const map = this.getCurrentMap();
+        if (!map) return false;
+
+        if (!name || !map.content[domain]) return false;
+        if (map.content[domain][name]) return false;
         
-        this.data[domain][name] = [];
+        map.content[domain][name] = [];
+        this._touch();
         this.notify();
         return true;
     }
 
     renameCategory(domain, oldName, newName) {
-        if (!newName || oldName === newName) return true;
-        if (this.data[domain][newName]) return false;
+        const map = this.getCurrentMap();
+        if (!map) return false;
 
-        const content = this.data[domain][oldName];
-        delete this.data[domain][oldName];
-        this.data[domain][newName] = content;
+        if (!newName || oldName === newName) return true;
+        if (map.content[domain][newName]) return false;
+
+        const content = map.content[domain][oldName];
+        delete map.content[domain][oldName];
+        map.content[domain][newName] = content;
+        this._touch();
         this.notify();
         return true;
     }
 
     deleteCategory(domain, name) {
-        if (this.data[domain]) {
-            delete this.data[domain][name];
+        const map = this.getCurrentMap();
+        if (map && map.content[domain]) {
+            delete map.content[domain][name];
+            this._touch();
             this.notify();
         }
     }
 
     addSolution(domain, category, name, share) {
-        if (!this.data[domain] || !this.data[domain][category]) return 'INVALID_TARGET';
-        const solutions = this.data[domain][category];
+        const map = this.getCurrentMap();
+        if (!map) return 'ERROR';
+        if (!map.content[domain] || !map.content[domain][category]) return 'INVALID_TARGET';
         
-        // Ensure name uniqueness within category
+        const solutions = map.content[domain][category];
+        
         if (solutions.some(s => s.name === name)) return 'DUPLICATE';
 
-        // Check for 100% overflow
         const currentTotal = solutions.reduce((sum, s) => sum + s.share, 0);
         if (currentTotal + share > 100) return 'OVERFLOW';
 
         solutions.push({ name, share });
+        this._touch();
         this.notify();
         return 'SUCCESS';
     }
 
     updateSolution(domain, category, index, newName, newShare) {
-        if (!this.data[domain] || !this.data[domain][category]) return 'INVALID_TARGET';
-        const solutions = this.data[domain][category];
+        const map = this.getCurrentMap();
+        if (!map) return 'ERROR';
+
+        if (!map.content[domain] || !map.content[domain][category]) return 'INVALID_TARGET';
+        const solutions = map.content[domain][category];
         
         if (!solutions[index]) return 'INVALID_INDEX';
 
-        // Check duplicate name only if name changed
         if (solutions[index].name !== newName && solutions.some((s, i) => i !== index && s.name === newName)) {
             return 'DUPLICATE';
         }
 
-        // Check for 100% overflow (exclude current item's old share)
         const otherShares = solutions.reduce((sum, s, i) => i === index ? sum : sum + s.share, 0);
         if (otherShares + newShare > 100) return 'OVERFLOW';
 
         solutions[index] = { name: newName, share: newShare };
+        this._touch();
         this.notify();
         return 'SUCCESS';
     }
 
     deleteSolution(domain, category, index) {
-        if (this.data[domain] && this.data[domain][category]) {
-            this.data[domain][category].splice(index, 1);
+        const map = this.getCurrentMap();
+        if (map && map.content[domain] && map.content[domain][category]) {
+            map.content[domain][category].splice(index, 1);
+            this._touch();
             this.notify();
         }
     }

@@ -30,70 +30,132 @@
     <!-- App Container (Centered, Fixed Width) -->
     <div class="w-full max-w-[1120px] h-full max-h-[900px] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col relative">
 
-        <!-- Header -->
-        <header class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shrink-0 z-20">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <!-- VIEW: HOME (List of Maps) -->
+        <div id="view-home" class="flex flex-col h-full">
+            <!-- Home Header -->
+            <header class="bg-white border-b border-slate-100 px-8 py-6 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900 tracking-tight leading-none">Solution Map</h1>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Dashboard</span>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-lg font-bold text-slate-900 tracking-tight leading-none">Solution Map</h1>
-                    <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Architecture Visualizer</span>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <!-- Toast -->
-                <div id="save-toast" class="hidden text-sm text-emerald-600 font-medium bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 flex items-center gap-1.5 shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    저장됨
-                </div>
-
-                <button id="btn-reset" class="text-sm font-medium text-slate-500 hover:text-red-600 transition-colors px-3 py-2 rounded-lg hover:bg-slate-50">
-                    초기화
+                <button id="btn-create-map" class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all text-sm font-bold shadow-lg hover:shadow-blue-500/30 active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Create
                 </button>
-                <button id="btn-manual-save" class="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all text-sm font-medium shadow-md hover:shadow-lg active:scale-95">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                    저장
-                </button>
-            </div>
-        </header>
+            </header>
 
-        <!-- Main Content -->
-        <main class="flex-1 overflow-hidden flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-slate-100">
-            <!-- Left Panel: Tree Builder -->
-            <section class="w-full md:w-[360px] flex flex-col bg-slate-50/50 shrink-0 h-full overflow-hidden">
-                <div class="p-4 border-b border-slate-200/60 bg-white/50 backdrop-blur-sm flex justify-between items-center shrink-0">
-                    <h2 class="text-sm font-bold text-slate-700 flex items-center gap-2">
-                        구조 정의
-                    </h2>
-                    <button id="btn-add-domain" class="flex items-center gap-1.5 bg-white text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-50 transition-all shadow-sm hover:border-blue-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        대분류 추가
+            <!-- Home Content: Card Grid -->
+            <main class="flex-1 overflow-y-auto bg-slate-50 p-8">
+                <div id="map-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Cards will be injected here -->
+                </div>
+                
+                <!-- Empty State for Home -->
+                <div id="home-empty-state" class="hidden flex flex-col items-center justify-center h-full text-center pb-20">
+                    <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-slate-100">
+                        <svg class="w-10 h-10 text-slate-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-700 mb-2">No Solution Maps Yet</h3>
+                    <p class="text-slate-500 max-w-xs mx-auto">Click the <span class="font-bold text-blue-600">+ Create</span> button to start visualizing your architecture.</p>
+                </div>
+            </main>
+        </div>
+
+        <!-- VIEW: EDITOR (Hidden by default) -->
+        <div id="view-editor" class="hidden flex flex-col h-full">
+            <!-- Editor Header -->
+            <header class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shrink-0 z-20">
+                <div class="flex items-center gap-4 flex-1">
+                    <button id="btn-back" class="p-2 -ml-2 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors" title="Back to Home">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    </button>
+                    <div class="flex flex-col flex-1 max-w-md">
+                        <input type="text" id="map-title-input" class="text-lg font-bold text-slate-900 bg-transparent border border-transparent hover:border-slate-200 focus:border-blue-400 focus:bg-white rounded px-2 py-0.5 outline-none transition-all w-full truncate" value="Untitled Map" placeholder="Enter map title...">
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- Toast -->
+                    <div id="save-toast" class="hidden text-sm text-emerald-600 font-medium bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 flex items-center gap-1.5 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Saved
+                    </div>
+                    <button id="btn-reset" class="text-sm font-medium text-slate-500 hover:text-red-600 transition-colors px-3 py-2 rounded-lg hover:bg-slate-50">
+                        Reset Map
                     </button>
                 </div>
-                <div id="tree-container" class="flex-1 overflow-y-auto p-4 space-y-3">
-                    <!-- Tree items will be injected here via JS -->
-                </div>
-            </section>
+            </header>
 
-            <!-- Right Panel: Treemap -->
-            <section class="w-full flex-1 flex flex-col bg-white relative overflow-hidden">
-                <div class="p-4 border-b border-slate-100 shrink-0 flex items-center justify-between z-10 bg-white">
-                    <h2 class="text-sm font-bold text-slate-700">시각화</h2>
-                </div>
-                <div id="treemap-container" class="flex-1 w-full h-full relative bg-slate-50">
-                    <!-- Custom Renderer will render here -->
-                </div>
-                <!-- Empty state overlay -->
-                <div id="empty-state" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-white z-0">
-                    <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+            <!-- Main Content -->
+            <main class="flex-1 overflow-hidden flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                <!-- Left Panel: Tree Builder -->
+                <section class="w-full md:w-[360px] flex flex-col bg-slate-50/50 shrink-0 h-full overflow-hidden">
+                    <div class="p-4 border-b border-slate-200/60 bg-white/50 backdrop-blur-sm flex justify-between items-center shrink-0">
+                        <h2 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                            Structure
+                        </h2>
+                        <button id="btn-add-domain" class="flex items-center gap-1.5 bg-white text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-50 transition-all shadow-sm hover:border-blue-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Add Domain
+                        </button>
                     </div>
-                    <p class="text-slate-500 font-semibold">데이터가 없습니다</p>
-                    <p class="text-slate-400 text-sm mt-1">좌측 패널에서 솔루션을 추가해주세요</p>
+                    <div id="tree-container" class="flex-1 overflow-y-auto p-4 space-y-3">
+                        <!-- Tree items will be injected here via JS -->
+                    </div>
+                    <!-- Save Button Area (Bottom Left) -->
+                    <div class="p-4 border-t border-slate-200 bg-white z-10">
+                        <button id="btn-manual-save" class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-sm font-bold shadow-md hover:shadow-lg active:scale-95">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                            Save Changes
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Right Panel: Treemap -->
+                <section class="w-full flex-1 flex flex-col bg-white relative overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 shrink-0 flex items-center justify-between z-10 bg-white">
+                        <h2 class="text-sm font-bold text-slate-700">Visualization</h2>
+                    </div>
+                    <div id="treemap-container" class="flex-1 w-full h-full relative bg-slate-50">
+                        <!-- Custom Renderer will render here -->
+                    </div>
+                    <!-- Empty state overlay -->
+                    <div id="empty-state" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-white z-0">
+                        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                        </div>
+                        <p class="text-slate-500 font-semibold">No Data</p>
+                        <p class="text-slate-400 text-sm mt-1">Add a Domain from the left panel</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Create Map Modal -->
+    <div id="create-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity opacity-0" id="create-modal-backdrop"></div>
+        <div class="relative bg-white border border-slate-200 rounded-xl shadow-2xl p-6 w-full max-w-sm transform scale-95 opacity-0 transition-all duration-200" id="create-modal-panel">
+            <h3 class="text-lg font-bold text-slate-900 mb-4">Create New Map</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="new-map-title" class="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                    <input type="text" id="new-map-title" class="input-premium w-full" placeholder="e.g. Enterprise Architecture 2024">
                 </div>
-            </section>
-        </main>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" id="create-modal-cancel" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="button" id="create-modal-confirm" class="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20">
+                        Create
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Custom Dark Warning Modal -->
@@ -110,7 +172,7 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-lg font-bold text-white mb-1" id="modal-title">알림</h3>
+                    <h3 class="text-lg font-bold text-white mb-1" id="modal-title">Alert</h3>
                     <p class="text-sm text-gray-300 leading-relaxed" id="warning-modal-message">
                         <!-- Message will be injected -->
                     </p>
@@ -118,7 +180,7 @@
             </div>
             <div class="mt-6 flex justify-end">
                 <button type="button" id="warning-modal-close" class="px-4 py-2 bg-white text-black text-sm font-bold rounded-lg hover:bg-gray-200 focus:outline-none transition-colors">
-                    확인
+                    OK
                 </button>
             </div>
         </div>
@@ -138,7 +200,7 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-lg font-bold text-white mb-1" id="confirm-modal-title">삭제 확인</h3>
+                    <h3 class="text-lg font-bold text-white mb-1" id="confirm-modal-title">Confirm Action</h3>
                     <p class="text-sm text-gray-300 leading-relaxed" id="confirm-modal-message">
                         <!-- Message will be injected -->
                     </p>
@@ -146,10 +208,10 @@
             </div>
             <div class="mt-6 flex justify-end gap-3">
                 <button type="button" id="confirm-modal-cancel" class="px-4 py-2 bg-gray-800 text-gray-300 text-sm font-bold rounded-lg hover:bg-gray-700 transition-colors">
-                    취소
+                    Cancel
                 </button>
                 <button type="button" id="confirm-modal-ok" class="px-4 py-2 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700 transition-colors shadow-lg shadow-red-900/20">
-                    삭제
+                    Delete
                 </button>
             </div>
         </div>
