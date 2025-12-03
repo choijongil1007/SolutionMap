@@ -90,16 +90,12 @@ function render(data) {
     if (rootNode.value === 0) return;
 
     // 2. Calculate Layout (Squarified)
-    // We start with the full container area
     const layoutNodes = calculateLayout(rootNode, { x: 0, y: 0, width, height });
 
     // 3. Render to DOM
     renderNodes(container, layoutNodes);
 }
 
-/**
- * Transforms the flat data store into a node tree with computed values.
- */
 function buildHierarchy(data) {
     const root = {
         name: 'root',
@@ -125,7 +121,6 @@ function buildHierarchy(data) {
             };
 
             solutions.forEach(sol => {
-                // Ensure share is a number
                 const shareVal = parseFloat(sol.share) || 0;
                 const solNode = {
                     name: sol.name,
@@ -152,26 +147,16 @@ function buildHierarchy(data) {
     return root;
 }
 
-/**
- * Recursively calculates the layout for the tree.
- * Returns a list of nodes with {rect} attached.
- */
 function calculateLayout(node, rect) {
-    // Add current node to results
     const results = [{ node, rect }];
 
-    // Base case: No children
     if (!node.children || node.children.length === 0) return results;
 
-    // Determine Content Area for Children based on Node Type (Subtract headers/padding)
     let contentRect = { ...rect };
 
     if (node.type === 'domain') {
-        // Header space
         contentRect.y += CONFIG.domain.headerHeight;
         contentRect.height -= CONFIG.domain.headerHeight;
-        
-        // Padding
         const pad = CONFIG.domain.padding;
         contentRect.x += pad;
         contentRect.y += pad;
@@ -179,30 +164,21 @@ function calculateLayout(node, rect) {
         contentRect.height -= (pad * 2);
 
     } else if (node.type === 'category') {
-        // Header space
         contentRect.y += CONFIG.category.headerHeight;
         contentRect.height -= CONFIG.category.headerHeight;
-
-        // Padding
         const pad = CONFIG.category.padding;
         contentRect.x += pad;
         contentRect.y += pad;
         contentRect.width -= (pad * 2);
         contentRect.height -= (pad * 2);
     } 
-    // Root has no chrome, just uses full rect
 
-    // Safety check for negative dimensions
     if (contentRect.width <= 0 || contentRect.height <= 0) return results;
 
-    // Run Squarify Algorithm for Children
-    // This returns an array of { child: node, rect: {...} }
     const layoutChildren = squarify(node.children, contentRect);
 
-    // Recursively calculate layout for children
     layoutChildren.forEach(item => {
         const childResults = calculateLayout(item.child, item.rect);
-        // Merge results
         childResults.forEach(r => results.push(r));
     });
 
@@ -211,15 +187,18 @@ function calculateLayout(node, rect) {
 
 /**
  * Squarified Treemap Algorithm
- * Returns [{ child, rect }, ...]
  */
 function squarify(children, rect) {
     const { x, y, width, height } = rect;
     if (children.length === 0) return [];
 
     const totalValue = children.reduce((sum, c) => sum + c.value, 0);
-    // Sort children by value descending
     const sortedChildren = [...children].sort((a, b) => b.value - a.value);
+    
+    // Scale factor to convert Value -> Area (pixels)
+    // Area = Value * scale
+    const totalArea = width * height;
+    const scale = totalArea / totalValue;
 
     const results = [];
     
@@ -230,41 +209,43 @@ function squarify(children, rect) {
     
     let currentRow = [];
     
-    // Helper to process a finished row
+    // Process a row and add its rects to results
     const layoutRow = (row, containerDim, isVerticalStacking) => {
+        // row: array of nodes
+        // containerDim: width of the container (if vertical stacking) or height (if horizontal stacking)
+        // isVerticalStacking: true if stacking rows vertically (width is fixed)
+        
+        // Sum of values in this row
         const rowValue = row.reduce((s, c) => s + c.value, 0);
-        const rowArea = (rowValue / totalValue) * (width * height);
+        const rowArea = rowValue * scale;
         
         let rowH, rowW;
         
-        // isVerticalStacking means we are stacking rows vertically (width is fixed to containerDim)
-        // If false, we are stacking columns horizontally (height is fixed to containerDim)
-        
         if (isVerticalStacking) {
-            // Stacking rows along Y axis. Row width is fixed.
-            rowW = containerDim; // which is availableWidth
-            rowH = rowArea / rowW;
+            // Row fills the container width (availableWidth)
+            rowW = availableWidth; 
+            rowH = rowArea / rowW; // Height determined by area
         } else {
-            // Stacking columns along X axis. Column height is fixed.
-            rowH = containerDim; // which is availableHeight
-            rowW = rowArea / rowH;
+            // Row fills the container height (availableHeight)
+            rowH = availableHeight;
+            rowW = rowArea / rowH; // Width determined by area
         }
 
         let itemX = cursorX;
         let itemY = cursorY;
 
         row.forEach(child => {
-            const itemArea = (child.value / totalValue) * (width * height);
+            const itemArea = child.value * scale;
             let itemW, itemH;
 
             if (isVerticalStacking) {
-                 // Items in this row flow Horizontally
+                 // Items flow horizontally inside this row
                  itemH = rowH;
                  itemW = itemArea / itemH;
                  results.push({ child, rect: { x: itemX, y: itemY, width: itemW, height: itemH } });
                  itemX += itemW;
             } else {
-                 // Items in this column flow Vertically
+                 // Items flow vertically inside this column
                  itemW = rowW;
                  itemH = itemArea / itemW;
                  results.push({ child, rect: { x: itemX, y: itemY, width: itemW, height: itemH } });
@@ -272,7 +253,6 @@ function squarify(children, rect) {
             }
         });
 
-        // Update cursor and available space
         if (isVerticalStacking) {
             cursorY += rowH;
             availableHeight -= rowH;
@@ -288,77 +268,61 @@ function squarify(children, rect) {
             return;
         }
 
+        // Determine orientation based on remaining space
         const shortSide = Math.min(availableWidth, availableHeight);
-        const isVerticalStacking = availableWidth >= availableHeight; // If width > height, we cut vertically? No.
-        // Standard approach:
-        // If width >= height, we treat 'width' as the long side. We stack columns along the long side.
-        // Wait, 'squarify' fills the short side.
-        // If width (600) > height (400). Short side is 400.
-        // We build a column of width `w`. `w` is determined by area.
-        // The items stack vertically inside this column.
         
-        // Let's stick to the parameter `w` in `worst(row, w)`. `w` is the fixed dimension of the row.
-        
-        const currentWorst = worstRatio(currentRow, shortSide, totalValue, width * height);
+        // Check worst ratio if we add this child to the current row
+        const currentWorst = worstRatio(currentRow, shortSide, scale);
         const nextRow = [...currentRow, child];
-        const nextWorst = worstRatio(nextRow, shortSide, totalValue, width * height);
+        const nextWorst = worstRatio(nextRow, shortSide, scale);
 
+        // If adding improves (or doesn't significantly worsen) aspect ratio, add it
         if (nextWorst <= currentWorst) {
             currentRow.push(child);
         } else {
-            layoutRow(currentRow, availableWidth >= availableHeight ? availableHeight : availableWidth, availableWidth < availableHeight); 
-            // Note logic above: 
-            // If availableWidth (600) > availableHeight (400):
-            // We are cutting off a chunk from width. The "row" acts as a vertical strip.
-            // The fixed dimension for items inside is the strip width? No, items stack inside.
-            // Items stack vertically. The fixed dimension of the row/strip is availableHeight.
-            
+            // Otherwise, finalize current row
+            const isVerticalStacking = availableWidth >= availableHeight;
+            layoutRow(currentRow, isVerticalStacking ? availableWidth : availableHeight, isVerticalStacking);
             currentRow = [child];
         }
     });
 
     if (currentRow.length > 0) {
-        layoutRow(currentRow, availableWidth >= availableHeight ? availableHeight : availableWidth, availableWidth < availableHeight);
+        const isVerticalStacking = availableWidth >= availableHeight;
+        layoutRow(currentRow, isVerticalStacking ? availableWidth : availableHeight, isVerticalStacking);
     }
 
     return results;
 }
 
-function worstRatio(row, w, totalTreeValue, totalTreeArea) {
+/**
+ * Calculates worst aspect ratio for a row of items.
+ * Uses area calculations to be unit-safe.
+ */
+function worstRatio(row, w, scale) {
     if (row.length === 0) return Infinity;
+    
     const rowValue = row.reduce((a, b) => a + b.value, 0);
-    const rowArea = (rowValue / totalTreeValue) * totalTreeArea;
-    const rowSide = rowArea / w; // The calculated thickness of the row
-    const r1 = (w * w * Math.max(...row.map(c => c.value))) / (rowValue * rowArea); // Simplified formula
-    // Actually let's use the explicit one for clarity
+    const rowArea = rowValue * scale;
+    const s2 = rowArea * rowArea;
+    const w2 = w * w;
+    
+    if (s2 === 0 || w2 === 0) return Infinity;
+
     const minVal = Math.min(...row.map(c => c.value));
     const maxVal = Math.max(...row.map(c => c.value));
-    const minArea = (minVal / rowValue) * rowArea;
-    const maxArea = (maxVal / rowValue) * rowArea;
     
-    // Side of item along w = minArea / rowSide? No.
-    // If row is a strip of thickness `rowSide` and length `w`.
-    // Item is a rectangle inside. One side is `rowSide`. Other is `ItemArea / rowSide`.
-    // Ratio = max(rowSide / other, other / rowSide).
+    const minArea = minVal * scale;
+    const maxArea = maxVal * scale;
     
-    // Let's use the standard formula: max(w^2 * maxVal / s^2, s^2 / (w^2 * minVal)) where s is sum.
-    // Derived from Bruls et al.
-    const s = rowValue;
-    const s2 = s * s;
-    const w2 = w * w;
+    // Formula: max(w^2 * maxArea / s^2, s^2 / (w^2 * minArea))
     return Math.max(
-        (w2 * maxVal) / s2,
-        s2 / (w2 * minVal)
+        (w2 * maxArea) / s2,
+        s2 / (w2 * minArea)
     );
 }
 
-/**
- * Renders the layout nodes to DOM elements.
- */
 function renderNodes(container, layoutItems) {
-    // Sort items so containers render before children (z-index naturally works or use explict z-index)
-    // We'll use explicit z-index.
-    
     layoutItems.forEach(({ node, rect }) => {
         if (node.type === 'root') return;
 
@@ -390,7 +354,6 @@ function applyDomainStyle(el, node) {
     el.style.backgroundColor = '#fff';
     el.style.zIndex = 10;
 
-    // Header
     const header = document.createElement('div');
     header.style.height = `${CONFIG.domain.headerHeight}px`;
     header.style.backgroundColor = CONFIG.domain.headerBg;
@@ -406,7 +369,6 @@ function applyCategoryStyle(el, node) {
     el.style.backgroundColor = '#fff';
     el.style.zIndex = 20;
 
-    // Header
     const header = document.createElement('div');
     header.style.height = `${CONFIG.category.headerHeight}px`;
     header.style.backgroundColor = CONFIG.category.headerBg;
@@ -426,18 +388,15 @@ function applySolutionStyle(el, node) {
     el.style.color = '#fff';
     el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default shadow-sm";
     
-    // Gap adjustment (simulate gap by shrinking size)
     const gap = CONFIG.solution.padding;
     el.style.width = `${Math.max(0, parseFloat(el.style.width) - gap * 2)}px`;
     el.style.height = `${Math.max(0, parseFloat(el.style.height) - gap * 2)}px`;
     el.style.left = `${parseFloat(el.style.left) + gap}px`;
     el.style.top = `${parseFloat(el.style.top) + gap}px`;
 
-    // Content
     const w = parseFloat(el.style.width);
     const h = parseFloat(el.style.height);
 
-    // Only show text if box is big enough
     if (w > 30 && h > 30) {
         const nameEl = document.createElement('div');
         nameEl.className = "font-medium text-xs leading-tight break-words w-full px-1 mb-0.5 line-clamp-2";
