@@ -4,12 +4,19 @@ import { store } from './data_model.js';
 let container = null;
 let resizeObserver = null;
 
-// Palette for solutions - Updated to fit premium aesthetic (Slightly less saturated)
+// Palette: Pastel / Soft Tones (Premium SaaS Look)
+// Ordered to be used by rank (1st, 2nd, 3rd...)
 const COLORS = [
-    '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', 
-    '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', 
-    '#06b6d4', '#84cc16', '#e11d48', '#0891b2',
-    '#7c3aed', '#db2777', '#ea580c', '#65a30d'
+    '#60a5fa', // Blue 400 (Top 1)
+    '#34d399', // Emerald 400 (Top 2)
+    '#f472b6', // Pink 400
+    '#a78bfa', // Violet 400
+    '#fbbf24', // Amber 400
+    '#22d3ee', // Cyan 400
+    '#fb7185', // Rose 400
+    '#94a3b8', // Slate 400
+    '#818cf8', // Indigo 400
+    '#a3e635'  // Lime 400
 ];
 
 // Layout Configuration
@@ -121,7 +128,11 @@ function buildHierarchy(data) {
                 value: 0
             };
 
-            solutions.forEach(sol => {
+            // Sort solutions by share descending to assign rank-based colors
+            // Clone array to avoid mutating store data directly during sort
+            const sortedSolutions = [...solutions].sort((a, b) => b.share - a.share);
+
+            sortedSolutions.forEach((sol, index) => {
                 const shareVal = parseFloat(sol.share) || 0;
                 // Ensure non-zero value for layout algo stability
                 const safeVal = shareVal <= 0 ? 0.01 : shareVal;
@@ -130,7 +141,8 @@ function buildHierarchy(data) {
                     name: sol.name,
                     type: 'solution',
                     share: shareVal,
-                    value: safeVal
+                    value: safeVal,
+                    rank: index // Assign rank (0 = 1st, 1 = 2nd, ...)
                 };
                 catNode.children.push(solNode);
                 catNode.value += solNode.value;
@@ -194,6 +206,7 @@ function squarify(children, rect) {
     if (children.length === 0) return [];
 
     const totalValue = children.reduce((sum, c) => sum + c.value, 0);
+    // Squarify still needs to sort by size for the algorithm to work best
     const sortedChildren = [...children].sort((a, b) => b.value - a.value);
     
     const totalArea = width * height;
@@ -317,7 +330,7 @@ function renderNodes(container, layoutItems) {
         el.style.height = `${Math.max(0, rect.height)}px`;
         el.style.boxSizing = 'border-box';
         el.style.overflow = 'hidden';
-        el.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)'; // Smoother easing
+        el.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)'; 
 
         if (node.type === 'domain') {
             applyDomainStyle(el, node);
@@ -364,14 +377,19 @@ function applyCategoryStyle(el, node) {
 function applySolutionStyle(el, node) {
     el.style.zIndex = 30;
     
-    const colorIndex = Math.abs(stringHash(node.name)) % COLORS.length;
+    // Use the rank assigned in buildHierarchy to determine color
+    // This ensures 1st place always gets the first color, 2nd place gets the second, etc.
+    const colorIndex = (node.rank || 0) % COLORS.length;
     const bg = COLORS[colorIndex];
 
     el.style.backgroundColor = bg;
-    el.style.color = '#fff';
-    // Remove shadow on individual solution to clean up noise, add slight border radius
+    el.style.color = '#fff'; // White text on pastel colors (400 weight usually supports white)
     el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default group rounded-sm";
     
+    // Add text shadow for better readability on lighter pastels if needed, 
+    // but 400-500 weight usually offers decent contrast for white text.
+    el.style.textShadow = '0 1px 2px rgba(0,0,0,0.1)';
+
     const gap = CONFIG.solution.padding;
     el.style.width = `${Math.max(0, parseFloat(el.style.width) - gap * 2)}px`;
     el.style.height = `${Math.max(0, parseFloat(el.style.height) - gap * 2)}px`;
