@@ -216,7 +216,8 @@ function showAddDomainInput() {
         if (val) {
             if (store.addDomain(val)) {
                 expandedState.add(`d-${val}`); // Auto expand
-                // Render handles UI update
+                // Force re-render to ensure UI reflects expanded state immediately
+                render(store.getData());
             } else {
                 alert("이미 존재하는 대분류입니다.");
                 input.focus();
