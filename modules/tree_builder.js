@@ -44,9 +44,9 @@ function render(data) {
         // Only show empty message if no temp inputs exist
         if (document.querySelectorAll('.temp-input-row').length === 0) {
              container.innerHTML = `
-                <div id="empty-msg" class="flex flex-col items-center justify-center h-40 text-slate-400">
-                    <p class="text-sm">데이터가 없습니다.</p>
-                    <p class="text-xs mt-1">'대분류 추가' 버튼을 눌러 시작하세요.</p>
+                <div id="empty-msg" class="flex flex-col items-center justify-center h-48 text-slate-400">
+                    <p class="text-sm font-medium">데이터가 없습니다</p>
+                    <p class="text-xs mt-1 text-slate-400">'대분류 추가' 버튼을 눌러 시작하세요.</p>
                 </div>`;
         }
     }
@@ -57,7 +57,7 @@ function render(data) {
         
         // 1. Domain Wrapper
         const domainEl = document.createElement('div');
-        domainEl.className = "bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm transition-all mb-3";
+        domainEl.className = "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm transition-all mb-3 card-hover-effect";
         domainEl.dataset.domainName = domainName;
         
         // 2. Domain Header
@@ -96,7 +96,7 @@ function render(data) {
         // 3. Domain Body (Categories)
         if (isExpanded) {
             const catContainer = document.createElement('div');
-            catContainer.className = "p-2 bg-slate-50/50 space-y-1";
+            catContainer.className = "p-2 bg-slate-50/30 space-y-1.5";
             catContainer.dataset.domainContent = domainName;
 
             const catKeys = Object.keys(categories);
@@ -107,7 +107,7 @@ function render(data) {
                 const isCatExpanded = expandedState.has(`c-${domainName}-${catName}`);
 
                 const catEl = document.createElement('div');
-                catEl.className = "rounded-md border border-transparent hover:border-slate-200 hover:bg-white transition-all";
+                catEl.className = "rounded-lg border border-transparent hover:border-slate-200 hover:bg-white transition-all";
                 catEl.dataset.catName = catName;
 
                 // Category Header
@@ -116,9 +116,9 @@ function render(data) {
                 
                 // Cat Title
                 const catTitleArea = document.createElement('div');
-                catTitleArea.className = "flex items-center gap-2 flex-1 pl-2";
+                catTitleArea.className = "flex items-center gap-2 flex-1 pl-1";
                 catTitleArea.innerHTML = `
-                    <span class="text-slate-400">${isCatExpanded ? ICONS.chevronDown : ICONS.chevronRight}</span>
+                    <span class="text-slate-400 scale-90">${isCatExpanded ? ICONS.chevronDown : ICONS.chevronRight}</span>
                     <span class="text-sm font-semibold text-slate-700 cat-title-text">${escapeHtml(catName)}</span>
                 `;
                 catTitleArea.addEventListener('click', () => toggleExpand(`c-${domainName}-${catName}`));
@@ -145,19 +145,19 @@ function render(data) {
                 // Solutions List
                 if (isCatExpanded) {
                     const solContainer = document.createElement('div');
-                    solContainer.className = "pl-9 pr-2 pb-2 space-y-1";
+                    solContainer.className = "pl-8 pr-1 pb-2 space-y-1";
                     solContainer.dataset.solutionContent = `${domainName}-${catName}`;
 
                     solutions.forEach((sol, idx) => {
                         const solEl = document.createElement('div');
-                        solEl.className = "flex items-center justify-between group/sol py-1.5 px-2 bg-white border border-slate-100 rounded shadow-sm hover:border-blue-200 transition-colors";
+                        solEl.className = "flex items-center justify-between group/sol py-2 px-3 bg-white border border-slate-100 rounded-lg shadow-sm hover:border-blue-300 transition-colors";
                         
                         const solContent = document.createElement('div');
                         solContent.className = "flex items-center gap-2 text-sm text-slate-600 w-full overflow-hidden mr-2";
                         solContent.innerHTML = `
                             <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
-                            <span class="truncate font-medium">${escapeHtml(sol.name)}</span>
-                            <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full font-mono shrink-0 ml-auto border border-slate-200">${sol.share}%</span>
+                            <span class="truncate font-medium text-slate-700">${escapeHtml(sol.name)}</span>
+                            <span class="text-[10px] bg-slate-50 text-slate-500 px-2 py-0.5 rounded-full font-mono shrink-0 ml-auto border border-slate-200">${sol.share}%</span>
                         `;
 
                         const solActions = document.createElement('div');
@@ -201,12 +201,12 @@ function showAddDomainInput() {
 
     // Create a row that mimics a Domain Header
     const row = document.createElement('div');
-    row.className = "temp-input-row bg-white border border-blue-400 rounded-lg p-3 flex items-center gap-2 mb-3 shadow-sm input-slide-down";
+    row.className = "temp-input-row bg-white border border-blue-400 rounded-xl p-3 flex items-center gap-2 mb-3 shadow-sm input-slide-down";
 
     const input = document.createElement('input');
     input.type = "text";
-    input.className = "flex-1 font-bold text-slate-800 text-sm outline-none placeholder-slate-400";
-    input.placeholder = "새 대분류 이름 입력...";
+    input.className = "input-premium flex-1";
+    input.placeholder = "새 대분류 이름...";
     
     const btnSave = createMiniButton(ICONS.check, "text-green-600 hover:bg-green-50");
     const btnCancel = createMiniButton(ICONS.x, "text-red-500 hover:bg-red-50");
@@ -259,12 +259,12 @@ function showAddCategoryInput(domainName) {
     removeTempInputs();
 
     const row = document.createElement('div');
-    row.className = "temp-input-row flex items-center gap-2 p-2 pl-4 bg-white border border-blue-300 rounded-md shadow-sm input-slide-down";
+    row.className = "temp-input-row flex items-center gap-2 p-2 pl-4 bg-white border border-blue-300 rounded-lg shadow-sm input-slide-down";
     
     const input = document.createElement('input');
     input.type = "text";
-    input.className = "flex-1 text-sm border-none outline-none bg-transparent placeholder-slate-400 font-medium";
-    input.placeholder = "중분류 이름 입력...";
+    input.className = "input-premium flex-1";
+    input.placeholder = "새 중분류 이름...";
     
     const btnSave = createMiniButton(ICONS.check, "text-green-600 hover:bg-green-50");
     const btnCancel = createMiniButton(ICONS.x, "text-red-500 hover:bg-red-50");
@@ -308,16 +308,16 @@ function showAddSolutionInput(domainName, categoryName) {
     removeTempInputs();
 
     const row = document.createElement('div');
-    row.className = "temp-input-row flex items-center gap-2 py-1.5 px-2 bg-blue-50/50 border border-blue-300 rounded-md shadow-sm input-slide-down";
+    row.className = "temp-input-row flex items-center gap-2 py-2 px-2 bg-blue-50/50 border border-blue-300 rounded-lg shadow-sm input-slide-down";
     
     const nameInput = document.createElement('input');
     nameInput.type = "text";
-    nameInput.className = "flex-1 text-sm border border-slate-300 rounded px-2 py-1 focus:border-blue-500 outline-none";
+    nameInput.className = "input-premium flex-1";
     nameInput.placeholder = "솔루션명";
 
     const shareInput = document.createElement('input');
     shareInput.type = "number";
-    shareInput.className = "w-16 text-sm border border-slate-300 rounded px-2 py-1 focus:border-blue-500 outline-none text-right";
+    shareInput.className = "input-premium w-20 text-right";
     shareInput.placeholder = "%";
     shareInput.value = "10";
 
@@ -369,7 +369,7 @@ function showEditCategoryInput(domain, oldName, headerEl) {
     
     const input = document.createElement('input');
     input.value = originalText;
-    input.className = "text-sm font-semibold text-slate-700 bg-white border border-blue-400 rounded px-1 outline-none w-full";
+    input.className = "input-premium !py-0.5 !h-6 text-xs";
     input.onclick = (e) => e.stopPropagation();
     
     const save = () => {
@@ -405,7 +405,7 @@ function showEditDomainInput(domain, headerEl) {
     titleEl.innerHTML = '';
     const input = document.createElement('input');
     input.value = originalText;
-    input.className = "font-bold text-slate-800 text-sm bg-white border border-blue-400 rounded px-1 outline-none w-full";
+    input.className = "input-premium !py-0.5 !h-7 text-sm font-bold";
     input.onclick = (e) => e.stopPropagation();
 
     const save = () => {
@@ -429,16 +429,16 @@ function showEditDomainInput(domain, headerEl) {
 
 function showEditSolutionInput(domain, category, index, solData, rowEl) {
     rowEl.innerHTML = '';
-    rowEl.className = "flex items-center gap-2 py-1.5 px-2 bg-blue-50 border border-blue-300 rounded shadow-sm";
+    rowEl.className = "flex items-center gap-2 py-2 px-2 bg-blue-50 border border-blue-300 rounded-lg shadow-sm";
 
     const nameInput = document.createElement('input');
     nameInput.value = solData.name;
-    nameInput.className = "flex-1 text-sm border border-slate-300 rounded px-2 py-1 focus:border-blue-500 outline-none";
+    nameInput.className = "input-premium flex-1";
 
     const shareInput = document.createElement('input');
     shareInput.value = solData.share;
     shareInput.type = "number";
-    shareInput.className = "w-16 text-sm border border-slate-300 rounded px-2 py-1 focus:border-blue-500 outline-none text-right";
+    shareInput.className = "input-premium w-20 text-right";
 
     const btnSave = createMiniButton(ICONS.check, "text-green-600 hover:bg-green-50");
     const btnCancel = createMiniButton(ICONS.x, "text-red-500 hover:bg-red-50");
@@ -484,7 +484,7 @@ function createActionButton(iconHtml, colorClass, title) {
 function createMiniButton(iconHtml, colorClass) {
     const btn = document.createElement('button');
     btn.innerHTML = iconHtml;
-    btn.className = `p-1 rounded transition-colors ${colorClass}`;
+    btn.className = `p-1.5 rounded-md transition-colors ${colorClass}`;
     return btn;
 }
 

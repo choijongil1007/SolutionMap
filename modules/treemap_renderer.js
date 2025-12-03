@@ -4,7 +4,7 @@ import { store } from './data_model.js';
 let container = null;
 let resizeObserver = null;
 
-// Palette for solutions
+// Palette for solutions - Updated to fit premium aesthetic (Slightly less saturated)
 const COLORS = [
     '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', 
     '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', 
@@ -15,23 +15,23 @@ const COLORS = [
 // Layout Configuration
 const CONFIG = {
     domain: {
-        headerHeight: 32,
-        padding: 6, // Gap between domain border and categories
-        headerBg: '#334155', // Slate-700
-        headerText: '#ffffff',
-        borderColor: '#334155',
-        borderWidth: 2
-    },
-    category: {
-        headerHeight: 26,
-        padding: 4, // Gap between category border and solutions
-        headerBg: '#f1f5f9', // Slate-100
-        headerText: '#334155', // Slate-700
+        headerHeight: 34,
+        padding: 6, 
+        headerBg: '#1e293b', // Slate-800
+        headerText: '#f8fafc',
         borderColor: '#cbd5e1', // Slate-300
         borderWidth: 1
     },
+    category: {
+        headerHeight: 28,
+        padding: 4, 
+        headerBg: '#f1f5f9', // Slate-100
+        headerText: '#475569', // Slate-600
+        borderColor: '#e2e8f0', // Slate-200
+        borderWidth: 1
+    },
     solution: {
-        padding: 1 // Gap between solutions
+        padding: 1 
     }
 };
 
@@ -189,9 +189,6 @@ function calculateLayout(node, rect) {
     return results;
 }
 
-/**
- * Squarified Treemap Algorithm
- */
 function squarify(children, rect) {
     const { x, y, width, height } = rect;
     if (children.length === 0) return [];
@@ -199,7 +196,6 @@ function squarify(children, rect) {
     const totalValue = children.reduce((sum, c) => sum + c.value, 0);
     const sortedChildren = [...children].sort((a, b) => b.value - a.value);
     
-    // Scale factor: Value * scale = Area (pixels)
     const totalArea = width * height;
     const scale = totalArea / totalValue;
 
@@ -212,20 +208,15 @@ function squarify(children, rect) {
     
     let currentRow = [];
     
-    // Function to layout a "row" of items. 
-    // In Squarified terminology, a "row" is a strip along the short edge.
     const layoutRow = (row) => {
         const rowValue = row.reduce((s, c) => s + c.value, 0);
         const rowArea = rowValue * scale;
         
-        // Decide direction based on the CURRENT available space
         const isWide = availableWidth >= availableHeight;
         
         if (isWide) {
-            // Container is Wide. We cut a Vertical Strip (Column) from the left.
-            // Height is fixed to availableHeight.
             const stripH = availableHeight;
-            const stripW = rowArea / stripH; // Derived width
+            const stripW = rowArea / stripH;
             
             let itemY = cursorY;
             row.forEach(child => {
@@ -237,17 +228,15 @@ function squarify(children, rect) {
                     child, 
                     rect: { x: cursorX, y: itemY, width: itemW, height: itemH } 
                 });
-                itemY += itemH; // Stack vertically inside the vertical strip
+                itemY += itemH; 
             });
             
             cursorX += stripW;
             availableWidth -= stripW;
             
         } else {
-            // Container is Tall. We cut a Horizontal Strip (Row) from the top.
-            // Width is fixed to availableWidth.
             const stripW = availableWidth;
-            const stripH = rowArea / stripW; // Derived height
+            const stripH = rowArea / stripW;
             
             let itemX = cursorX;
             row.forEach(child => {
@@ -259,7 +248,7 @@ function squarify(children, rect) {
                     child, 
                     rect: { x: itemX, y: cursorY, width: itemW, height: itemH } 
                 });
-                itemX += itemW; // Stack horizontally inside the horizontal strip
+                itemX += itemW;
             });
             
             cursorY += stripH;
@@ -279,7 +268,6 @@ function squarify(children, rect) {
         const nextRow = [...currentRow, child];
         const nextWorst = worstRatio(nextRow, shortSide, scale);
 
-        // Squarified Logic: Add to row if aspect ratio improves (gets lower)
         if (nextWorst <= currentWorst) {
             currentRow.push(child);
         } else {
@@ -295,24 +283,11 @@ function squarify(children, rect) {
     return results;
 }
 
-/**
- * Calculates worst aspect ratio for a row of items.
- * w is the length of the fixed side (the short side of the container).
- */
 function worstRatio(row, w, scale) {
     if (row.length === 0) return Infinity;
     
     const rowValue = row.reduce((a, b) => a + b.value, 0);
     const rowArea = rowValue * scale;
-    
-    // s = rowArea
-    // w = fixed side length
-    // For a rectangle in the row with area A:
-    // One side is (rowArea / w). The other side is (A / (rowArea/w)) = (A*w / rowArea).
-    // Aspect Ratio = max(Side1/Side2, Side2/Side1)
-    // Simplified formula from Bruls et al.:
-    // max(w^2 * maxArea / rowArea^2, rowArea^2 / (w^2 * minArea))
-    
     const s2 = rowArea * rowArea;
     const w2 = w * w;
     
@@ -342,7 +317,7 @@ function renderNodes(container, layoutItems) {
         el.style.height = `${Math.max(0, rect.height)}px`;
         el.style.boxSizing = 'border-box';
         el.style.overflow = 'hidden';
-        el.style.transition = 'all 0.4s ease-out'; // Slightly faster transition
+        el.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)'; // Smoother easing
 
         if (node.type === 'domain') {
             applyDomainStyle(el, node);
@@ -357,7 +332,7 @@ function renderNodes(container, layoutItems) {
 }
 
 function applyDomainStyle(el, node) {
-    el.className = "rounded-lg shadow-sm flex flex-col";
+    el.className = "rounded-xl shadow-sm flex flex-col overflow-hidden";
     el.style.border = `${CONFIG.domain.borderWidth}px solid ${CONFIG.domain.borderColor}`;
     el.style.backgroundColor = '#fff';
     el.style.zIndex = 10;
@@ -372,7 +347,7 @@ function applyDomainStyle(el, node) {
 }
 
 function applyCategoryStyle(el, node) {
-    el.className = "rounded flex flex-col";
+    el.className = "rounded-lg flex flex-col overflow-hidden";
     el.style.border = `${CONFIG.category.borderWidth}px solid ${CONFIG.category.borderColor}`;
     el.style.backgroundColor = '#fff';
     el.style.zIndex = 20;
@@ -381,7 +356,7 @@ function applyCategoryStyle(el, node) {
     header.style.height = `${CONFIG.category.headerHeight}px`;
     header.style.backgroundColor = CONFIG.category.headerBg;
     header.style.color = CONFIG.category.headerText;
-    header.className = "flex items-center justify-center font-semibold text-xs shrink-0 truncate px-1";
+    header.className = "flex items-center justify-center font-semibold text-xs shrink-0 truncate px-1 tracking-tight";
     header.textContent = node.name;
     el.appendChild(header);
 }
@@ -394,7 +369,8 @@ function applySolutionStyle(el, node) {
 
     el.style.backgroundColor = bg;
     el.style.color = '#fff';
-    el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default shadow-sm group";
+    // Remove shadow on individual solution to clean up noise, add slight border radius
+    el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default group rounded-sm";
     
     const gap = CONFIG.solution.padding;
     el.style.width = `${Math.max(0, parseFloat(el.style.width) - gap * 2)}px`;
@@ -405,18 +381,16 @@ function applySolutionStyle(el, node) {
     const w = parseFloat(el.style.width);
     const h = parseFloat(el.style.height);
 
-    // Only show text if box is large enough
     if (w > 30 && h > 24) {
         const nameEl = document.createElement('div');
         nameEl.className = "font-medium text-xs leading-tight break-words w-full px-0.5 mb-0.5 line-clamp-2";
-        // Adaptive font size
-        nameEl.style.fontSize = w < 60 ? '10px' : '12px';
+        nameEl.style.fontSize = w < 60 ? '10px' : '11px';
         nameEl.textContent = node.name;
         el.appendChild(nameEl);
         
         if (h > 45) {
             const shareEl = document.createElement('div');
-            shareEl.className = "text-[10px] opacity-90 font-mono";
+            shareEl.className = "text-[9px] opacity-90 font-mono";
             shareEl.textContent = `${node.share}%`;
             el.appendChild(shareEl);
         }
