@@ -1,4 +1,5 @@
 
+
 import { store } from './data_model.js';
 
 let container = null;
@@ -28,14 +29,14 @@ const CONFIG = {
     },
     category: {
         headerHeight: 32,
-        padding: 5, 
+        padding: 0, // Changed to 0 to remove whitespace inside box
         headerBg: '#171717', // Neutral-900 (Black) Background
         headerText: '#ffffff', // White Text
-        borderColor: '#9CA3AF', // Gray Border (Updated to be more visible)
+        borderColor: '#000000', // Black Border
         borderWidth: 1
     },
     solution: {
-        padding: 1 
+        padding: 0 // Changed to 0 for completely full look
     }
 };
 
@@ -364,7 +365,8 @@ function applyDomainStyle(el, node) {
 }
 
 function applyCategoryStyle(el, node) {
-    el.className = "rounded-lg flex flex-col overflow-hidden shadow-sm";
+    // Changed: Removed rounded-lg for square corners
+    el.className = "flex flex-col overflow-hidden shadow-sm"; 
     el.style.border = `${CONFIG.category.borderWidth}px solid ${CONFIG.category.borderColor}`;
     el.style.backgroundColor = '#fff';
     el.style.zIndex = 20;
@@ -389,7 +391,8 @@ function applySolutionStyle(el, node) {
     el.style.color = '#ffffff'; 
     el.style.textShadow = '0 1px 2px rgba(0,0,0,0.15)';
     
-    el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default group rounded-sm shadow-sm";
+    // Changed: Removed rounded-sm and shadow-sm for flat full tile look
+    el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default group";
 
     const gap = CONFIG.solution.padding;
     el.style.width = `${Math.max(0, parseFloat(el.style.width) - gap * 2)}px`;
@@ -418,4 +421,7 @@ function applySolutionStyle(el, node) {
     }
     
     el.title = `${node.name} (${node.share}%)`;
+    
+    // Optional: Add a subtle border to separate tiles since padding is 0
+    el.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,0.15)";
 }
