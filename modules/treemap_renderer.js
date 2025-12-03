@@ -34,7 +34,8 @@ const CONFIG = {
         headerBg: '#171717', 
         headerText: '#ffffff', 
         borderColor: '#000000', 
-        borderWidth: 1
+        borderWidth: 1,
+        margin: 2 // Spacing between categories
     },
     solution: {
         padding: 0 
@@ -286,7 +287,20 @@ function calculateLayout(node, rect) {
     const layoutChildren = squarify(node.children, contentRect);
 
     layoutChildren.forEach(item => {
-        const childResults = calculateLayout(item.child, item.rect);
+        let childRect = item.rect;
+
+        // Apply spacing (margin) between Categories
+        if (node.type === 'domain') {
+            const m = CONFIG.category.margin;
+            childRect = {
+                x: item.rect.x + (m / 2),
+                y: item.rect.y + (m / 2),
+                width: item.rect.width - m,
+                height: item.rect.height - m
+            };
+        }
+
+        const childResults = calculateLayout(item.child, childRect);
         childResults.forEach(r => results.push(r));
     });
 
