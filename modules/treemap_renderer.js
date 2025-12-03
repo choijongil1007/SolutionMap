@@ -4,6 +4,7 @@ import { store } from './data_model.js';
 
 let container = null;
 let resizeObserver = null;
+let tooltipEl = null; // Custom Tooltip Element
 
 // Palette: Custom User Palette
 // Used by rank order (1st, 2nd, 3rd...)
@@ -44,6 +45,8 @@ const CONFIG = {
 
 export function initTreemap(containerId) {
     container = document.getElementById(containerId);
+    tooltipEl = document.getElementById('custom-tooltip');
+    
     if (!container) return;
 
     // Set container base styles
@@ -528,7 +531,32 @@ function applySolutionStyle(el, node) {
         }
     }
     
-    el.title = `${node.name} (${node.share}%)`;
+    // CUSTOM TOOLTIP LOGIC
+    // Remove native tooltip
+    el.removeAttribute('title');
+
+    el.addEventListener('mouseenter', (e) => {
+        if (!tooltipEl) return;
+        tooltipEl.textContent = `${node.name} (${node.share}%)`;
+        tooltipEl.classList.remove('hidden');
+    });
+
+    el.addEventListener('mousemove', (e) => {
+        if (!tooltipEl) return;
+        // Position above the cursor with offset
+        const x = e.clientX;
+        const y = e.clientY - 15;
+        
+        tooltipEl.style.left = `${x}px`;
+        tooltipEl.style.top = `${y}px`;
+        // Center horizontally relative to cursor, place above
+        tooltipEl.style.transform = 'translate(-50%, -100%)';
+    });
+
+    el.addEventListener('mouseleave', () => {
+        if (!tooltipEl) return;
+        tooltipEl.classList.add('hidden');
+    });
     
     // Optional: Add a subtle border to separate tiles since padding is 0
     el.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,0.15)";
