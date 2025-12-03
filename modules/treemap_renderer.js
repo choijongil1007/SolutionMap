@@ -35,7 +35,7 @@ const CONFIG = {
         headerText: '#ffffff', 
         borderColor: '#000000', 
         borderWidth: 1,
-        margin: 2 // Spacing between categories
+        margin: 1 // Spacing between categories
     },
     solution: {
         padding: 0 
