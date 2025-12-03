@@ -33,7 +33,7 @@ const CONFIG = {
         padding: 0, 
         headerBg: '#171717', 
         headerText: '#ffffff', 
-        borderColor: '#000000', // Changed to Black
+        borderColor: '#000000', 
         borderWidth: 1
     },
     solution: {
@@ -93,50 +93,78 @@ function render(data) {
         }
     }
 
-    // 1. Calculate Dynamic Height based on Domain Count
-    // To allow the map to grow vertically as domains are added.
+    const containerWidth = container.clientWidth;
+    if (containerWidth === 0) return;
+
+    // 1. Calculate Dynamic Height based on Content Density (Solutions count)
     const domainKeys = Object.keys(data);
-    const domainCount = domainKeys.length;
-    const minHeight = 600; // Minimum default height
-    const heightPerDomain = 300; // Pixels allocated per domain approx
     
-    // Calculate required height: Domains + Gaps + Padding
-    let calculatedHeight = minHeight;
-    if (domainCount > 0) {
-        calculatedHeight = (domainCount * heightPerDomain) + ((domainCount - 1) * CONFIG.domain.marginBottom) + (CONFIG.globalPadding * 2);
+    // Configuration for dynamic sizing
+    const MIN_DOMAIN_HEIGHT = 400; // Minimum height for a domain
+    const AREA_PER_SOLUTION = 14000; // Estimated pixels needed per solution (approx 140x100)
+    
+    // Calculate required height for each domain
+    const domainHeights = {};
+    let totalRequiredHeight = CONFIG.globalPadding * 2; // Start with top/bottom padding
+
+    domainKeys.forEach(domainName => {
+        const categories = data[domainName];
+        let solutionCount = 0;
+        
+        Object.values(categories).forEach(solutions => {
+            solutionCount += solutions.length;
+        });
+
+        // Ensure at least 1 count to avoid 0 height
+        solutionCount = Math.max(1, solutionCount);
+
+        // Calculate required area
+        const requiredArea = solutionCount * AREA_PER_SOLUTION;
+        
+        // Convert Area to Height (Area / Width)
+        // Adjust width for padding
+        const effectiveWidth = containerWidth - (CONFIG.globalPadding * 2);
+        let calculatedH = requiredArea / effectiveWidth;
+        
+        // Add header heights overhead
+        const categoryCount = Object.keys(categories).length;
+        const overhead = CONFIG.domain.headerHeight + (categoryCount * CONFIG.category.headerHeight) + 100; // buffer
+        
+        calculatedH += overhead;
+
+        // Apply constraints
+        domainHeights[domainName] = Math.max(MIN_DOMAIN_HEIGHT, calculatedH);
+        
+        totalRequiredHeight += domainHeights[domainName];
+    });
+
+    // Add gaps
+    if (domainKeys.length > 0) {
+        totalRequiredHeight += (domainKeys.length - 1) * CONFIG.domain.marginBottom;
     }
     
-    // Ensure height is at least the minimum
-    calculatedHeight = Math.max(minHeight, calculatedHeight);
-    
     // Apply height to container
-    container.style.height = `${calculatedHeight}px`;
+    container.style.height = `${totalRequiredHeight}px`;
 
-    const width = container.clientWidth;
-    const height = calculatedHeight;
+    // 2. Transform Data into Hierarchy with Values AND Custom Heights
+    const rootNode = buildHierarchy(data, domainHeights);
 
-    if (width === 0 || height === 0) return;
-
-    // 2. Transform Data into Hierarchy with Values
-    const rootNode = buildHierarchy(data);
-
-    if (rootNode.value === 0) return;
+    if (rootNode.value === 0 && domainKeys.length === 0) return;
 
     // 3. Calculate Layout
-    // Apply Global Padding
     const pad = CONFIG.globalPadding;
     const layoutNodes = calculateLayout(rootNode, { 
         x: pad, 
         y: pad, 
-        width: width - (pad * 2), 
-        height: height - (pad * 2) 
+        width: containerWidth - (pad * 2), 
+        height: totalRequiredHeight - (pad * 2) 
     });
 
     // 4. Render to DOM
     renderNodes(container, layoutNodes);
 }
 
-function buildHierarchy(data) {
+function buildHierarchy(data, domainHeights) {
     const root = {
         name: 'root',
         type: 'root',
@@ -149,7 +177,8 @@ function buildHierarchy(data) {
             name: domainName,
             type: 'domain',
             children: [],
-            value: 0
+            value: 0,
+            customHeight: domainHeights ? domainHeights[domainName] : 0 // Inject calculated height
         };
 
         Object.entries(categories).forEach(([catName, solutions]) => {
@@ -184,10 +213,9 @@ function buildHierarchy(data) {
             }
         });
 
-        if (domainNode.value > 0) {
-            root.children.push(domainNode);
-            root.value += domainNode.value;
-        }
+        // Even if value is 0, we might want to show the domain structure (handle empty domains)
+        root.children.push(domainNode);
+        root.value += domainNode.value;
     });
 
     return root;
@@ -200,23 +228,15 @@ function calculateLayout(node, rect) {
 
     let contentRect = { ...rect };
 
-    // --- Special Layout for Root -> Domain (Vertical Stack) ---
+    // --- Special Layout for Root -> Domain (Vertical Stack using Custom Heights) ---
     if (node.type === 'root') {
         const children = node.children;
-        const totalValue = children.reduce((sum, c) => sum + c.value, 0);
-        
-        // Calculate gaps
         const gap = CONFIG.domain.marginBottom;
-        const totalGaps = Math.max(0, children.length - 1) * gap;
-        const availableHeight = contentRect.height - totalGaps;
-        
         let currentY = contentRect.y;
 
         children.forEach(child => {
-            // Determine height proportional to value
-            // Guard against division by zero if totalValue is 0
-            const ratio = totalValue === 0 ? 0 : child.value / totalValue;
-            const childH = Math.max(0, availableHeight * ratio);
+            // Use the pre-calculated custom height
+            const childH = child.customHeight || 0;
             
             const childRect = {
                 x: contentRect.x,
@@ -257,6 +277,10 @@ function calculateLayout(node, rect) {
         contentRect.height -= (pad * 2);
     } 
 
+    // Safety check for negative dimensions
+    contentRect.width = Math.max(0, contentRect.width);
+    contentRect.height = Math.max(0, contentRect.height);
+
     if (contentRect.width <= 0 || contentRect.height <= 0) return results;
 
     const layoutChildren = squarify(node.children, contentRect);
@@ -274,6 +298,9 @@ function squarify(children, rect) {
     if (children.length === 0) return [];
 
     const totalValue = children.reduce((sum, c) => sum + c.value, 0);
+    // If total value is 0 (e.g. empty categories), we can't layout properly
+    if (totalValue === 0) return [];
+
     const sortedChildren = [...children].sort((a, b) => b.value - a.value);
     
     const totalArea = width * height;
@@ -343,6 +370,8 @@ function squarify(children, rect) {
         }
 
         const shortSide = Math.min(availableWidth, availableHeight);
+        // Avoid division by zero
+        if (shortSide <= 0) return;
         
         const currentWorst = worstRatio(currentRow, shortSide, scale);
         const nextRow = [...currentRow, child];
