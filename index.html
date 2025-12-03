@@ -96,6 +96,34 @@
         </main>
     </div>
 
+    <!-- Custom Dark Warning Modal -->
+    <div id="warning-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity opacity-0" id="warning-modal-backdrop"></div>
+        
+        <!-- Modal Panel -->
+        <div class="relative bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-6 w-full max-w-sm transform scale-95 opacity-0 transition-all duration-200" id="warning-modal-panel">
+            <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-red-900/30 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 17.626zM12 17.25h.007v.008H12v-.008z" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-white mb-1" id="modal-title">알림</h3>
+                    <p class="text-sm text-slate-300 leading-relaxed" id="warning-modal-message">
+                        <!-- Message will be injected -->
+                    </p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button type="button" id="warning-modal-close" class="px-4 py-2 bg-white text-slate-900 text-sm font-bold rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-colors">
+                    확인
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Load App Module -->
     <script type="module" src="app.js"></script>
 </body>

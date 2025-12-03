@@ -1,4 +1,3 @@
-
 import { store } from './data_model.js';
 
 // State to track which tree nodes are expanded
@@ -219,7 +218,7 @@ function showAddDomainInput() {
                 // Force re-render to ensure UI reflects expanded state immediately
                 render(store.getData());
             } else {
-                alert("이미 존재하는 대분류입니다.");
+                showWarningModal("이미 존재하는 대분류입니다.");
                 input.focus();
             }
         }
@@ -299,7 +298,7 @@ function showAddCategoryInput(domainName) {
             if (store.addCategory(domainName, val)) {
                 // Success
             } else {
-                alert("이미 존재하는 이름입니다.");
+                showWarningModal("이미 존재하는 이름입니다.");
             }
         }
     };
@@ -378,7 +377,7 @@ function showAddSolutionInput(domainName, categoryName) {
             return;
         }
         if (isNaN(share) || share < 0) {
-            alert("유효한 숫자를 입력하세요.");
+            showWarningModal("유효한 숫자를 입력하세요.");
             shareInput.focus();
             return;
         }
@@ -387,14 +386,12 @@ function showAddSolutionInput(domainName, categoryName) {
         if (result === 'SUCCESS') {
             // Success
         } else if (result === 'OVERFLOW') {
-            alert("솔루션 점유율의 합계는 100%를 초과할 수 없습니다.");
-            // Re-render to clear temp input or we can just let user fix it. 
-            // Request says "Input is cancelled", so we remove it.
-            row.remove();
+            showWarningModal("솔루션 점유율의 합계는 100%를 초과할 수 없습니다.");
+            row.remove(); // Input cancelled
         } else if (result === 'DUPLICATE') {
-            alert("이미 존재하는 솔루션입니다.");
+            showWarningModal("이미 존재하는 솔루션입니다.");
         } else {
-            alert("추가에 실패했습니다.");
+            showWarningModal("추가에 실패했습니다.");
         }
     };
 
@@ -505,11 +502,11 @@ function showEditSolutionInput(domain, category, index, solData, rowEl) {
             if (result === 'SUCCESS') {
                 // Success
             } else if (result === 'OVERFLOW') {
-                alert("솔루션 점유율의 합계는 100%를 초과할 수 없습니다.");
+                showWarningModal("솔루션 점유율의 합계는 100%를 초과할 수 없습니다.");
                 // Revert to original data by re-rendering
                 render(store.getData());
             } else if (result === 'DUPLICATE') {
-                alert("이미 존재하는 솔루션 이름입니다.");
+                showWarningModal("이미 존재하는 솔루션 이름입니다.");
             } else {
                 render(store.getData());
             }
@@ -583,4 +580,40 @@ function deleteSolution(domain, category, index) {
     if (confirm("이 솔루션을 삭제하시겠습니까?")) {
         store.deleteSolution(domain, category, index);
     }
+}
+
+function showWarningModal(message) {
+    const modal = document.getElementById('warning-modal');
+    const backdrop = document.getElementById('warning-modal-backdrop');
+    const panel = document.getElementById('warning-modal-panel');
+    const msgEl = document.getElementById('warning-modal-message');
+    const closeBtn = document.getElementById('warning-modal-close');
+
+    if (!modal || !backdrop || !panel || !msgEl) {
+        alert(message); // Fallback
+        return;
+    }
+
+    msgEl.textContent = message;
+    modal.classList.remove('hidden');
+
+    // Simple fade-in animation using Tailwind transition classes
+    requestAnimationFrame(() => {
+        backdrop.classList.remove('opacity-0');
+        panel.classList.remove('opacity-0', 'scale-95');
+        panel.classList.add('opacity-100', 'scale-100');
+    });
+
+    const close = () => {
+        backdrop.classList.add('opacity-0');
+        panel.classList.remove('opacity-100', 'scale-100');
+        panel.classList.add('opacity-0', 'scale-95');
+        
+        // Wait for transition duration before hiding
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 200);
+    };
+
+    closeBtn.onclick = close;
 }
