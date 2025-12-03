@@ -58,12 +58,19 @@ export function initTreemap(containerId) {
     });
 
     // Handle Resize
-    resizeObserver = new ResizeObserver(() => {
-        window.requestAnimationFrame(() => {
-            if (store.getData()) {
-                render(store.getData());
+    // Note: We only trigger if width changes to avoid infinite loop with height updates
+    let lastWidth = container.clientWidth;
+    resizeObserver = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+            if (entry.contentRect.width !== lastWidth) {
+                lastWidth = entry.contentRect.width;
+                window.requestAnimationFrame(() => {
+                    if (store.getData()) {
+                        render(store.getData());
+                    }
+                });
             }
-        });
+        }
     });
     resizeObserver.observe(container);
 }
@@ -86,17 +93,36 @@ function render(data) {
         }
     }
 
+    // 1. Calculate Dynamic Height based on Domain Count
+    // To allow the map to grow vertically as domains are added.
+    const domainKeys = Object.keys(data);
+    const domainCount = domainKeys.length;
+    const minHeight = 600; // Minimum default height
+    const heightPerDomain = 300; // Pixels allocated per domain approx
+    
+    // Calculate required height: Domains + Gaps + Padding
+    let calculatedHeight = minHeight;
+    if (domainCount > 0) {
+        calculatedHeight = (domainCount * heightPerDomain) + ((domainCount - 1) * CONFIG.domain.marginBottom) + (CONFIG.globalPadding * 2);
+    }
+    
+    // Ensure height is at least the minimum
+    calculatedHeight = Math.max(minHeight, calculatedHeight);
+    
+    // Apply height to container
+    container.style.height = `${calculatedHeight}px`;
+
     const width = container.clientWidth;
-    const height = container.clientHeight;
+    const height = calculatedHeight;
 
     if (width === 0 || height === 0) return;
 
-    // 1. Transform Data into Hierarchy with Values
+    // 2. Transform Data into Hierarchy with Values
     const rootNode = buildHierarchy(data);
 
     if (rootNode.value === 0) return;
 
-    // 2. Calculate Layout
+    // 3. Calculate Layout
     // Apply Global Padding
     const pad = CONFIG.globalPadding;
     const layoutNodes = calculateLayout(rootNode, { 
@@ -106,7 +132,7 @@ function render(data) {
         height: height - (pad * 2) 
     });
 
-    // 3. Render to DOM
+    // 4. Render to DOM
     renderNodes(container, layoutNodes);
 }
 
