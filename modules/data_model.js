@@ -27,6 +27,11 @@ class DataModelStore {
 
     // --- Actions ---
 
+    resetData() {
+        this.data = {};
+        this.notify();
+    }
+
     addDomain(name) {
         if (!name || this.data[name]) return false;
         this.data[name] = {};

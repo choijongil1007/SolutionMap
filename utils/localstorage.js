@@ -1,18 +1,6 @@
-const STORAGE_KEY = "solution_map_v1";
+const STORAGE_KEY = "solution_map_v3";
 
-const DEFAULT_DATA = {
-  "AI 분석계": {
-    "데이터 수집 / ETL": [
-      { "name": "Kafka", "share": 40 },
-      { "name": "Airbyte", "share": 30 },
-      { "name": "Fivetran", "share": 30 }
-    ],
-    "데이터 저장": [
-        { "name": "Snowflake", "share": 40 },
-        { "name": "BigQuery", "share": 60 }
-    ]
-  }
-};
+const DEFAULT_DATA = {};
 
 export const loadData = () => {
   try {
@@ -23,7 +11,8 @@ export const loadData = () => {
   } catch (e) {
     console.error("Failed to load data from local storage", e);
   }
-  return JSON.parse(JSON.stringify(DEFAULT_DATA)); // Deep copy
+  // Return empty object if no data found
+  return {};
 };
 
 export const saveData = (data) => {

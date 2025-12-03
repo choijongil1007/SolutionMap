@@ -22,10 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 5. Setup Header Actions
-    setupManualSave();
+    setupActions();
 });
 
-function setupManualSave() {
+function setupActions() {
+    // Save Action
     const saveBtn = document.getElementById('btn-manual-save');
     const toast = document.getElementById('save-toast');
     
@@ -42,6 +43,16 @@ function setupManualSave() {
                 toast.classList.remove('toast-visible');
                 toast.classList.add('hidden');
             }, 2500);
+        });
+    }
+
+    // Reset Action
+    const resetBtn = document.getElementById('btn-reset');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            if (confirm("정말로 모든 데이터를 삭제하고 초기화하시겠습니까?")) {
+                store.resetData();
+            }
         });
     }
 }
