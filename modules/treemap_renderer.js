@@ -69,18 +69,19 @@ function render(data) {
                 type: 'treemap',
                 width: '100%',
                 height: '100%',
-                roam: false, // Disable zoom/pan to keep the layout static and box-like
-                nodeClick: false, // Disable default drill-down
+                roam: false, // Zoom/Pan disabled for fixed layout
+                nodeClick: false, // Drill-down disabled to show full hierarchy at once
                 breadcrumb: {
                     show: false
                 },
-                // Base label config for leaf nodes (Solutions)
+                // Default label config for leaf nodes (Solutions)
                 label: {
                     show: true,
                     formatter: '{b}\n{c}%',
-                    fontSize: 13,
+                    fontSize: 14,
+                    fontWeight: 'bold',
                     color: '#fff',
-                    lineHeight: 18,
+                    lineHeight: 20,
                     textShadowColor: 'rgba(0,0,0,0.3)',
                     textShadowBlur: 5
                 },
@@ -89,58 +90,60 @@ function render(data) {
                     borderWidth: 1
                 },
                 levels: [
-                    // Level 0: 대분류 (Domains / Large Category)
-                    // Displays the Domain Name at the top center of the entire block
+                    // Level 0: 대분류 (Domains)
+                    // Outer box with Dark Header at Top Center
                     {
                         itemStyle: {
-                            borderColor: '#334155',
-                            borderWidth: 2, // Thicker border for the main container
-                            gapWidth: 6 // Visual gap between different Domains
+                            borderColor: '#1e293b', // Dark Slate Border
+                            borderWidth: 2,
+                            gapWidth: 8 // Large gap between Domains
                         },
                         upperLabel: {
                             show: true,
-                            height: 36,
+                            height: 40,
                             fontSize: 16,
                             fontWeight: 'bold',
-                            color: '#f8fafc',
-                            align: 'center', // Center aligned as requested
+                            color: '#f8fafc', // Light Text
+                            backgroundColor: '#1e293b', // Dark Header Background
+                            align: 'center',
                             verticalAlign: 'middle',
-                            backgroundColor: '#334155' // Distinct header background
+                            padding: [0, 10]
                         }
                     },
-                    // Level 1: 중분류 (Categories / Medium Category)
-                    // Displays the Category Name at the top center of its sub-block
+                    // Level 1: 중분류 (Categories)
+                    // Inner box with Light Header at Top Center
                     {
                         itemStyle: {
                             borderColor: '#94a3b8',
                             borderWidth: 1,
-                            gapWidth: 3 // Visual gap between Categories within a Domain
+                            gapWidth: 4 // Medium gap between Categories
                         },
                         upperLabel: {
                             show: true,
-                            height: 28,
+                            height: 30,
                             fontSize: 14,
                             fontWeight: '600',
-                            color: '#1e293b',
-                            align: 'center', // Center aligned as requested
-                            verticalAlign: 'middle',
-                            backgroundColor: '#e2e8f0' // Lighter header background
+                            color: '#334155', // Dark Text
+                            backgroundColor: '#e2e8f0', // Light Header Background
+                            align: 'center',
+                            verticalAlign: 'middle'
                         }
                     },
-                    // Level 2: 솔루션 (Solutions - Leaves)
-                    // Displays the Solution Name inside the box
+                    // Level 2: 솔루션 (Solutions)
+                    // Leaf nodes displaying Name and Share
                     {
                         itemStyle: {
-                            gapWidth: 1,
+                            gapWidth: 1, // Small gap between Solutions
                             borderColorSaturation: 0.7
                         },
                         label: {
                             position: 'inside',
                             align: 'center',
-                            verticalAlign: 'middle'
+                            verticalAlign: 'middle',
+                            formatter: '{b}\n{c}%'
                         },
                         upperLabel: {
-                            show: false // No header for leaf nodes
+                            show: false // No header for solutions themselves
                         }
                     }
                 ],
