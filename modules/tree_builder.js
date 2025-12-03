@@ -383,10 +383,18 @@ function showAddSolutionInput(domainName, categoryName) {
             return;
         }
 
-        if (store.addSolution(domainName, categoryName, name, share)) {
+        const result = store.addSolution(domainName, categoryName, name, share);
+        if (result === 'SUCCESS') {
             // Success
-        } else {
+        } else if (result === 'OVERFLOW') {
+            alert("솔루션 점유율의 합계는 100%를 초과할 수 없습니다.");
+            // Re-render to clear temp input or we can just let user fix it. 
+            // Request says "Input is cancelled", so we remove it.
+            row.remove();
+        } else if (result === 'DUPLICATE') {
             alert("이미 존재하는 솔루션입니다.");
+        } else {
+            alert("추가에 실패했습니다.");
         }
     };
 
@@ -493,7 +501,18 @@ function showEditSolutionInput(domain, category, index, solData, rowEl) {
         const newShare = parseFloat(shareInput.value);
 
         if (newName && !isNaN(newShare) && newShare >= 0) {
-            store.updateSolution(domain, category, index, newName, newShare);
+            const result = store.updateSolution(domain, category, index, newName, newShare);
+            if (result === 'SUCCESS') {
+                // Success
+            } else if (result === 'OVERFLOW') {
+                alert("솔루션 점유율의 합계는 100%를 초과할 수 없습니다.");
+                // Revert to original data by re-rendering
+                render(store.getData());
+            } else if (result === 'DUPLICATE') {
+                alert("이미 존재하는 솔루션 이름입니다.");
+            } else {
+                render(store.getData());
+            }
         } else {
             render(store.getData());
         }

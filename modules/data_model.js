@@ -1,3 +1,4 @@
+
 /**
  * DataModelStore
  * Manages the application state and notifies listeners of changes.
@@ -83,31 +84,39 @@ class DataModelStore {
     }
 
     addSolution(domain, category, name, share) {
-        if (!this.data[domain] || !this.data[domain][category]) return false;
+        if (!this.data[domain] || !this.data[domain][category]) return 'INVALID_TARGET';
         const solutions = this.data[domain][category];
         
         // Ensure name uniqueness within category
-        if (solutions.some(s => s.name === name)) return false;
+        if (solutions.some(s => s.name === name)) return 'DUPLICATE';
+
+        // Check for 100% overflow
+        const currentTotal = solutions.reduce((sum, s) => sum + s.share, 0);
+        if (currentTotal + share > 100) return 'OVERFLOW';
 
         solutions.push({ name, share });
         this.notify();
-        return true;
+        return 'SUCCESS';
     }
 
     updateSolution(domain, category, index, newName, newShare) {
-        if (!this.data[domain] || !this.data[domain][category]) return false;
+        if (!this.data[domain] || !this.data[domain][category]) return 'INVALID_TARGET';
         const solutions = this.data[domain][category];
         
-        if (!solutions[index]) return false;
+        if (!solutions[index]) return 'INVALID_INDEX';
 
         // Check duplicate name only if name changed
         if (solutions[index].name !== newName && solutions.some((s, i) => i !== index && s.name === newName)) {
-            return false;
+            return 'DUPLICATE';
         }
+
+        // Check for 100% overflow (exclude current item's old share)
+        const otherShares = solutions.reduce((sum, s, i) => i === index ? sum : sum + s.share, 0);
+        if (otherShares + newShare > 100) return 'OVERFLOW';
 
         solutions[index] = { name: newName, share: newShare };
         this.notify();
-        return true;
+        return 'SUCCESS';
     }
 
     deleteSolution(domain, category, index) {
