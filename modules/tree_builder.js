@@ -254,8 +254,31 @@ function showAddCategoryInput(domainName) {
         render(store.getData());
     }
 
-    const contentBox = document.querySelector(`[data-domain-content="${domainName}"]`);
-    if (!contentBox) return;
+    // Try to find the container safely
+    const safeName = CSS.escape(domainName);
+    let contentBox = document.querySelector(`[data-domain-content="${safeName}"]`);
+
+    // If not found, force a re-render and try again (mitigates sync issues)
+    if (!contentBox) {
+        render(store.getData());
+        contentBox = document.querySelector(`[data-domain-content="${safeName}"]`);
+    }
+
+    // Fallback: Manually iterate if selector fails
+    if (!contentBox) {
+        const allBoxes = document.querySelectorAll('[data-domain-content]');
+        for (let box of allBoxes) {
+            if (box.dataset.domainContent === domainName) {
+                contentBox = box;
+                break;
+            }
+        }
+    }
+
+    if (!contentBox) {
+        console.error("Content box not found for domain:", domainName);
+        return;
+    }
 
     removeTempInputs();
 
@@ -303,7 +326,28 @@ function showAddSolutionInput(domainName, categoryName) {
         render(store.getData());
     }
 
-    const contentBox = document.querySelector(`[data-solution-content="${domainName}-${categoryName}"]`);
+    const safeDomain = CSS.escape(domainName);
+    const safeCat = CSS.escape(categoryName);
+    
+    let contentBox = document.querySelector(`[data-solution-content="${safeDomain}-${safeCat}"]`);
+
+    if (!contentBox) {
+        render(store.getData());
+        contentBox = document.querySelector(`[data-solution-content="${safeDomain}-${safeCat}"]`);
+    }
+
+    // Fallback: Manually iterate if selector fails
+    if (!contentBox) {
+        const allBoxes = document.querySelectorAll('[data-solution-content]');
+        const targetKey = `${domainName}-${categoryName}`;
+        for (let box of allBoxes) {
+            if (box.dataset.solutionContent === targetKey) {
+                contentBox = box;
+                break;
+            }
+        }
+    }
+
     if (!contentBox) return;
 
     removeTempInputs();
