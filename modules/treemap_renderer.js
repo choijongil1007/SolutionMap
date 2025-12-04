@@ -155,7 +155,8 @@ function render(data) {
 
         // Map Container
         const mapContainer = document.createElement('div');
-        mapContainer.className = "relative w-full bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-10"; 
+        // Removed border, bg, rounded, overflow-hidden to prevent clipping
+        mapContainer.className = "relative w-full mb-10"; 
         mapContainer.style.height = `${finalHeight}px`;
 
         // Build Mini-Tree just for this Domain
