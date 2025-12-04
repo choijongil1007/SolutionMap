@@ -1,5 +1,4 @@
 
-
 import { store } from './data_model.js';
 import { showWarningModal, showConfirmModal } from '../utils/modal.js';
 
@@ -301,15 +300,13 @@ async function fetchPainPoints() {
     loader.classList.remove('hidden');
 
     try {
-        // Simplified prompt for plain text output to reduce JSON parsing errors
         const prompt = `List 5 to 8 common customer pain points for the software product "${manufacturer} ${product}" in Korean. Provide the answer as a plain text list, one item per line. Do not use numbering or markdown.`;
         
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzcdRKb5yBKr5bu9uvGt28KTQqUkPsAR80GwbURPzFeOmaRY2_i1lA4Kk_GsuNpBZuVRA/exec";
         
-        // Pass prompt to both 'q' and 'prompt' parameters to accommodate different GAS script implementations
+        // Pass prompt to both 'q' and 'prompt' parameters
         const url = `${GAS_URL}?q=${encodeURIComponent(prompt)}&prompt=${encodeURIComponent(prompt)}`;
 
-        // Add explicit headers and mode to ensure standard browser behavior
         const response = await fetch(url, {
             method: 'GET',
             mode: 'cors',
@@ -321,10 +318,22 @@ async function fetchPainPoints() {
 
         if (!response.ok) throw new Error(`API Request Failed: ${response.status}`);
         
-        const text = await response.text();
+        const responseText = await response.text();
+        let rawContent = responseText;
+
+        // Try to parse as JSON (Gemini API format) in case GAS returns full JSON response
+        try {
+            const json = JSON.parse(responseText);
+            if (json.candidates && json.candidates[0] && json.candidates[0].content && json.candidates[0].content.parts) {
+                // Extract the actual text content from Gemini JSON structure
+                rawContent = json.candidates[0].content.parts[0].text;
+            }
+        } catch (e) {
+            // Not valid JSON or different structure, treat as plain text
+        }
         
         // Parse: Split by newlines, filter empty or short lines
-        const painPoints = text.split('\n')
+        const painPoints = rawContent.split('\n')
             .map(line => line.trim())
             .filter(line => line.length > 0)
             .map(line => line.replace(/^[-*•\d\.]+\s*/, '')); // Remove bullets/numbers
