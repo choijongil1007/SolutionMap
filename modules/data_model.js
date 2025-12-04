@@ -207,7 +207,7 @@ class DataModelStore {
         }
     }
 
-    addSolution(domain, category, name, share) {
+    addSolution(domain, category, name, share, manufacturer = "", painPoints = [], note = "") {
         const map = this.getCurrentMap();
         if (!map) return 'ERROR';
         if (!map.content[domain] || !map.content[domain][category]) return 'INVALID_TARGET';
@@ -219,13 +219,20 @@ class DataModelStore {
         const currentTotal = solutions.reduce((sum, s) => sum + s.share, 0);
         if (currentTotal + share > 100) return 'OVERFLOW';
 
-        solutions.push({ name, share });
+        solutions.push({ 
+            name, 
+            share,
+            manufacturer: manufacturer || "",
+            painPoints: painPoints || [],
+            note: note || ""
+        });
+        
         this._touch();
         this.notify();
         return 'SUCCESS';
     }
 
-    updateSolution(domain, category, index, newName, newShare) {
+    updateSolution(domain, category, index, newName, newShare, newManufacturer, newPainPoints, newNote) {
         const map = this.getCurrentMap();
         if (!map) return 'ERROR';
 
@@ -241,7 +248,16 @@ class DataModelStore {
         const otherShares = solutions.reduce((sum, s, i) => i === index ? sum : sum + s.share, 0);
         if (otherShares + newShare > 100) return 'OVERFLOW';
 
-        solutions[index] = { name: newName, share: newShare };
+        // Merge existing fields with updates if not provided (optional safety, though UI provides all)
+        const existing = solutions[index];
+        solutions[index] = { 
+            name: newName, 
+            share: newShare,
+            manufacturer: newManufacturer !== undefined ? newManufacturer : existing.manufacturer,
+            painPoints: newPainPoints !== undefined ? newPainPoints : existing.painPoints,
+            note: newNote !== undefined ? newNote : existing.note
+        };
+        
         this._touch();
         this.notify();
         return 'SUCCESS';

@@ -156,6 +156,65 @@
         </div>
     </div>
 
+    <!-- Solution Add/Edit Modal (New) -->
+    <div id="solution-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity opacity-0" id="solution-modal-backdrop"></div>
+        <div class="relative bg-white border border-slate-200 rounded-xl shadow-2xl p-6 w-full max-w-lg transform scale-95 opacity-0 transition-all duration-200 max-h-[90vh] flex flex-col" id="solution-modal-panel">
+            <h3 class="text-xl font-bold text-slate-900 mb-4 flex-shrink-0" id="solution-modal-title">솔루션 추가</h3>
+            
+            <div class="overflow-y-auto pr-2 space-y-4 flex-1">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-1">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">제조사</label>
+                        <input type="text" id="sol-manufacturer" class="input-premium w-full" placeholder="예: Atlassian">
+                    </div>
+                    <div class="col-span-1">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">점유율 (%)</label>
+                        <input type="number" id="sol-share" class="input-premium w-full" value="10">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">제품명</label>
+                    <input type="text" id="sol-name" class="input-premium w-full" placeholder="예: Jira Software">
+                </div>
+
+                <!-- Pain Point Section -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="block text-sm font-bold text-slate-700">Pain-Points (고객 불만)</label>
+                        <button type="button" id="btn-analyze-painpoints" class="text-xs bg-slate-900 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-slate-800 flex items-center gap-1.5 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                            AI 분석
+                        </button>
+                    </div>
+                    
+                    <div id="painpoint-loading" class="hidden py-4 flex justify-center">
+                        <div class="spinner border-slate-300 border-t-blue-600"></div>
+                    </div>
+
+                    <div id="painpoint-list" class="space-y-2 max-h-40 overflow-y-auto">
+                        <p class="text-xs text-slate-400 text-center py-4">제조사와 제품명을 입력 후 'AI 분석' 버튼을 눌러주세요.</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">추가 사항 (직접 입력)</label>
+                    <textarea id="sol-note" class="input-premium w-full h-20 resize-none" placeholder="위 목록에 없는 불만 사항이나 메모를 입력하세요..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-4 border-t border-slate-100 mt-4 flex-shrink-0">
+                <button type="button" id="solution-modal-cancel" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors">
+                    취소
+                </button>
+                <button type="button" id="solution-modal-save" class="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20">
+                    저장
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom Dark Warning Modal -->
     <div id="warning-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <!-- Backdrop -->

@@ -1,11 +1,17 @@
 
 
+
 import { store } from './data_model.js';
 import { showWarningModal, showConfirmModal } from '../utils/modal.js';
 
 // State to track which tree nodes are expanded
 const expandedState = new Set();
 let container = null;
+
+// Modal Elements State
+let currentDomainForModal = null;
+let currentCategoryForModal = null;
+let currentSolutionIndexForModal = null; // null for add, number for edit
 
 // Icons
 const ICONS = {
@@ -27,6 +33,9 @@ export function initTreeBuilder(elementId) {
         addDomainBtn.parentNode.replaceChild(newBtn, addDomainBtn);
         newBtn.addEventListener('click', showAddDomainInput);
     }
+
+    // Initialize Solution Modal Events
+    setupSolutionModal();
 
     store.subscribe((data) => {
         render(data);
@@ -130,7 +139,11 @@ function render(data) {
                 catActions.className = "flex items-center gap-1 opacity-0 group-hover/cat:opacity-100 transition-opacity";
 
                 const cBtnAdd = createActionButton(ICONS.plus, 'text-slate-500', '솔루션 추가');
-                cBtnAdd.onclick = (e) => { e.stopPropagation(); showAddSolutionInput(domainName, catName); };
+                cBtnAdd.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    // Replace inline input with Modal call
+                    openSolutionModal(domainName, catName); 
+                };
 
                 const cBtnEdit = createActionButton(ICONS.edit, 'text-blue-500', '이름 수정');
                 cBtnEdit.onclick = (e) => { e.stopPropagation(); showEditCategoryInput(domainName, catName, catHeader); };
@@ -166,7 +179,7 @@ function render(data) {
                         solActions.className = "flex items-center opacity-0 group-hover/sol:opacity-100 transition-opacity shrink-0";
                         
                         const sBtnEdit = createActionButton(ICONS.edit, 'text-blue-400', '수정');
-                        sBtnEdit.onclick = () => showEditSolutionInput(domainName, catName, idx, sol, solEl);
+                        sBtnEdit.onclick = () => openSolutionModal(domainName, catName, sol, idx);
                         
                         const sBtnDel = createActionButton(ICONS.trash, 'text-red-400', '삭제');
                         sBtnDel.onclick = () => deleteSolution(domainName, catName, idx);
@@ -191,7 +204,240 @@ function render(data) {
     container.scrollTop = scrollTop;
 }
 
-// --- Inline Input Logic ---
+// --- Solution Modal Logic ---
+
+function setupSolutionModal() {
+    const modal = document.getElementById('solution-modal');
+    const cancelBtn = document.getElementById('solution-modal-cancel');
+    const saveBtn = document.getElementById('solution-modal-save');
+    const analyzeBtn = document.getElementById('btn-analyze-painpoints');
+
+    cancelBtn.addEventListener('click', closeSolutionModal);
+    saveBtn.addEventListener('click', saveSolutionFromModal);
+    analyzeBtn.addEventListener('click', fetchPainPoints);
+}
+
+function openSolutionModal(domainName, categoryName, existingSolution = null, index = null) {
+    currentDomainForModal = domainName;
+    currentCategoryForModal = categoryName;
+    currentSolutionIndexForModal = index;
+
+    const modal = document.getElementById('solution-modal');
+    const backdrop = document.getElementById('solution-modal-backdrop');
+    const panel = document.getElementById('solution-modal-panel');
+    const title = document.getElementById('solution-modal-title');
+
+    // Inputs
+    const mInput = document.getElementById('sol-manufacturer');
+    const nInput = document.getElementById('sol-name');
+    const sInput = document.getElementById('sol-share');
+    const noteInput = document.getElementById('sol-note');
+    const listContainer = document.getElementById('painpoint-list');
+
+    // Reset Inputs
+    mInput.value = '';
+    nInput.value = '';
+    sInput.value = '10';
+    noteInput.value = '';
+    listContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">제조사와 제품명을 입력 후 \'AI 분석\' 버튼을 눌러주세요.</p>';
+
+    if (existingSolution) {
+        title.textContent = '솔루션 수정';
+        mInput.value = existingSolution.manufacturer || '';
+        nInput.value = existingSolution.name || '';
+        sInput.value = existingSolution.share || 10;
+        noteInput.value = existingSolution.note || '';
+        
+        // Render existing pain points if any
+        if (existingSolution.painPoints && existingSolution.painPoints.length > 0) {
+            renderPainPoints(existingSolution.painPoints, true); // All checked
+        }
+    } else {
+        title.textContent = '솔루션 추가';
+    }
+
+    modal.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        backdrop.classList.remove('opacity-0');
+        panel.classList.remove('opacity-0', 'scale-95');
+        panel.classList.add('opacity-100', 'scale-100');
+    });
+    
+    if(!existingSolution) {
+        mInput.focus();
+    }
+}
+
+function closeSolutionModal() {
+    const modal = document.getElementById('solution-modal');
+    const backdrop = document.getElementById('solution-modal-backdrop');
+    const panel = document.getElementById('solution-modal-panel');
+
+    backdrop.classList.add('opacity-0');
+    panel.classList.remove('opacity-100', 'scale-100');
+    panel.classList.add('opacity-0', 'scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 200);
+
+    // Reset state
+    currentDomainForModal = null;
+    currentCategoryForModal = null;
+    currentSolutionIndexForModal = null;
+}
+
+async function fetchPainPoints() {
+    const manufacturer = document.getElementById('sol-manufacturer').value.trim();
+    const product = document.getElementById('sol-name').value.trim();
+    const listContainer = document.getElementById('painpoint-list');
+    const loader = document.getElementById('painpoint-loading');
+
+    if (!manufacturer || !product) {
+        showWarningModal("제조사와 제품명을 모두 입력해주세요.");
+        return;
+    }
+
+    // UI Loading State
+    listContainer.innerHTML = '';
+    loader.classList.remove('hidden');
+
+    try {
+        // Construct prompt for the GAS endpoint
+        // Assuming GAS takes a 'prompt' or 'q' query parameter. 
+        // Based on user provided URL, we'll try a standard GET request.
+        // We want a JSON array back.
+        const prompt = `List 5 to 8 common customer pain points for the software product "${manufacturer} ${product}" in Korean. Format the output strictly as a JSON array of strings. Do not include markdown code blocks.`;
+        
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzcdRKb5yBKr5bu9uvGt28KTQqUkPsAR80GwbURPzFeOmaRY2_i1lA4Kk_GsuNpBZuVRA/exec";
+        const url = `${GAS_URL}?q=${encodeURIComponent(prompt)}`;
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("API Request Failed");
+        
+        const text = await response.text();
+        
+        // Attempt to parse JSON. API might return plain text or wrapped JSON.
+        let painPoints = [];
+        try {
+            // Clean up if it's wrapped in markdown code blocks like ```json ... ```
+            let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            painPoints = JSON.parse(cleanText);
+        } catch (e) {
+            // Fallback: split by newlines if JSON parse fails
+            painPoints = text.split('\n').filter(line => line.length > 2).map(l => l.replace(/^- /, ''));
+        }
+
+        if (!Array.isArray(painPoints) || painPoints.length === 0) {
+             listContainer.innerHTML = '<p class="text-xs text-red-400 text-center py-4">Pain-Point를 가져올 수 없습니다. 직접 입력해주세요.</p>';
+        } else {
+             renderPainPoints(painPoints, false);
+        }
+
+    } catch (error) {
+        console.error(error);
+        listContainer.innerHTML = '<p class="text-xs text-red-400 text-center py-4">분석 중 오류가 발생했습니다.</p>';
+    } finally {
+        loader.classList.add('hidden');
+    }
+}
+
+function renderPainPoints(points, preChecked = false) {
+    const listContainer = document.getElementById('painpoint-list');
+    listContainer.innerHTML = '';
+
+    points.forEach((point, idx) => {
+        const id = `pp-${idx}`;
+        const div = document.createElement('div');
+        div.className = "flex items-start gap-2 p-2 hover:bg-slate-50 rounded-lg cursor-pointer";
+        div.onclick = (e) => {
+            if (e.target.tagName !== 'INPUT') {
+                const cb = div.querySelector('input');
+                cb.checked = !cb.checked;
+            }
+        };
+
+        const checkbox = document.createElement('input');
+        checkbox.type = "checkbox";
+        checkbox.id = id;
+        checkbox.value = point;
+        checkbox.className = "mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500";
+        if (preChecked) checkbox.checked = true;
+
+        const label = document.createElement('label');
+        label.htmlFor = id;
+        label.className = "text-sm text-slate-700 cursor-pointer";
+        label.textContent = point;
+
+        div.append(checkbox, label);
+        listContainer.appendChild(div);
+    });
+}
+
+function saveSolutionFromModal() {
+    const mInput = document.getElementById('sol-manufacturer');
+    const nInput = document.getElementById('sol-name');
+    const sInput = document.getElementById('sol-share');
+    const noteInput = document.getElementById('sol-note');
+    const listContainer = document.getElementById('painpoint-list');
+
+    const manufacturer = mInput.value.trim();
+    const name = nInput.value.trim();
+    const share = parseFloat(sInput.value);
+    const note = noteInput.value.trim();
+
+    // Collect checked pain points
+    const checkedPainPoints = [];
+    listContainer.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+        checkedPainPoints.push(cb.value);
+    });
+
+    if (!name) {
+        showWarningModal("제품명을 입력해주세요.");
+        return;
+    }
+    if (isNaN(share) || share < 0) {
+        showWarningModal("유효한 점유율(%)을 입력해주세요.");
+        return;
+    }
+
+    let result;
+    if (currentSolutionIndexForModal !== null) {
+        // Edit
+        result = store.updateSolution(
+            currentDomainForModal,
+            currentCategoryForModal,
+            currentSolutionIndexForModal,
+            name,
+            share,
+            manufacturer,
+            checkedPainPoints,
+            note
+        );
+    } else {
+        // Add
+        result = store.addSolution(
+            currentDomainForModal,
+            currentCategoryForModal,
+            name,
+            share,
+            manufacturer,
+            checkedPainPoints,
+            note
+        );
+    }
+
+    if (result === 'SUCCESS') {
+        closeSolutionModal();
+    } else if (result === 'OVERFLOW') {
+        showWarningModal("솔루션 점유율의 합계는 100%를 초과할 수 없습니다.");
+    } else if (result === 'DUPLICATE') {
+        showWarningModal("이미 존재하는 솔루션 이름입니다.");
+    } else {
+        showWarningModal("저장에 실패했습니다.");
+    }
+}
+
+// --- Inline Input Logic (Only Domain/Category remain inline) ---
 
 function showAddDomainInput() {
     if (!container) return;
@@ -321,99 +567,6 @@ function showAddCategoryInput(domainName) {
     input.focus();
 }
 
-function showAddSolutionInput(domainName, categoryName) {
-    const key = `c-${domainName}-${categoryName}`;
-    if (!expandedState.has(key)) {
-        expandedState.add(key);
-        render(store.getData());
-    }
-
-    const safeDomain = CSS.escape(domainName);
-    const safeCat = CSS.escape(categoryName);
-    
-    let contentBox = document.querySelector(`[data-solution-content="${safeDomain}-${safeCat}"]`);
-
-    if (!contentBox) {
-        render(store.getData());
-        contentBox = document.querySelector(`[data-solution-content="${safeDomain}-${safeCat}"]`);
-    }
-
-    // Fallback: Manually iterate if selector fails
-    if (!contentBox) {
-        const allBoxes = document.querySelectorAll('[data-solution-content]');
-        const targetKey = `${domainName}-${categoryName}`;
-        for (let box of allBoxes) {
-            if (box.dataset.solutionContent === targetKey) {
-                contentBox = box;
-                break;
-            }
-        }
-    }
-
-    if (!contentBox) return;
-
-    removeTempInputs();
-
-    const row = document.createElement('div');
-    row.className = "temp-input-row flex items-center gap-2 py-2 px-2 bg-blue-50/50 border border-blue-300 rounded-lg shadow-sm input-slide-down";
-    
-    const nameInput = document.createElement('input');
-    nameInput.type = "text";
-    nameInput.className = "input-premium flex-1";
-    nameInput.placeholder = "솔루션명";
-
-    const shareInput = document.createElement('input');
-    shareInput.type = "number";
-    shareInput.className = "input-premium w-20 text-right";
-    shareInput.placeholder = "%";
-    shareInput.value = "10";
-
-    const btnSave = createMiniButton(ICONS.check, "text-green-600 hover:bg-green-50");
-    const btnCancel = createMiniButton(ICONS.x, "text-red-500 hover:bg-red-50");
-
-    const save = () => {
-        const name = nameInput.value.trim();
-        const share = parseFloat(shareInput.value);
-
-        if (!name) {
-            nameInput.focus();
-            return;
-        }
-        if (isNaN(share) || share < 0) {
-            showWarningModal("유효한 숫자를 입력하세요.");
-            shareInput.focus();
-            return;
-        }
-
-        const result = store.addSolution(domainName, categoryName, name, share);
-        if (result === 'SUCCESS') {
-            // Success
-        } else if (result === 'OVERFLOW') {
-            showWarningModal("솔루션 점유율의 합계는 100%를 초과할 수 없습니다.");
-            row.remove(); // Input cancelled
-        } else if (result === 'DUPLICATE') {
-            showWarningModal("이미 존재하는 솔루션입니다.");
-        } else {
-            showWarningModal("추가에 실패했습니다.");
-        }
-    };
-
-    btnSave.onclick = save;
-    btnCancel.onclick = () => row.remove();
-
-    const onEnter = (e) => {
-        if (e.key === 'Enter') save();
-        if (e.key === 'Escape') row.remove();
-    };
-
-    nameInput.addEventListener('keydown', onEnter);
-    shareInput.addEventListener('keydown', onEnter);
-
-    row.append(nameInput, shareInput, btnSave, btnCancel);
-    contentBox.appendChild(row);
-    nameInput.focus();
-}
-
 function showEditCategoryInput(domain, oldName, headerEl) {
     const titleEl = headerEl.querySelector('.cat-title-text');
     const originalText = titleEl.innerText;
@@ -478,59 +631,6 @@ function showEditDomainInput(domain, headerEl) {
 
     titleEl.appendChild(input);
     input.focus();
-}
-
-function showEditSolutionInput(domain, category, index, solData, rowEl) {
-    rowEl.innerHTML = '';
-    rowEl.className = "flex items-center gap-2 py-2 px-2 bg-blue-50 border border-blue-300 rounded-lg shadow-sm";
-
-    const nameInput = document.createElement('input');
-    nameInput.value = solData.name;
-    nameInput.className = "input-premium flex-1";
-
-    const shareInput = document.createElement('input');
-    shareInput.value = solData.share;
-    shareInput.type = "number";
-    shareInput.className = "input-premium w-20 text-right";
-
-    const btnSave = createMiniButton(ICONS.check, "text-green-600 hover:bg-green-50");
-    const btnCancel = createMiniButton(ICONS.x, "text-red-500 hover:bg-red-50");
-
-    const save = () => {
-        const newName = nameInput.value.trim();
-        const newShare = parseFloat(shareInput.value);
-
-        if (newName && !isNaN(newShare) && newShare >= 0) {
-            const result = store.updateSolution(domain, category, index, newName, newShare);
-            if (result === 'SUCCESS') {
-                // Success
-            } else if (result === 'OVERFLOW') {
-                showWarningModal("솔루션 점유율의 합계는 100%를 초과할 수 없습니다.");
-                // Revert to original data by re-rendering
-                render(store.getData());
-            } else if (result === 'DUPLICATE') {
-                showWarningModal("이미 존재하는 솔루션 이름입니다.");
-            } else {
-                render(store.getData());
-            }
-        } else {
-            render(store.getData());
-        }
-    };
-
-    btnSave.onclick = save;
-    btnCancel.onclick = () => render(store.getData());
-
-    const onEnter = (e) => {
-        if (e.key === 'Enter') save();
-        if (e.key === 'Escape') render(store.getData());
-    };
-
-    nameInput.addEventListener('keydown', onEnter);
-    shareInput.addEventListener('keydown', onEnter);
-
-    rowEl.append(nameInput, shareInput, btnSave, btnCancel);
-    nameInput.focus();
 }
 
 function removeTempInputs() {
