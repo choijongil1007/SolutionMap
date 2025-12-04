@@ -21,10 +21,10 @@ const CONFIG = {
     globalPadding: 24, 
 
     domain: {
-        headerHeight: 32, 
-        padding: 6,
-        marginBottom: 0, // Controlled by wrapper spacing now    
-        headerBg: '#1f2937', 
+        headerHeight: 0, // Removed header height (was 32)
+        padding: 0,      // Removed padding (was 6)
+        marginBottom: 0,     
+        headerBg: 'transparent', 
         headerText: '#ffffff', 
         borderColor: 'transparent', 
         borderWidth: 0    
@@ -118,10 +118,10 @@ function render(data) {
 
         // --- PART A: VISUAL TREEMAP FOR THIS DOMAIN ---
         
-        // 3. Sub-header: [ Solution Map ]
+        // 3. Sub-header: Solution Map
         const mapHeader = document.createElement('h3');
-        mapHeader.className = "text-sm font-bold text-slate-500 mb-4 uppercase tracking-wider pl-1";
-        mapHeader.innerHTML = `<span class="text-blue-500 mr-1">[</span> Solution Map <span class="text-blue-500 ml-1">]</span>`;
+        mapHeader.className = "text-lg font-bold text-slate-700 mb-4 pl-1";
+        mapHeader.textContent = "Solution Map";
         sectionWrapper.appendChild(mapHeader);
 
         // Calculate Height for this Domain
@@ -139,13 +139,14 @@ function render(data) {
         let calculatedH = requiredArea / effectiveWidth;
         
         const categoryCount = Object.keys(categories).length;
-        const overhead = CONFIG.domain.headerHeight + (categoryCount * CONFIG.category.headerHeight) + 80;
+        // Overhead calculation adjusted (domain header is now 0)
+        const overhead = CONFIG.domain.headerHeight + (categoryCount * CONFIG.category.headerHeight) + 40;
         calculatedH += overhead;
         const finalHeight = Math.max(MIN_DOMAIN_HEIGHT, calculatedH);
 
         // Map Container
         const mapContainer = document.createElement('div');
-        mapContainer.className = "relative w-full bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-10"; // Added margin-bottom for spacing before insights
+        mapContainer.className = "relative w-full bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-10"; 
         mapContainer.style.height = `${finalHeight}px`;
 
         // Build Mini-Tree just for this Domain
@@ -202,10 +203,10 @@ function generateDomainInsights(domainName, categories) {
     const wrapper = document.createElement('div');
     wrapper.className = "w-full";
 
-    // Insight Sub-Header: [ Insight ]
+    // Insight Sub-Header: Insight
     const insightHeader = document.createElement('h3');
-    insightHeader.className = "text-sm font-bold text-slate-500 mb-4 uppercase tracking-wider pl-1";
-    insightHeader.innerHTML = `<span class="text-blue-500 mr-1">[</span> Insight <span class="text-blue-500 ml-1">]</span>`;
+    insightHeader.className = "text-lg font-bold text-slate-700 mb-4 pl-1";
+    insightHeader.textContent = "Insight";
     wrapper.appendChild(insightHeader);
     
     const grid = document.createElement('div');
@@ -288,7 +289,6 @@ function buildDomainTree(domainName, categories) {
         type: 'domain',
         children: [],
         value: 0
-        // customHeight is not needed here as we are calculating height for the container explicitly
     };
 
     Object.entries(categories).forEach(([catName, solutions]) => {
@@ -360,8 +360,6 @@ function calculateLayout(node, rect) {
 
     // --- Root -> Domain ---
     if (node.type === 'root') {
-        // Since we are rendering per-domain, the root only has 1 child (the domain).
-        // It takes the full space.
         const child = node.children[0];
         if(!child) return results;
 
@@ -379,6 +377,7 @@ function calculateLayout(node, rect) {
 
     // --- Domain -> Category ---
     if (node.type === 'domain') {
+        // If headerHeight is 0, this does nothing, which effectively removes the space reservation
         contentRect.y += CONFIG.domain.headerHeight;
         contentRect.height -= CONFIG.domain.headerHeight;
         const pad = CONFIG.domain.padding;
@@ -577,14 +576,8 @@ function applyDomainStyle(el, node) {
     el.style.backgroundColor = 'transparent';
     el.style.zIndex = 10;
 
-    const header = document.createElement('div');
-    header.style.height = `${CONFIG.domain.headerHeight}px`;
-    header.style.backgroundColor = CONFIG.domain.headerBg; 
-    header.style.color = CONFIG.domain.headerText;
-    header.style.borderBottom = 'none'; 
-    header.className = "flex items-center justify-center font-bold text-sm tracking-tight shrink-0 uppercase px-2 mb-1 rounded-sm";
-    header.textContent = node.name;
-    el.appendChild(header);
+    // Header removed as requested. CONFIG.domain.headerHeight is 0.
+    // We do NOT create the header child div.
 }
 
 function applyCategoryStyle(el, node) {
