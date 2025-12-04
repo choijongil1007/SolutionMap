@@ -58,14 +58,18 @@ function showHome() {
 }
 
 function showEditor(mapId) {
-    store.selectMap(mapId);
-    const map = store.getCurrentMap();
-    if (!map) return;
-
-    mapTitleInput.value = map.title;
-
+    // 1. Switch View First (Ensure container is visible for renderer dimensions)
     views.home.classList.add('hidden');
     views.editor.classList.remove('hidden');
+    
+    // 2. Select Map (Triggers subscribers -> Render)
+    store.selectMap(mapId);
+    
+    // 3. Update Title Input
+    const map = store.getCurrentMap();
+    if (map) {
+        mapTitleInput.value = map.title;
+    }
 }
 
 // --- Home Screen Logic ---

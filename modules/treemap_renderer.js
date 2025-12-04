@@ -83,7 +83,11 @@ export function initTreemap(containerId) {
 function render(data) {
     if (!container) return;
     
-    // Clear container
+    // Check width BEFORE clearing. If hidden (width 0), abort to preserve content (if any) or avoid blanking.
+    const containerWidth = container.clientWidth;
+    if (containerWidth === 0) return;
+
+    // Now it's safe to clear
     container.innerHTML = '';
     
     // Handle empty state
@@ -100,9 +104,6 @@ function render(data) {
             emptyState.classList.add('hidden');
         }
     }
-
-    const containerWidth = container.clientWidth;
-    if (containerWidth === 0) return;
 
     // 1. Calculate Dynamic Height based on Content Density (Solutions count)
     const domainKeys = Object.keys(data);
