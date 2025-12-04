@@ -10,10 +10,6 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- PDF Generation Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
     <script>
         tailwind.config = {
             theme: {
@@ -121,10 +117,7 @@
                 <section class="w-full flex-1 flex flex-col bg-white relative">
                     <div class="p-4 border-b border-slate-100 shrink-0 flex items-center justify-between z-10 bg-white">
                         <h2 class="text-lg font-bold text-slate-700">솔루션 맵</h2>
-                        <button id="btn-export-pdf" class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
-                            PDF로 저장
-                        </button>
+                        <!-- Export PDF Button Removed -->
                     </div>
                     
                     <!-- Treemap Container (Modified to stack Domain sections) -->
