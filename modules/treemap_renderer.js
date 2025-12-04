@@ -81,6 +81,15 @@ function render(data) {
     const containerWidth = container.clientWidth;
     if (containerWidth === 0) return;
 
+    // FIX: Calculate available width by subtracting padding AND border offset
+    const compStyle = window.getComputedStyle(container);
+    const paddingX = parseFloat(compStyle.paddingLeft) + parseFloat(compStyle.paddingRight);
+    
+    // Subtract extra space for the border of the mapContainer (2px) and a tiny safety buffer (2px)
+    // mapContainer has 'border' class which adds 1px border on each side.
+    const BORDER_OFFSET = 4; 
+    const availableWidth = Math.max(0, containerWidth - paddingX - BORDER_OFFSET);
+
     // Safe to clear
     container.innerHTML = '';
     
@@ -134,7 +143,7 @@ function render(data) {
         solutionCount = Math.max(1, solutionCount);
         
         // Calculate dimensions
-        const effectiveWidth = containerWidth; 
+        const effectiveWidth = availableWidth; 
         const requiredArea = solutionCount * AREA_PER_SOLUTION;
         let calculatedH = requiredArea / effectiveWidth;
         
