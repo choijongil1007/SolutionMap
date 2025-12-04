@@ -1,7 +1,5 @@
 
 
-
-
 import { store } from './data_model.js';
 import { showSolutionDetailModal } from '../utils/modal.js';
 
@@ -10,7 +8,6 @@ let resizeObserver = null;
 let tooltipEl = null; // Custom Tooltip Element
 
 // Palette: Custom User Palette
-// Used by rank order (1st, 2nd, 3rd...)
 const CHROMATIC_PALETTE = [
     '#4C6EF5', // Blue
     '#0CA678', // Green
@@ -21,14 +18,14 @@ const CHROMATIC_PALETTE = [
 
 // Layout Configuration
 const CONFIG = {
-    globalPadding: 32, 
+    globalPadding: 24, 
 
     domain: {
-        headerHeight: 32, // Reduced height for the bar
+        headerHeight: 32, 
         padding: 6,
-        marginBottom: 60, // Increased space between stacked domains (24 -> 60)       
-        headerBg: '#1f2937', // Dark gray background (Bar style)
-        headerText: '#ffffff', // White text
+        marginBottom: 0, // Controlled by wrapper spacing now    
+        headerBg: '#1f2937', 
+        headerText: '#ffffff', 
         borderColor: 'transparent', 
         borderWidth: 0    
     },
@@ -39,7 +36,7 @@ const CONFIG = {
         headerText: '#ffffff', 
         borderColor: '#000000', 
         borderWidth: 1,
-        margin: 1 // Spacing between categories
+        margin: 1 
     },
     solution: {
         padding: 0 
@@ -52,10 +49,6 @@ export function initTreemap(containerId) {
     
     if (!container) return;
 
-    // Set container base styles
-    container.style.position = 'relative';
-    container.style.overflow = 'hidden';
-
     // Initial Render
     render(store.getData());
 
@@ -65,7 +58,6 @@ export function initTreemap(containerId) {
     });
 
     // Handle Resize
-    // Note: We only trigger if width changes to avoid infinite loop with height updates
     let lastWidth = container.clientWidth;
     resizeObserver = new ResizeObserver((entries) => {
         for (let entry of entries) {
@@ -85,210 +77,189 @@ export function initTreemap(containerId) {
 function render(data) {
     if (!container) return;
     
-    // Check width BEFORE clearing. If hidden (width 0), abort to preserve content (if any) or avoid blanking.
+    // Check width BEFORE clearing.
     const containerWidth = container.clientWidth;
     if (containerWidth === 0) return;
 
-    // Now it's safe to clear
+    // Safe to clear
     container.innerHTML = '';
     
     // Handle empty state
-    const hasData = data && Object.keys(data).length > 0;
+    const domainEntries = Object.entries(data);
+    const hasData = domainEntries.length > 0;
     const emptyState = document.getElementById('empty-state');
+    
     if (emptyState) {
         if (!hasData) {
             emptyState.classList.remove('hidden');
-            // Ensure insight panel is hidden too
-            const insightPanel = document.getElementById('insight-panel');
-            if (insightPanel) insightPanel.classList.add('hidden');
             return;
         } else {
             emptyState.classList.add('hidden');
         }
     }
 
-    // 1. Calculate Dynamic Height based on Content Density (Solutions count)
-    const domainKeys = Object.keys(data);
-    
     // Configuration for dynamic sizing
-    const MIN_DOMAIN_HEIGHT = 400; // Minimum height for a domain
-    const AREA_PER_SOLUTION = 14000; // Estimated pixels needed per solution (approx 140x100)
-    
-    // Calculate required height for each domain
-    const domainHeights = {};
-    let totalRequiredHeight = CONFIG.globalPadding * 2; // Start with top/bottom padding
+    const MIN_DOMAIN_HEIGHT = 400; 
+    const AREA_PER_SOLUTION = 14000; 
 
-    domainKeys.forEach(domainName => {
-        const categories = data[domainName];
-        let solutionCount = 0;
+    // --- MAIN RENDER LOOP: Process each Domain separately ---
+    // This allows [Domain Map] -> [Domain Insight] -> [Next Domain Map] ...
+    
+    domainEntries.forEach(([domainName, categories]) => {
+        // 1. Create Wrapper for this Domain Section
+        const sectionWrapper = document.createElement('div');
+        sectionWrapper.className = "flex flex-col gap-6 w-full"; // Gap between Map and Insights
+
+        // --- PART A: VISUAL TREEMAP FOR THIS DOMAIN ---
         
+        // Calculate Height for this Domain
+        let solutionCount = 0;
         Object.values(categories).forEach(solutions => {
-            // Count actual solutions + potentially 1 for the "Unknown" block if shares < 100
             let currentShare = solutions.reduce((acc, s) => acc + s.share, 0);
             solutionCount += solutions.length;
-            if (currentShare < 100) {
-                solutionCount += 1; // Add space for the '?' block
-            }
+            if (currentShare < 100) solutionCount += 1; // Unknown block
         });
-
-        // Ensure at least 1 count to avoid 0 height
         solutionCount = Math.max(1, solutionCount);
-
-        // Calculate required area
-        const requiredArea = solutionCount * AREA_PER_SOLUTION;
         
-        // Convert Area to Height (Area / Width)
-        // Adjust width for padding
-        const effectiveWidth = containerWidth - (CONFIG.globalPadding * 2);
+        // Calculate dimensions
+        const effectiveWidth = containerWidth; // No global padding on container now, handled by inner logic
+        const requiredArea = solutionCount * AREA_PER_SOLUTION;
         let calculatedH = requiredArea / effectiveWidth;
         
-        // Add header heights overhead
         const categoryCount = Object.keys(categories).length;
-        const overhead = CONFIG.domain.headerHeight + (categoryCount * CONFIG.category.headerHeight) + 100; // buffer
-        
+        const overhead = CONFIG.domain.headerHeight + (categoryCount * CONFIG.category.headerHeight) + 80;
         calculatedH += overhead;
+        const finalHeight = Math.max(MIN_DOMAIN_HEIGHT, calculatedH);
 
-        // Apply constraints
-        domainHeights[domainName] = Math.max(MIN_DOMAIN_HEIGHT, calculatedH);
+        // Map Container
+        const mapContainer = document.createElement('div');
+        mapContainer.className = "relative w-full bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-sm";
+        mapContainer.style.height = `${finalHeight}px`;
+
+        // Build Mini-Tree just for this Domain
+        // We create a fake "root" that contains just this single domain node
+        const domainRoot = buildDomainTree(domainName, categories);
+
+        if (domainRoot.value > 0 || Object.keys(categories).length > 0) {
+            // Layout
+            const layoutNodes = calculateLayout(domainRoot, { 
+                x: 0, 
+                y: 0, 
+                width: effectiveWidth, 
+                height: finalHeight 
+            });
+            // Render Nodes into mapContainer
+            renderNodes(mapContainer, layoutNodes);
+        } else {
+            // Empty domain placeholder
+            mapContainer.innerHTML = `<div class="flex items-center justify-center h-full text-slate-400 text-sm">데이터 없음</div>`;
+        }
         
-        totalRequiredHeight += domainHeights[domainName];
+        sectionWrapper.appendChild(mapContainer);
+
+
+        // --- PART B: INSIGHTS FOR THIS DOMAIN ---
+        
+        const insightsEl = generateDomainInsights(domainName, categories);
+        if (insightsEl) {
+            sectionWrapper.appendChild(insightsEl);
+        }
+
+        // Add to Main Container
+        container.appendChild(sectionWrapper);
     });
-
-    // Add gaps
-    if (domainKeys.length > 0) {
-        totalRequiredHeight += (domainKeys.length - 1) * CONFIG.domain.marginBottom;
-    }
-    
-    // Apply height to container
-    container.style.height = `${totalRequiredHeight}px`;
-
-    // 2. Transform Data into Hierarchy with Values AND Custom Heights
-    const rootNode = buildHierarchy(data, domainHeights);
-
-    if (rootNode.value === 0 && domainKeys.length === 0) return;
-
-    // 3. Calculate Layout
-    const pad = CONFIG.globalPadding;
-    const layoutNodes = calculateLayout(rootNode, { 
-        x: pad, 
-        y: pad, 
-        width: containerWidth - (pad * 2), 
-        height: totalRequiredHeight - (pad * 2) 
-    });
-
-    // 4. Render to DOM
-    renderNodes(container, layoutNodes);
-    
-    // 5. Render Insights (New)
-    renderInsights(data);
 }
 
-function renderInsights(data) {
-    const insightPanel = document.getElementById('insight-panel');
-    const contentBox = document.getElementById('insight-content');
+/**
+ * Generates the Insight DOM element for a specific domain.
+ * Returns null if no insights exist.
+ */
+function generateDomainInsights(domainName, categories) {
+    let hasContent = false;
     
-    if (!insightPanel || !contentBox) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = "bg-white border-t-2 border-slate-100 pt-4";
 
-    contentBox.innerHTML = '';
+    const title = document.createElement('div');
+    title.className = "flex items-center gap-2 mb-4";
+    title.innerHTML = `
+        <div class="w-1 h-5 bg-slate-800 rounded-full"></div>
+        <h3 class="text-base font-bold text-slate-800 uppercase tracking-wide">${domainName} <span class="text-slate-400 font-normal">Insight</span></h3>
+    `;
     
-    let globalHasContent = false;
+    const grid = document.createElement('div');
+    grid.className = "grid grid-cols-1 gap-4";
 
-    Object.entries(data).forEach(([domainName, categories]) => {
-        // Create Domain Section
-        const domainWrapper = document.createElement('div');
-        domainWrapper.className = "mb-8 last:mb-0";
-        
-        const domainTitle = document.createElement('h3');
-        domainTitle.className = "text-lg font-bold text-slate-900 border-l-4 border-slate-900 pl-3 mb-4 uppercase tracking-wide";
-        domainTitle.textContent = domainName;
-        
-        // Store cards here
-        const cardsContainer = document.createElement('div');
-        cardsContainer.className = "grid grid-cols-1 gap-4";
-        
-        let hasSolutionInDomain = false;
+    Object.entries(categories).forEach(([catName, solutions]) => {
+        solutions.forEach(sol => {
+            const hasPainPoints = sol.painPoints && sol.painPoints.length > 0;
+            const hasNote = sol.note && sol.note.trim().length > 0;
 
-        Object.entries(categories).forEach(([catName, solutions]) => {
-            solutions.forEach(sol => {
-                const hasPainPoints = sol.painPoints && sol.painPoints.length > 0;
-                const hasNote = sol.note && sol.note.trim().length > 0;
+            if (!hasPainPoints && !hasNote) return;
 
-                // FILTER: Only show cards that have Pain Points or Notes
-                if (!hasPainPoints && !hasNote) {
-                    return; 
-                }
+            hasContent = true;
 
-                hasSolutionInDomain = true;
-                globalHasContent = true;
+            const card = document.createElement('div');
+            card.className = "bg-slate-50 rounded-xl border border-slate-200 p-5 hover:border-blue-300 transition-colors";
 
-                const card = document.createElement('div');
-                card.className = "bg-slate-50 rounded-xl border border-slate-200 p-5 hover:border-blue-300 transition-colors";
-
-                // Header: Category | Name | Share | Manufacturer
-                let headerHtml = `
-                    <div class="flex flex-wrap items-start justify-between gap-4 mb-3">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded">${catName}</span>
-                                <span class="text-xs font-medium text-slate-400">제조사: ${sol.manufacturer || '-'}</span>
-                            </div>
-                            <h4 class="text-lg font-bold text-slate-800">${sol.name}</h4>
+            let headerHtml = `
+                <div class="flex flex-wrap items-start justify-between gap-4 mb-3">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded">${catName}</span>
+                            <span class="text-xs font-medium text-slate-400">제조사: ${sol.manufacturer || '-'}</span>
                         </div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-2xl font-bold text-blue-600">${sol.share}%</span>
-                            <span class="text-xs text-slate-400 font-medium uppercase mt-2">Share</span>
-                        </div>
+                        <h4 class="text-lg font-bold text-slate-800">${sol.name}</h4>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-2xl font-bold text-blue-600">${sol.share}%</span>
+                        <span class="text-xs text-slate-400 font-medium uppercase mt-2">Share</span>
+                    </div>
+                </div>
+            `;
+
+            let bodyHtml = '';
+            if (hasPainPoints) {
+                const tags = sol.painPoints.map(p => 
+                    `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-100">
+                        ${p}
+                     </span>`
+                ).join('');
+                
+                bodyHtml += `
+                    <div class="mb-3">
+                        <p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Pain Points</p>
+                        <div class="flex flex-wrap gap-2">${tags}</div>
                     </div>
                 `;
+            }
 
-                // Content: Pain Points & Notes
-                let bodyHtml = '';
-
-                if (hasPainPoints) {
-                    const tags = sol.painPoints.map(p => 
-                        `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-100">
-                            ${p}
-                         </span>`
-                    ).join('');
-                    
-                    bodyHtml += `
-                        <div class="mb-3">
-                            <p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Pain Points</p>
-                            <div class="flex flex-wrap gap-2">${tags}</div>
-                        </div>
-                    `;
-                }
-
-                if (hasNote) {
-                    bodyHtml += `
-                        <div class="${hasPainPoints ? 'pt-3 border-t border-slate-200/60' : ''}">
-                            <p class="text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">추가 사항</p>
-                            <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">${sol.note}</p>
-                        </div>
-                    `;
-                }
-                
-                card.innerHTML = headerHtml + bodyHtml;
-                cardsContainer.appendChild(card);
-            });
+            if (hasNote) {
+                bodyHtml += `
+                    <div class="${hasPainPoints ? 'pt-3 border-t border-slate-200/60' : ''}">
+                        <p class="text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">추가 사항</p>
+                        <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">${sol.note}</p>
+                    </div>
+                `;
+            }
+            
+            card.innerHTML = headerHtml + bodyHtml;
+            grid.appendChild(card);
         });
-
-        // Only append the domain section if it has at least one card
-        if (hasSolutionInDomain) {
-            domainWrapper.appendChild(domainTitle);
-            domainWrapper.appendChild(cardsContainer);
-            contentBox.appendChild(domainWrapper);
-        }
     });
 
-    if (globalHasContent) {
-        insightPanel.classList.remove('hidden');
-    } else {
-        insightPanel.classList.add('hidden');
-    }
+    if (!hasContent) return null;
+
+    wrapper.appendChild(title);
+    wrapper.appendChild(grid);
+    return wrapper;
 }
 
-function buildHierarchy(data, domainHeights) {
+/**
+ * Builds a mini-tree for a single domain to pass to the layout engine.
+ * Wraps the domain in a fake 'root'.
+ */
+function buildDomainTree(domainName, categories) {
     const root = {
         name: 'root',
         type: 'root',
@@ -296,81 +267,70 @@ function buildHierarchy(data, domainHeights) {
         value: 0
     };
 
-    Object.entries(data).forEach(([domainName, categories]) => {
-        const domainNode = {
-            name: domainName,
-            type: 'domain',
+    const domainNode = {
+        name: domainName,
+        type: 'domain',
+        children: [],
+        value: 0
+        // customHeight is not needed here as we are calculating height for the container explicitly
+    };
+
+    Object.entries(categories).forEach(([catName, solutions]) => {
+        const catNode = {
+            name: catName,
+            type: 'category',
             children: [],
-            value: 0,
-            customHeight: domainHeights ? domainHeights[domainName] : 0 // Inject calculated height
+            value: 0
         };
 
-        Object.entries(categories).forEach(([catName, solutions]) => {
-            const catNode = {
-                name: catName,
-                type: 'category',
-                children: [],
-                value: 0
+        let totalShare = 0;
+        const sortedSolutions = [...solutions].sort((a, b) => b.share - a.share);
+
+        sortedSolutions.forEach((sol, index) => {
+            const shareVal = parseFloat(sol.share) || 0;
+            totalShare += shareVal;
+            const safeVal = shareVal <= 0 ? 0.01 : shareVal;
+            
+            const solNode = {
+                name: sol.name,
+                type: 'solution',
+                share: shareVal,
+                value: safeVal,
+                rank: index,
+                isUnknown: false,
+                manufacturer: sol.manufacturer,
+                painPoints: sol.painPoints,
+                note: sol.note
             };
-
-            // Track total share to handle "Unknown" gap
-            let totalShare = 0;
-
-            // Sort solutions by share descending
-            const sortedSolutions = [...solutions].sort((a, b) => b.share - a.share);
-
-            sortedSolutions.forEach((sol, index) => {
-                const shareVal = parseFloat(sol.share) || 0;
-                totalShare += shareVal;
-                
-                const safeVal = shareVal <= 0 ? 0.01 : shareVal;
-                
-                const solNode = {
-                    name: sol.name,
-                    type: 'solution',
-                    share: shareVal,
-                    value: safeVal,
-                    rank: index,
-                    isUnknown: false,
-                    // Pass specific fields needed for popup
-                    manufacturer: sol.manufacturer,
-                    painPoints: sol.painPoints,
-                    note: sol.note
-                };
-                catNode.children.push(solNode);
-                catNode.value += solNode.value;
-            });
-
-            // Check if there is missing share (e.g., total < 100)
-            if (totalShare < 100) {
-                const remainder = 100 - totalShare;
-                // Fix floating point precision
-                const cleanRemainder = parseFloat(remainder.toFixed(2));
-                
-                if (cleanRemainder > 0) {
-                    const unknownNode = {
-                        name: '?',
-                        type: 'solution',
-                        share: cleanRemainder,
-                        value: cleanRemainder,
-                        rank: 999, // Push to end usually
-                        isUnknown: true // Flag to identify
-                    };
-                    catNode.children.push(unknownNode);
-                    catNode.value += unknownNode.value;
-                }
-            }
-
-            if (catNode.value > 0) {
-                domainNode.children.push(catNode);
-                domainNode.value += catNode.value;
-            }
+            catNode.children.push(solNode);
+            catNode.value += solNode.value;
         });
 
-        // Even if value is 0, we might want to show the domain structure (handle empty domains)
-        root.children.push(domainNode);
-        root.value += domainNode.value;
+        if (totalShare < 100) {
+            const remainder = parseFloat((100 - totalShare).toFixed(2));
+            if (remainder > 0) {
+                const unknownNode = {
+                    name: '?',
+                    type: 'solution',
+                    share: remainder,
+                    value: remainder,
+                    rank: 999,
+                    isUnknown: true
+                };
+                catNode.children.push(unknownNode);
+                catNode.value += unknownNode.value;
+            }
+        }
+
+        if (catNode.value > 0) {
+            domainNode.children.push(catNode);
+            domainNode.value += catNode.value;
+        }
     });
+
+    // Always push the domain node even if empty to ensure header renders (if logic permits)
+    root.children.push(domainNode);
+    root.value += domainNode.value;
 
     return root;
 }
@@ -382,36 +342,26 @@ function calculateLayout(node, rect) {
 
     let contentRect = { ...rect };
 
-    // --- Special Layout for Root -> Domain (Vertical Stack using Custom Heights) ---
+    // --- Root -> Domain ---
     if (node.type === 'root') {
-        const children = node.children;
-        const gap = CONFIG.domain.marginBottom;
-        let currentY = contentRect.y;
+        // Since we are rendering per-domain, the root only has 1 child (the domain).
+        // It takes the full space.
+        const child = node.children[0];
+        if(!child) return results;
 
-        children.forEach(child => {
-            // Use the pre-calculated custom height
-            const childH = child.customHeight || 0;
-            
-            const childRect = {
-                x: contentRect.x,
-                y: currentY,
-                width: contentRect.width,
-                height: childH
-            };
-
-            // Recurse
-            const childResults = calculateLayout(child, childRect);
-            childResults.forEach(r => results.push(r));
-
-            // Move cursor
-            currentY += childH + gap;
-        });
-
+        const childRect = {
+            x: contentRect.x,
+            y: contentRect.y,
+            width: contentRect.width,
+            height: contentRect.height
+        };
+        
+        const childResults = calculateLayout(child, childRect);
+        childResults.forEach(r => results.push(r));
         return results;
     }
 
-    // --- Standard Squarified Layout for Domain -> Category -> Solution ---
-    
+    // --- Domain -> Category ---
     if (node.type === 'domain') {
         contentRect.y += CONFIG.domain.headerHeight;
         contentRect.height -= CONFIG.domain.headerHeight;
@@ -420,8 +370,9 @@ function calculateLayout(node, rect) {
         contentRect.y += pad;
         contentRect.width -= (pad * 2);
         contentRect.height -= (pad * 2);
-
-    } else if (node.type === 'category') {
+    } 
+    // --- Category -> Solution ---
+    else if (node.type === 'category') {
         contentRect.y += CONFIG.category.headerHeight;
         contentRect.height -= CONFIG.category.headerHeight;
         const pad = CONFIG.category.padding;
@@ -431,13 +382,11 @@ function calculateLayout(node, rect) {
         contentRect.height -= (pad * 2);
     } 
 
-    // Safety check for negative dimensions
     contentRect.width = Math.max(0, contentRect.width);
     contentRect.height = Math.max(0, contentRect.height);
 
     if (contentRect.width <= 0 || contentRect.height <= 0) return results;
 
-    // FIX: Use node.children instead of undefined variable children
     const layoutChildren = squarify(node.children, contentRect);
 
     layoutChildren.forEach(item => {
@@ -466,7 +415,6 @@ function squarify(children, rect) {
     if (children.length === 0) return [];
 
     const totalValue = children.reduce((sum, c) => sum + c.value, 0);
-    // If total value is 0 (e.g. empty categories), we can't layout properly
     if (totalValue === 0) return [];
 
     const sortedChildren = [...children].sort((a, b) => b.value - a.value);
@@ -538,7 +486,6 @@ function squarify(children, rect) {
         }
 
         const shortSide = Math.min(availableWidth, availableHeight);
-        // Avoid division by zero
         if (shortSide <= 0) return;
         
         const currentWorst = worstRatio(currentRow, shortSide, scale);
@@ -609,25 +556,22 @@ function renderNodes(container, layoutItems) {
 }
 
 function applyDomainStyle(el, node) {
-    // Large Category Bar Style: Transparent container, bottom-bordered header
-    el.className = "flex flex-col"; // No box shadow or border on the container
+    el.className = "flex flex-col";
     el.style.border = 'none';
     el.style.backgroundColor = 'transparent';
     el.style.zIndex = 10;
 
     const header = document.createElement('div');
     header.style.height = `${CONFIG.domain.headerHeight}px`;
-    header.style.backgroundColor = CONFIG.domain.headerBg; // Dark Bar background
+    header.style.backgroundColor = CONFIG.domain.headerBg; 
     header.style.color = CONFIG.domain.headerText;
-    header.style.borderBottom = 'none'; // Removed thick line
-    // Changed: Reduced font size (text-sm) and added rounded corners
+    header.style.borderBottom = 'none'; 
     header.className = "flex items-center justify-center font-bold text-sm tracking-tight shrink-0 uppercase px-2 mb-1 rounded-sm";
     header.textContent = node.name;
     el.appendChild(header);
 }
 
 function applyCategoryStyle(el, node) {
-    // Changed: Removed rounded-lg for square corners
     el.className = "flex flex-col overflow-hidden shadow-sm"; 
     el.style.border = `${CONFIG.category.borderWidth}px solid ${CONFIG.category.borderColor}`;
     el.style.backgroundColor = '#fff';
@@ -645,9 +589,8 @@ function applyCategoryStyle(el, node) {
 function applySolutionStyle(el, node) {
     el.style.zIndex = 30;
     
-    // CUSTOM STYLE FOR UNKNOWN
     if (node.isUnknown) {
-        el.style.backgroundColor = '#9CA3AF'; // Gray (Slate 400)
+        el.style.backgroundColor = '#9CA3AF'; 
         el.style.color = '#ffffff';
     } else {
         const rank = node.rank || 0;
@@ -658,9 +601,6 @@ function applySolutionStyle(el, node) {
     }
     
     el.style.textShadow = '0 1px 2px rgba(0,0,0,0.15)';
-    
-    // Changed: Removed rounded-sm and shadow-sm for flat full tile look
-    // Added: Clickable cursor
     el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-pointer group";
 
     const gap = CONFIG.solution.padding;
@@ -674,9 +614,7 @@ function applySolutionStyle(el, node) {
 
     if (w > 30 && h > 24) {
         const nameEl = document.createElement('div');
-        // Increased font size and weight
         nameEl.className = "font-bold leading-tight break-words w-full px-0.5 mb-0.5 line-clamp-2";
-        // Adaptive font size: Bigger than before (12px min, 15px max)
         nameEl.style.fontSize = w < 80 ? '12px' : '15px'; 
         nameEl.textContent = node.name;
         el.appendChild(nameEl);
@@ -689,14 +627,11 @@ function applySolutionStyle(el, node) {
         }
     }
     
-    // Add Click listener for Detail Popup
     el.addEventListener('click', (e) => {
         e.stopPropagation();
         showSolutionDetailModal(node);
     });
     
-    // CUSTOM TOOLTIP LOGIC
-    // Remove native tooltip
     el.removeAttribute('title');
 
     el.addEventListener('mouseenter', (e) => {
@@ -713,13 +648,11 @@ function applySolutionStyle(el, node) {
 
     el.addEventListener('mousemove', (e) => {
         if (!tooltipEl) return;
-        // Position above the cursor with offset
         const x = e.clientX;
         const y = e.clientY - 15;
         
         tooltipEl.style.left = `${x}px`;
         tooltipEl.style.top = `${y}px`;
-        // Center horizontally relative to cursor, place above
         tooltipEl.style.transform = 'translate(-50%, -100%)';
     });
 
@@ -728,6 +661,5 @@ function applySolutionStyle(el, node) {
         tooltipEl.classList.add('hidden');
     });
     
-    // Optional: Add a subtle border to separate tiles since padding is 0
     el.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,0.15)";
 }
