@@ -122,7 +122,7 @@ function render(data) {
         // 2. Main Header: | [Domain] Solution Map & Insight
         const mainHeader = document.createElement('h2');
         mainHeader.className = "text-2xl font-bold text-slate-800 mb-8 flex items-center tracking-tight";
-        mainHeader.innerHTML = `<span class="text-blue-600 mr-3 text-3xl font-light">|</span> ${domainName} Solution Map & Insight`;
+        mainHeader.innerHTML = `<span class="text-blue-600 mr-3 text-3xl font-light">|</span> ${domainName}`;
         sectionWrapper.appendChild(mainHeader);
 
         // --- PART A: VISUAL TREEMAP FOR THIS DOMAIN ---
