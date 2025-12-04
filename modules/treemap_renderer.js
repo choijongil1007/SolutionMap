@@ -92,6 +92,9 @@ function render(data) {
     if (emptyState) {
         if (!hasData) {
             emptyState.classList.remove('hidden');
+            // Ensure insight panel is hidden too
+            const insightPanel = document.getElementById('insight-panel');
+            if (insightPanel) insightPanel.classList.add('hidden');
             return;
         } else {
             emptyState.classList.add('hidden');
@@ -172,6 +175,114 @@ function render(data) {
 
     // 4. Render to DOM
     renderNodes(container, layoutNodes);
+    
+    // 5. Render Insights (New)
+    renderInsights(data);
+}
+
+function renderInsights(data) {
+    const insightPanel = document.getElementById('insight-panel');
+    const contentBox = document.getElementById('insight-content');
+    
+    if (!insightPanel || !contentBox) return;
+
+    contentBox.innerHTML = '';
+    
+    let hasContent = false;
+
+    Object.entries(data).forEach(([domainName, categories]) => {
+        // Create Domain Section
+        const domainWrapper = document.createElement('div');
+        domainWrapper.className = "mb-8 last:mb-0";
+        
+        const domainTitle = document.createElement('h3');
+        domainTitle.className = "text-lg font-bold text-slate-900 border-l-4 border-slate-900 pl-3 mb-4 uppercase tracking-wide";
+        domainTitle.textContent = domainName;
+        
+        // Store cards here
+        const cardsContainer = document.createElement('div');
+        cardsContainer.className = "grid grid-cols-1 gap-4";
+        
+        let hasSolutionInDomain = false;
+
+        Object.entries(categories).forEach(([catName, solutions]) => {
+            solutions.forEach(sol => {
+                // Filter: Show all solutions, but visually emphasize ones with data
+                hasSolutionInDomain = true;
+                hasContent = true;
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-50 rounded-xl border border-slate-200 p-5 hover:border-blue-300 transition-colors";
+
+                // Header: Category | Name | Share | Manufacturer
+                let headerHtml = `
+                    <div class="flex flex-wrap items-start justify-between gap-4 mb-3">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded">${catName}</span>
+                                <span class="text-xs font-medium text-slate-400">제조사: ${sol.manufacturer || '-'}</span>
+                            </div>
+                            <h4 class="text-lg font-bold text-slate-800">${sol.name}</h4>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-2xl font-bold text-blue-600">${sol.share}%</span>
+                            <span class="text-xs text-slate-400 font-medium uppercase mt-2">Share</span>
+                        </div>
+                    </div>
+                `;
+
+                // Content: Pain Points & Notes
+                let bodyHtml = '';
+                const hasPainPoints = sol.painPoints && sol.painPoints.length > 0;
+                const hasNote = sol.note && sol.note.trim().length > 0;
+
+                if (hasPainPoints) {
+                    const tags = sol.painPoints.map(p => 
+                        `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-100">
+                            ${p}
+                         </span>`
+                    ).join('');
+                    
+                    bodyHtml += `
+                        <div class="mb-3">
+                            <p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Pain Points</p>
+                            <div class="flex flex-wrap gap-2">${tags}</div>
+                        </div>
+                    `;
+                }
+
+                if (hasNote) {
+                    bodyHtml += `
+                        <div class="${hasPainPoints ? 'pt-3 border-t border-slate-200/60' : ''}">
+                            <p class="text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">추가 사항</p>
+                            <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">${sol.note}</p>
+                        </div>
+                    `;
+                }
+                
+                if (!hasPainPoints && !hasNote) {
+                     bodyHtml += `
+                        <p class="text-sm text-slate-400 italic">등록된 상세 정보가 없습니다.</p>
+                     `;
+                }
+
+                card.innerHTML = headerHtml + bodyHtml;
+                cardsContainer.appendChild(card);
+            });
+        });
+
+        if (hasSolutionInDomain) {
+            domainWrapper.appendChild(domainTitle);
+            domainWrapper.appendChild(cardsContainer);
+            contentBox.appendChild(domainWrapper);
+        }
+    });
+
+    if (hasContent) {
+        insightPanel.classList.remove('hidden');
+    } else {
+        insightPanel.classList.add('hidden');
+    }
 }
 
 function buildHierarchy(data, domainHeights) {
@@ -323,7 +434,7 @@ function calculateLayout(node, rect) {
 
     if (contentRect.width <= 0 || contentRect.height <= 0) return results;
 
-    const layoutChildren = squarify(node.children, contentRect);
+    const layoutChildren = squarify(children, contentRect);
 
     layoutChildren.forEach(item => {
         let childRect = item.rect;
