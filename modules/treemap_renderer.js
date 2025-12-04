@@ -633,8 +633,10 @@ function applySolutionStyle(el, node) {
 
     if (w > 30 && h > 24) {
         const nameEl = document.createElement('div');
-        nameEl.className = "font-bold leading-tight break-words w-full px-0.5 mb-0.5 line-clamp-2";
-        nameEl.style.fontSize = w < 80 ? '12px' : '15px'; 
+        // Changed leading-tight to leading-snug to prevent clipping bottom descenders
+        nameEl.className = "font-bold leading-snug break-words w-full px-0.5 mb-0.5 line-clamp-2";
+        // Reduced font size by 1px for better fit
+        nameEl.style.fontSize = w < 80 ? '11px' : '14px'; 
         nameEl.textContent = node.name;
         el.appendChild(nameEl);
         
