@@ -21,11 +21,11 @@ const CONFIG = {
     globalPadding: 32, 
 
     domain: {
-        headerHeight: 46, 
+        headerHeight: 32, // Reduced height for the bar
         padding: 6,
         marginBottom: 24, // Space between stacked domains       
-        headerBg: 'transparent', 
-        headerText: '#171717', 
+        headerBg: '#1f2937', // Dark gray background (Bar style)
+        headerText: '#ffffff', // White text
         borderColor: 'transparent', 
         borderWidth: 0    
     },
@@ -497,11 +497,11 @@ function applyDomainStyle(el, node) {
 
     const header = document.createElement('div');
     header.style.height = `${CONFIG.domain.headerHeight}px`;
-    header.style.backgroundColor = 'transparent';
+    header.style.backgroundColor = CONFIG.domain.headerBg; // Dark Bar background
     header.style.color = CONFIG.domain.headerText;
-    // Strong bottom border acts as the "Bar"
-    header.style.borderBottom = '3px solid #171717'; 
-    header.className = "flex items-center justify-center font-extrabold text-xl tracking-tight shrink-0 uppercase px-2 mb-1";
+    header.style.borderBottom = 'none'; // Removed thick line
+    // Changed: Reduced font size (text-sm) and added rounded corners
+    header.className = "flex items-center justify-center font-bold text-sm tracking-tight shrink-0 uppercase px-2 mb-1 rounded-sm";
     header.textContent = node.name;
     el.appendChild(header);
 }
