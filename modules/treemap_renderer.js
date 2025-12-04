@@ -23,7 +23,7 @@ const CONFIG = {
     domain: {
         headerHeight: 32, // Reduced height for the bar
         padding: 6,
-        marginBottom: 24, // Space between stacked domains       
+        marginBottom: 60, // Increased space between stacked domains (24 -> 60)       
         headerBg: '#1f2937', // Dark gray background (Bar style)
         headerText: '#ffffff', // White text
         borderColor: 'transparent', 
