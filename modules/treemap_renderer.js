@@ -103,15 +103,27 @@ function render(data) {
     const AREA_PER_SOLUTION = 14000; 
 
     // --- MAIN RENDER LOOP: Process each Domain separately ---
-    // This allows [Domain Map] -> [Domain Insight] -> [Next Domain Map] ...
     
     domainEntries.forEach(([domainName, categories]) => {
         // 1. Create Wrapper for this Domain Section
         const sectionWrapper = document.createElement('div');
-        sectionWrapper.className = "flex flex-col gap-6 w-full"; // Gap between Map and Insights
+        // Added styling for distinct separation: bottom border and margin
+        sectionWrapper.className = "w-full mb-16 border-b border-slate-200 pb-16 last:border-0 last:mb-0 last:pb-0"; 
+
+        // 2. Main Header: | [Domain] Solution Map & Insight
+        const mainHeader = document.createElement('h2');
+        mainHeader.className = "text-2xl font-bold text-slate-800 mb-8 flex items-center tracking-tight";
+        mainHeader.innerHTML = `<span class="text-blue-600 mr-3 text-3xl font-light">|</span> ${domainName} Solution Map & Insight`;
+        sectionWrapper.appendChild(mainHeader);
 
         // --- PART A: VISUAL TREEMAP FOR THIS DOMAIN ---
         
+        // 3. Sub-header: [ Solution Map ]
+        const mapHeader = document.createElement('h3');
+        mapHeader.className = "text-sm font-bold text-slate-500 mb-4 uppercase tracking-wider pl-1";
+        mapHeader.innerHTML = `<span class="text-blue-500 mr-1">[</span> Solution Map <span class="text-blue-500 ml-1">]</span>`;
+        sectionWrapper.appendChild(mapHeader);
+
         // Calculate Height for this Domain
         let solutionCount = 0;
         Object.values(categories).forEach(solutions => {
@@ -122,7 +134,7 @@ function render(data) {
         solutionCount = Math.max(1, solutionCount);
         
         // Calculate dimensions
-        const effectiveWidth = containerWidth; // No global padding on container now, handled by inner logic
+        const effectiveWidth = containerWidth; 
         const requiredArea = solutionCount * AREA_PER_SOLUTION;
         let calculatedH = requiredArea / effectiveWidth;
         
@@ -133,11 +145,10 @@ function render(data) {
 
         // Map Container
         const mapContainer = document.createElement('div');
-        mapContainer.className = "relative w-full bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-sm";
+        mapContainer.className = "relative w-full bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-10"; // Added margin-bottom for spacing before insights
         mapContainer.style.height = `${finalHeight}px`;
 
         // Build Mini-Tree just for this Domain
-        // We create a fake "root" that contains just this single domain node
         const domainRoot = buildDomainTree(domainName, categories);
 
         if (domainRoot.value > 0 || Object.keys(categories).length > 0) {
@@ -177,15 +188,25 @@ function render(data) {
 function generateDomainInsights(domainName, categories) {
     let hasContent = false;
     
-    const wrapper = document.createElement('div');
-    wrapper.className = "bg-white border-t-2 border-slate-100 pt-4";
+    // Check if any content exists first
+    Object.values(categories).forEach(solutions => {
+        solutions.forEach(sol => {
+            if ((sol.painPoints && sol.painPoints.length > 0) || (sol.note && sol.note.trim().length > 0)) {
+                hasContent = true;
+            }
+        });
+    });
 
-    const title = document.createElement('div');
-    title.className = "flex items-center gap-2 mb-4";
-    title.innerHTML = `
-        <div class="w-1 h-5 bg-slate-800 rounded-full"></div>
-        <h3 class="text-base font-bold text-slate-800 uppercase tracking-wide">${domainName} <span class="text-slate-400 font-normal">Insight</span></h3>
-    `;
+    if (!hasContent) return null;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = "w-full";
+
+    // Insight Sub-Header: [ Insight ]
+    const insightHeader = document.createElement('h3');
+    insightHeader.className = "text-sm font-bold text-slate-500 mb-4 uppercase tracking-wider pl-1";
+    insightHeader.innerHTML = `<span class="text-blue-500 mr-1">[</span> Insight <span class="text-blue-500 ml-1">]</span>`;
+    wrapper.appendChild(insightHeader);
     
     const grid = document.createElement('div');
     grid.className = "grid grid-cols-1 gap-4";
@@ -196,8 +217,6 @@ function generateDomainInsights(domainName, categories) {
             const hasNote = sol.note && sol.note.trim().length > 0;
 
             if (!hasPainPoints && !hasNote) return;
-
-            hasContent = true;
 
             const card = document.createElement('div');
             card.className = "bg-slate-50 rounded-xl border border-slate-200 p-5 hover:border-blue-300 transition-colors";
@@ -248,9 +267,6 @@ function generateDomainInsights(domainName, categories) {
         });
     });
 
-    if (!hasContent) return null;
-
-    wrapper.appendChild(title);
     wrapper.appendChild(grid);
     return wrapper;
 }
