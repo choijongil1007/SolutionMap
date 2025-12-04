@@ -1,4 +1,5 @@
 
+
 import { store } from './data_model.js';
 import { showWarningModal, showConfirmModal } from '../utils/modal.js';
 
@@ -361,30 +362,53 @@ function renderPainPoints(points, preChecked = false) {
     const listContainer = document.getElementById('painpoint-list');
     listContainer.innerHTML = '';
 
-    points.forEach((point, idx) => {
-        const id = `pp-${idx}`;
+    points.forEach((point) => {
         const div = document.createElement('div');
-        div.className = "flex items-start gap-2 p-2 hover:bg-slate-50 rounded-lg cursor-pointer";
-        div.onclick = (e) => {
-            if (e.target.tagName !== 'INPUT') {
-                const cb = div.querySelector('input');
-                cb.checked = !cb.checked;
+        
+        // 초기 상태 설정
+        const isSelected = preChecked;
+
+        // 스타일 정의
+        const baseClass = "flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-200 select-none group mb-2";
+        const selectedClass = "border-blue-500 bg-blue-50/50 text-blue-900 shadow-sm ring-1 ring-blue-500/20";
+        const unselectedClass = "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-slate-50";
+
+        // 상태 적용
+        div.className = `${baseClass} ${isSelected ? selectedClass : unselectedClass}`;
+        div.dataset.value = point;
+        div.dataset.selected = isSelected ? "true" : "false";
+
+        // 아이콘 (체크 표시)
+        const icon = document.createElement('div');
+        const iconSelected = "border-blue-500 bg-blue-500 text-white";
+        const iconUnselected = "border-slate-300 bg-white text-transparent group-hover:border-blue-400";
+        
+        icon.className = `w-5 h-5 mt-0.5 rounded-full border flex items-center justify-center transition-colors shrink-0 ${isSelected ? iconSelected : iconUnselected}`;
+        icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+        // 텍스트
+        const text = document.createElement('span');
+        text.className = "text-sm flex-1 leading-relaxed font-medium";
+        text.textContent = point;
+
+        // 클릭 이벤트 핸들러
+        div.onclick = () => {
+            const currentSelected = div.dataset.selected === "true";
+            const newSelected = !currentSelected;
+            
+            div.dataset.selected = newSelected ? "true" : "false";
+            
+            if (newSelected) {
+                div.className = `${baseClass} ${selectedClass}`;
+                icon.className = `w-5 h-5 mt-0.5 rounded-full border flex items-center justify-center transition-colors shrink-0 ${iconSelected}`;
+            } else {
+                div.className = `${baseClass} ${unselectedClass}`;
+                icon.className = `w-5 h-5 mt-0.5 rounded-full border flex items-center justify-center transition-colors shrink-0 ${iconUnselected}`;
             }
         };
 
-        const checkbox = document.createElement('input');
-        checkbox.type = "checkbox";
-        checkbox.id = id;
-        checkbox.value = point;
-        checkbox.className = "mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500";
-        if (preChecked) checkbox.checked = true;
-
-        const label = document.createElement('label');
-        label.htmlFor = id;
-        label.className = "text-sm text-slate-700 cursor-pointer";
-        label.textContent = point;
-
-        div.append(checkbox, label);
+        div.appendChild(icon);
+        div.appendChild(text);
         listContainer.appendChild(div);
     });
 }
@@ -403,8 +427,8 @@ function saveSolutionFromModal() {
 
     // Collect checked pain points
     const checkedPainPoints = [];
-    listContainer.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-        checkedPainPoints.push(cb.value);
+    listContainer.querySelectorAll('div[data-selected="true"]').forEach(div => {
+        checkedPainPoints.push(div.dataset.value);
     });
 
     if (!name) {
