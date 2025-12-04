@@ -1,6 +1,5 @@
 
 
-
 import { store } from './data_model.js';
 import { showWarningModal, showConfirmModal } from '../utils/modal.js';
 
@@ -302,40 +301,48 @@ async function fetchPainPoints() {
     loader.classList.remove('hidden');
 
     try {
-        // Construct prompt for the GAS endpoint
-        // Assuming GAS takes a 'prompt' or 'q' query parameter. 
-        // Based on user provided URL, we'll try a standard GET request.
-        // We want a JSON array back.
-        const prompt = `List 5 to 8 common customer pain points for the software product "${manufacturer} ${product}" in Korean. Format the output strictly as a JSON array of strings. Do not include markdown code blocks.`;
+        // Simplified prompt for plain text output to reduce JSON parsing errors
+        const prompt = `List 5 to 8 common customer pain points for the software product "${manufacturer} ${product}" in Korean. Provide the answer as a plain text list, one item per line. Do not use numbering or markdown.`;
         
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzcdRKb5yBKr5bu9uvGt28KTQqUkPsAR80GwbURPzFeOmaRY2_i1lA4Kk_GsuNpBZuVRA/exec";
-        const url = `${GAS_URL}?q=${encodeURIComponent(prompt)}`;
+        
+        // Pass prompt to both 'q' and 'prompt' parameters to accommodate different GAS script implementations
+        const url = `${GAS_URL}?q=${encodeURIComponent(prompt)}&prompt=${encodeURIComponent(prompt)}`;
 
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("API Request Failed");
+        // Add explicit headers and mode to ensure standard browser behavior
+        const response = await fetch(url, {
+            method: 'GET',
+            mode: 'cors',
+            redirect: 'follow',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            }
+        });
+
+        if (!response.ok) throw new Error(`API Request Failed: ${response.status}`);
         
         const text = await response.text();
         
-        // Attempt to parse JSON. API might return plain text or wrapped JSON.
-        let painPoints = [];
-        try {
-            // Clean up if it's wrapped in markdown code blocks like ```json ... ```
-            let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-            painPoints = JSON.parse(cleanText);
-        } catch (e) {
-            // Fallback: split by newlines if JSON parse fails
-            painPoints = text.split('\n').filter(line => line.length > 2).map(l => l.replace(/^- /, ''));
-        }
+        // Parse: Split by newlines, filter empty or short lines
+        const painPoints = text.split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .map(line => line.replace(/^[-*•\d\.]+\s*/, '')); // Remove bullets/numbers
 
-        if (!Array.isArray(painPoints) || painPoints.length === 0) {
-             listContainer.innerHTML = '<p class="text-xs text-red-400 text-center py-4">Pain-Point를 가져올 수 없습니다. 직접 입력해주세요.</p>';
+        if (painPoints.length === 0) {
+             listContainer.innerHTML = '<p class="text-xs text-red-400 text-center py-4">결과를 가져올 수 없습니다. 직접 입력해주세요.</p>';
         } else {
              renderPainPoints(painPoints, false);
         }
 
     } catch (error) {
-        console.error(error);
-        listContainer.innerHTML = '<p class="text-xs text-red-400 text-center py-4">분석 중 오류가 발생했습니다.</p>';
+        console.error("PainPoint Fetch Error:", error);
+        let msg = "분석 중 오류가 발생했습니다.";
+        // Handle the specific error message the user reported
+        if (error.message && error.message.includes("message port closed")) {
+            msg = "브라우저 연결 오류입니다. 다시 시도해주세요.";
+        }
+        listContainer.innerHTML = `<p class="text-xs text-red-400 text-center py-4">${msg}</p>`;
     } finally {
         loader.classList.add('hidden');
     }
