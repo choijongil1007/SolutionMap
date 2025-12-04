@@ -116,7 +116,12 @@ function render(data) {
         let solutionCount = 0;
         
         Object.values(categories).forEach(solutions => {
+            // Count actual solutions + potentially 1 for the "Unknown" block if shares < 100
+            let currentShare = solutions.reduce((acc, s) => acc + s.share, 0);
             solutionCount += solutions.length;
+            if (currentShare < 100) {
+                solutionCount += 1; // Add space for the '?' block
+            }
         });
 
         // Ensure at least 1 count to avoid 0 height
@@ -193,11 +198,16 @@ function buildHierarchy(data, domainHeights) {
                 value: 0
             };
 
+            // Track total share to handle "Unknown" gap
+            let totalShare = 0;
+
             // Sort solutions by share descending
             const sortedSolutions = [...solutions].sort((a, b) => b.share - a.share);
 
             sortedSolutions.forEach((sol, index) => {
                 const shareVal = parseFloat(sol.share) || 0;
+                totalShare += shareVal;
+                
                 const safeVal = shareVal <= 0 ? 0.01 : shareVal;
                 
                 const solNode = {
@@ -205,11 +215,32 @@ function buildHierarchy(data, domainHeights) {
                     type: 'solution',
                     share: shareVal,
                     value: safeVal,
-                    rank: index 
+                    rank: index,
+                    isUnknown: false
                 };
                 catNode.children.push(solNode);
                 catNode.value += solNode.value;
             });
+
+            // Check if there is missing share (e.g., total < 100)
+            if (totalShare < 100) {
+                const remainder = 100 - totalShare;
+                // Fix floating point precision
+                const cleanRemainder = parseFloat(remainder.toFixed(2));
+                
+                if (cleanRemainder > 0) {
+                    const unknownNode = {
+                        name: '?',
+                        type: 'solution',
+                        share: cleanRemainder,
+                        value: cleanRemainder,
+                        rank: 999, // Push to end usually
+                        isUnknown: true // Flag to identify
+                    };
+                    catNode.children.push(unknownNode);
+                    catNode.value += unknownNode.value;
+                }
+            }
 
             if (catNode.value > 0) {
                 domainNode.children.push(catNode);
@@ -494,12 +525,18 @@ function applyCategoryStyle(el, node) {
 function applySolutionStyle(el, node) {
     el.style.zIndex = 30;
     
-    const rank = node.rank || 0;
-    const colorIndex = rank % CHROMATIC_PALETTE.length;
-    const bg = CHROMATIC_PALETTE[colorIndex];
-
-    el.style.backgroundColor = bg;
-    el.style.color = '#ffffff'; 
+    // CUSTOM STYLE FOR UNKNOWN
+    if (node.isUnknown) {
+        el.style.backgroundColor = '#9CA3AF'; // Gray (Slate 400)
+        el.style.color = '#ffffff';
+    } else {
+        const rank = node.rank || 0;
+        const colorIndex = rank % CHROMATIC_PALETTE.length;
+        const bg = CHROMATIC_PALETTE[colorIndex];
+        el.style.backgroundColor = bg;
+        el.style.color = '#ffffff'; 
+    }
+    
     el.style.textShadow = '0 1px 2px rgba(0,0,0,0.15)';
     
     // Changed: Removed rounded-sm and shadow-sm for flat full tile look
@@ -537,7 +574,13 @@ function applySolutionStyle(el, node) {
 
     el.addEventListener('mouseenter', (e) => {
         if (!tooltipEl) return;
-        tooltipEl.textContent = `${node.name} (${node.share}%)`;
+        
+        if (node.isUnknown) {
+            tooltipEl.innerHTML = `미확인 솔루션 (${node.share}%)<br><span class="text-red-400 text-xs mt-1 block font-medium">확인 필요</span>`;
+        } else {
+            tooltipEl.textContent = `${node.name} (${node.share}%)`;
+        }
+        
         tooltipEl.classList.remove('hidden');
     });
 
