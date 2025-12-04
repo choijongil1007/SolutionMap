@@ -1,5 +1,6 @@
 
 
+
 import { store } from './data_model.js';
 import { showSolutionDetailModal } from '../utils/modal.js';
 
@@ -435,7 +436,8 @@ function calculateLayout(node, rect) {
 
     if (contentRect.width <= 0 || contentRect.height <= 0) return results;
 
-    const layoutChildren = squarify(children, contentRect);
+    // FIX: Use node.children instead of undefined variable children
+    const layoutChildren = squarify(node.children, contentRect);
 
     layoutChildren.forEach(item => {
         let childRect = item.rect;
