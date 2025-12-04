@@ -244,21 +244,26 @@ async function exportToPDF() {
     btn.disabled = true;
 
     try {
-        const element = document.getElementById('treemap-container');
-        if (!element) throw new Error("Element not found");
+        // 1. Check Libraries
+        if (!window.html2canvas) throw new Error("html2canvas 라이브러리가 로드되지 않았습니다.");
+        if (!window.jspdf) throw new Error("jspdf 라이브러리가 로드되지 않았습니다.");
 
-        // Use html2canvas to capture the element
-        const canvas = await html2canvas(element, {
+        const element = document.getElementById('treemap-container');
+        if (!element) throw new Error("캡처할 영역을 찾을 수 없습니다.");
+
+        // 2. Capture with explicit height options for scrollable content
+        const canvas = await window.html2canvas(element, {
             scale: 2, // Higher scale for better quality
             useCORS: true,
             backgroundColor: '#ffffff', // Ensure white background
-            logging: false
+            logging: false,
+            height: element.scrollHeight,      // Capture full height
+            windowHeight: element.scrollHeight // mimic window height
         });
 
         const imgData = canvas.toDataURL('image/png');
         
-        // Initialize jsPDF (A4 Portrait)
-        // Global variable jspdf provided by CDN
+        // 3. Generate PDF
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
         
@@ -281,13 +286,14 @@ async function exportToPDF() {
             heightLeft -= pageHeight;
         }
 
-        // Save
-        const mapTitle = mapTitleInput.value || "SolutionMap";
-        pdf.save(`${mapTitle}.pdf`);
+        const mapTitle = mapTitleInput.value.trim() || "SolutionMap";
+        // Clean filename
+        const safeTitle = mapTitle.replace(/[^a-z0-9가-힣\s-_]/gi, '').trim();
+        pdf.save(`${safeTitle}.pdf`);
 
     } catch (error) {
         console.error("PDF Export Error:", error);
-        showWarningModal("PDF 생성 중 오류가 발생했습니다.");
+        showWarningModal(`PDF 생성 실패: ${error.message}`);
     } finally {
         // Reset Button
         btn.innerHTML = originalText;
