@@ -1,6 +1,7 @@
 
 
 
+
 import { store } from './data_model.js';
 import { showSolutionDetailModal } from '../utils/modal.js';
 
@@ -190,7 +191,7 @@ function renderInsights(data) {
 
     contentBox.innerHTML = '';
     
-    let hasContent = false;
+    let globalHasContent = false;
 
     Object.entries(data).forEach(([domainName, categories]) => {
         // Create Domain Section
@@ -209,9 +210,16 @@ function renderInsights(data) {
 
         Object.entries(categories).forEach(([catName, solutions]) => {
             solutions.forEach(sol => {
-                // Filter: Show all solutions, but visually emphasize ones with data
+                const hasPainPoints = sol.painPoints && sol.painPoints.length > 0;
+                const hasNote = sol.note && sol.note.trim().length > 0;
+
+                // FILTER: Only show cards that have Pain Points or Notes
+                if (!hasPainPoints && !hasNote) {
+                    return; 
+                }
+
                 hasSolutionInDomain = true;
-                hasContent = true;
+                globalHasContent = true;
 
                 const card = document.createElement('div');
                 card.className = "bg-slate-50 rounded-xl border border-slate-200 p-5 hover:border-blue-300 transition-colors";
@@ -235,8 +243,6 @@ function renderInsights(data) {
 
                 // Content: Pain Points & Notes
                 let bodyHtml = '';
-                const hasPainPoints = sol.painPoints && sol.painPoints.length > 0;
-                const hasNote = sol.note && sol.note.trim().length > 0;
 
                 if (hasPainPoints) {
                     const tags = sol.painPoints.map(p => 
@@ -262,17 +268,12 @@ function renderInsights(data) {
                     `;
                 }
                 
-                if (!hasPainPoints && !hasNote) {
-                     bodyHtml += `
-                        <p class="text-sm text-slate-400 italic">등록된 상세 정보가 없습니다.</p>
-                     `;
-                }
-
                 card.innerHTML = headerHtml + bodyHtml;
                 cardsContainer.appendChild(card);
             });
         });
 
+        // Only append the domain section if it has at least one card
         if (hasSolutionInDomain) {
             domainWrapper.appendChild(domainTitle);
             domainWrapper.appendChild(cardsContainer);
@@ -280,7 +281,7 @@ function renderInsights(data) {
         }
     });
 
-    if (hasContent) {
+    if (globalHasContent) {
         insightPanel.classList.remove('hidden');
     } else {
         insightPanel.classList.add('hidden');
