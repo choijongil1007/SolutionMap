@@ -227,6 +227,72 @@ function setupEditorActions() {
             }
         });
     }
+
+    // PDF Export Button
+    const pdfBtn = document.getElementById('btn-export-pdf');
+    if (pdfBtn) {
+        pdfBtn.addEventListener('click', exportToPDF);
+    }
+}
+
+async function exportToPDF() {
+    const btn = document.getElementById('btn-export-pdf');
+    const originalText = btn.innerHTML;
+    
+    // Set Loading State
+    btn.innerHTML = `<div class="spinner w-3.5 h-3.5 border-2 border-slate-300 border-t-blue-600 mr-1.5"></div> 생성 중...`;
+    btn.disabled = true;
+
+    try {
+        const element = document.getElementById('treemap-container');
+        if (!element) throw new Error("Element not found");
+
+        // Use html2canvas to capture the element
+        const canvas = await html2canvas(element, {
+            scale: 2, // Higher scale for better quality
+            useCORS: true,
+            backgroundColor: '#ffffff', // Ensure white background
+            logging: false
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Initialize jsPDF (A4 Portrait)
+        // Global variable jspdf provided by CDN
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        const imgWidth = 210; // A4 Width in mm
+        const pageHeight = 297; // A4 Height in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        // First page
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        // Add extra pages if content overflows
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+
+        // Save
+        const mapTitle = mapTitleInput.value || "SolutionMap";
+        pdf.save(`${mapTitle}.pdf`);
+
+    } catch (error) {
+        console.error("PDF Export Error:", error);
+        showWarningModal("PDF 생성 중 오류가 발생했습니다.");
+    } finally {
+        // Reset Button
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
 }
 
 function escapeHtml(text) {
