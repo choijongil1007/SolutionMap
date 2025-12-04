@@ -210,8 +210,10 @@ function setupSolutionModal() {
     const cancelBtn = document.getElementById('solution-modal-cancel');
     const saveBtn = document.getElementById('solution-modal-save');
     const analyzeBtn = document.getElementById('btn-analyze-painpoints');
+    const backdrop = document.getElementById('solution-modal-backdrop');
 
     cancelBtn.addEventListener('click', closeSolutionModal);
+    backdrop.addEventListener('click', closeSolutionModal); // Close on backdrop click
     saveBtn.addEventListener('click', saveSolutionFromModal);
     analyzeBtn.addEventListener('click', fetchPainPoints);
 }
@@ -238,7 +240,7 @@ function openSolutionModal(domainName, categoryName, existingSolution = null, in
     nInput.value = '';
     sInput.value = '10';
     noteInput.value = '';
-    listContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">제조사와 제품명을 입력 후 \'AI 분석\' 버튼을 눌러주세요.</p>';
+    listContainer.innerHTML = '<p class="text-xs text-gray-500 text-center py-4">제조사와 제품명을 입력 후 \'AI 분석\' 버튼을 눌러주세요.</p>';
 
     if (existingSolution) {
         title.textContent = '솔루션 수정';
@@ -368,10 +370,13 @@ function renderPainPoints(points, preChecked = false) {
         // 초기 상태 설정
         const isSelected = preChecked;
 
-        // 스타일 정의
+        // Dark Theme Styles
+        // Unselected: Dark background, Gray border, Gray text
+        const unselectedClass = "border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-500 hover:bg-gray-700";
+        // Selected: Blue tint background, Blue border, Blue/White text
+        const selectedClass = "border-blue-500 bg-blue-900/30 text-blue-100 shadow-sm ring-1 ring-blue-500/30";
+
         const baseClass = "flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-200 select-none group mb-2";
-        const selectedClass = "border-blue-500 bg-blue-50/50 text-blue-900 shadow-sm ring-1 ring-blue-500/20";
-        const unselectedClass = "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-slate-50";
 
         // 상태 적용
         div.className = `${baseClass} ${isSelected ? selectedClass : unselectedClass}`;
@@ -381,7 +386,7 @@ function renderPainPoints(points, preChecked = false) {
         // 아이콘 (체크 표시)
         const icon = document.createElement('div');
         const iconSelected = "border-blue-500 bg-blue-500 text-white";
-        const iconUnselected = "border-slate-300 bg-white text-transparent group-hover:border-blue-400";
+        const iconUnselected = "border-gray-600 bg-gray-800 text-transparent group-hover:border-gray-500";
         
         icon.className = `w-5 h-5 mt-0.5 rounded-full border flex items-center justify-center transition-colors shrink-0 ${isSelected ? iconSelected : iconUnselected}`;
         icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;

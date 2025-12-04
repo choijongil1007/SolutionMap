@@ -73,6 +73,29 @@ body {
     color: #9CA3AF;
 }
 
+/* Dark Theme Input */
+.input-dark {
+    background-color: #1f2937; /* Gray 800 */
+    border: 1px solid #374151; /* Gray 700 */
+    border-radius: 8px; 
+    padding: 8px 12px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    color: #F9FAFB; /* Gray 50 */
+    width: 100%;
+}
+
+.input-dark:focus {
+    outline: none;
+    border-color: #3B82F6; /* Blue 500 */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    background-color: #111827; /* Gray 900 */
+}
+
+.input-dark::placeholder {
+    color: #6B7280; /* Gray 500 */
+}
+
 .btn-pill {
     border-radius: 9999px;
     transition: all 0.2s ease;

@@ -1,6 +1,7 @@
 
 
 import { store } from './data_model.js';
+import { showSolutionDetailModal } from '../utils/modal.js';
 
 let container = null;
 let resizeObserver = null;
@@ -216,7 +217,11 @@ function buildHierarchy(data, domainHeights) {
                     share: shareVal,
                     value: safeVal,
                     rank: index,
-                    isUnknown: false
+                    isUnknown: false,
+                    // Pass specific fields needed for popup
+                    manufacturer: sol.manufacturer,
+                    painPoints: sol.painPoints,
+                    note: sol.note
                 };
                 catNode.children.push(solNode);
                 catNode.value += solNode.value;
@@ -540,7 +545,8 @@ function applySolutionStyle(el, node) {
     el.style.textShadow = '0 1px 2px rgba(0,0,0,0.15)';
     
     // Changed: Removed rounded-sm and shadow-sm for flat full tile look
-    el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-default group";
+    // Added: Clickable cursor
+    el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-pointer group";
 
     const gap = CONFIG.solution.padding;
     el.style.width = `${Math.max(0, parseFloat(el.style.width) - gap * 2)}px`;
@@ -567,6 +573,12 @@ function applySolutionStyle(el, node) {
             el.appendChild(shareEl);
         }
     }
+    
+    // Add Click listener for Detail Popup
+    el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showSolutionDetailModal(node);
+    });
     
     // CUSTOM TOOLTIP LOGIC
     // Remove native tooltip
