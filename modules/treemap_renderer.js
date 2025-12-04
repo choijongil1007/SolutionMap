@@ -620,7 +620,8 @@ function applySolutionStyle(el, node) {
     }
     
     el.style.textShadow = '0 1px 2px rgba(0,0,0,0.15)';
-    el.className = "flex flex-col items-center justify-center text-center p-1 hover:brightness-110 transition-all cursor-pointer group";
+    // FIX: Reduced padding to p-[2px] to give more room. Kept items-center justify-center.
+    el.className = "flex flex-col items-center justify-center text-center p-[2px] hover:brightness-110 transition-all cursor-pointer group";
 
     const gap = CONFIG.solution.padding;
     el.style.width = `${Math.max(0, parseFloat(el.style.width) - gap * 2)}px`;
@@ -633,16 +634,17 @@ function applySolutionStyle(el, node) {
 
     if (w > 30 && h > 24) {
         const nameEl = document.createElement('div');
-        // Changed leading-tight to leading-snug to prevent clipping bottom descenders
-        nameEl.className = "font-bold leading-snug break-words w-full px-0.5 mb-0.5 line-clamp-2";
-        // Reduced font size by 1px for better fit
-        nameEl.style.fontSize = w < 80 ? '11px' : '14px'; 
+        // FIX: Changed leading-snug to leading-tight (approx 1.25) or custom tight line height.
+        // Added pb-[1px] to prevent descender clipping at bottom.
+        nameEl.className = "font-bold leading-tight break-words w-full px-0.5 pb-[1px] line-clamp-2";
+        // FIX: Slightly reduced font size: 13px (was 14px), 10px (was 11px)
+        nameEl.style.fontSize = w < 80 ? '10px' : '13px'; 
         nameEl.textContent = node.name;
         el.appendChild(nameEl);
         
         if (h > 50) {
             const shareEl = document.createElement('div');
-            shareEl.className = "text-[11px] opacity-90 font-mono font-medium";
+            shareEl.className = "text-[10px] opacity-90 font-mono font-medium";
             shareEl.textContent = `${node.share}%`;
             el.appendChild(shareEl);
         }

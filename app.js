@@ -253,7 +253,7 @@ async function exportToPDF() {
 
         // 2. Capture with explicit height options for scrollable content
         const canvas = await window.html2canvas(element, {
-            scale: 4, // Increased to 4 for high quality
+            scale: 3, // Reduced from 4 to 3 for balance
             useCORS: true,
             backgroundColor: '#ffffff', // Ensure white background
             logging: false,
