@@ -48,62 +48,71 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loader = document.getElementById('app-loading');
     if(loader) loader.classList.remove('hidden');
 
-    // 1. Check for Migration
-    await checkAndMigrateData();
-
-    // 2. Init Store (Firestore Listeners)
+    // 1. Init Store (Firestore Listeners)
     await store.init();
 
-    // 3. Init Components
+    // 2. Init Components
     initTreeBuilder('tree-container');
     initTreemap('treemap-container');
     initTreemap('detail-treemap-area'); 
     initStrategyRenderer('strategy-container');
 
-    // 4. Setup Global Events
+    // 3. Setup Global Events
     setupGlobalEvents();
 
     if(loader) loader.classList.add('hidden');
 
-    // 5. Start at Home
+    // 4. Start at Home
     navigateTo(ROUTES.HOME);
+    
+    // 5. Attempt Automatic Migration (Optional - Silent Fail)
+    // checkAndMigrateData(); 
 });
 
 async function checkAndMigrateData() {
     try {
-        // Check if Firestore has any customers
         const snapshot = await getDocs(collection(db, "customers"));
-        if (!snapshot.empty) {
-            console.log("Firestore already has data. Skipping migration.");
-            return;
-        }
+        if (!snapshot.empty) return;
+        
+        // Use the manual function if auto detection passes
+        console.log("Auto-migrating...");
+        await manualMigrateData(true); 
+    } catch (e) {
+        console.warn("Auto migration skipped:", e);
+    }
+}
 
-        // Check LocalStorage
+async function manualMigrateData(silent = false) {
+    const loader = document.getElementById('app-loading');
+    
+    try {
+        if (!silent && !confirm('로컬스토리지의 데이터를 서버(Firebase)로 업로드하시겠습니까? \n이미 서버에 데이터가 있다면 중복되거나 덮어씌워질 수 있습니다.')) return;
+
+        if (loader) loader.classList.remove('hidden');
+        if (loader) loader.querySelector('p').textContent = "데이터 업로드 중...";
+
         const localData = loadData();
         if (!localData || !localData.customers || localData.customers.length === 0) {
-            console.log("No local data to migrate.");
+            if (!silent) alert('로컬스토리지에 저장된 데이터가 없습니다.');
             return;
         }
 
-        console.log("Migrating LocalStorage data to Firestore...");
+        let count = 0;
         
         // Migrate Customers
         for (const cust of localData.customers) {
-            // Use existing ID as Doc ID to preserve links
             await setDoc(doc(db, "customers", cust.id), cust);
+            count++;
         }
 
         // Migrate Maps
         if (localData.maps) {
             for (const map of localData.maps) {
-                // Ensure map content is clean
                 const cleanMap = { ...map };
                 if (!cleanMap.content) cleanMap.content = {};
-                
-                // Clean system keys from content if present (legacy bug fix)
+                // Clean system keys
                 const systemKeys = ['customers', 'maps', 'reports'];
                 systemKeys.forEach(key => delete cleanMap.content[key]);
-
                 await setDoc(doc(db, "maps", map.id), cleanMap);
             }
         }
@@ -115,13 +124,23 @@ async function checkAndMigrateData() {
             }
         }
 
-        console.log("Migration Complete.");
-        
-        // Optional: Clear local storage or keep as backup
-        // localStorage.removeItem("solution_map_v4_db"); 
+        if (!silent) {
+            alert(`성공적으로 데이터를 가져왔습니다! (고객 ${count}명)\n최신 정보를 반영하기 위해 화면을 새로고침합니다.`);
+            window.location.reload();
+        }
 
     } catch (e) {
-        console.error("Migration failed:", e);
+        console.error("Migration Failed", e);
+        if (!silent) {
+            let msg = "오류가 발생했습니다.";
+            if (e.code === 'permission-denied' || e.message.includes('permission-denied')) {
+                msg = "권한 오류: Firebase Console > Firestore Database > 규칙(Rules) 탭에서\n 읽기/쓰기 권한을 허용(allow read, write: if true;) 해주세요.";
+            }
+            alert(msg);
+        }
+    } finally {
+        if (loader) loader.classList.add('hidden');
+        if (loader) loader.querySelector('p').textContent = "데이터를 불러오는 중...";
     }
 }
 
@@ -371,6 +390,10 @@ function renderStrategy(mapId) {
 function setupGlobalEvents() {
     // 1. Home Actions
     document.getElementById('btn-new-customer').onclick = openCustomerModal;
+    
+    // Import Data Trigger
+    const btnImport = document.getElementById('btn-import-data');
+    if (btnImport) btnImport.onclick = () => manualMigrateData(false);
     
     // 2. Workspace Actions
     document.getElementById('ws-btn-back').onclick = () => navigateTo(ROUTES.HOME);
