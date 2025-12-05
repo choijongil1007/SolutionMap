@@ -4,6 +4,7 @@ import { loadData, saveData } from './utils/localstorage.js';
 import { store } from './modules/data_model.js';
 import { initTreeBuilder } from './modules/tree_builder.js';
 import { initTreemap } from './modules/treemap_renderer.js';
+import { initInsightRenderer } from './modules/insight_renderer.js';
 import { showConfirmModal, showWarningModal } from './utils/modal.js';
 
 // DOM Elements
@@ -27,6 +28,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize Components
     initTreeBuilder('tree-container');
     initTreemap('treemap-container');
+    initInsightRenderer(
+        'insight-container',
+        'tab-solution-map',
+        'tab-insight',
+        'treemap-container',
+        'empty-state'
+    );
 
     // 2. Load Data from Storage
     const initialData = loadData();

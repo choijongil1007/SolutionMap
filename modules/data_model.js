@@ -1,4 +1,5 @@
 
+
 /**
  * DataModelStore
  * Manages the application state (list of maps + current active map) and notifies listeners.
@@ -39,6 +40,27 @@ class DataModelStore {
     getData() {
         const current = this.getCurrentMap();
         return current ? current.content : {};
+    }
+
+    /**
+     * Returns a flat text representation of the current solution map.
+     * Used for providing context to the AI model.
+     */
+    getSolutionContextString() {
+        const data = this.getData();
+        const lines = [];
+        
+        Object.entries(data).forEach(([domain, categories]) => {
+            Object.entries(categories).forEach(([category, solutions]) => {
+                solutions.forEach(sol => {
+                    const mf = sol.manufacturer ? `[${sol.manufacturer}] ` : '';
+                    lines.push(`- ${domain} > ${category}: ${mf}${sol.name}`);
+                });
+            });
+        });
+
+        if (lines.length === 0) return "No solutions defined in the current architecture.";
+        return lines.join('\n');
     }
 
     // --- Subscription ---

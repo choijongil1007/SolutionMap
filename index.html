@@ -9,7 +9,18 @@
     <link href="style.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Marked.js for Markdown Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
+    <!-- Import Map for Google GenAI SDK -->
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.run/@google/genai"
+      }
+    }
+    </script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -115,18 +126,28 @@
 
                 <!-- Right Panel: Treemap + Insight -->
                 <section class="w-full flex-1 flex flex-col bg-white relative">
-                    <div class="p-4 border-b border-slate-100 shrink-0 flex items-center justify-between z-10 bg-white">
-                        <h2 class="text-lg font-bold text-slate-700">솔루션 맵</h2>
-                        <!-- Export PDF Button Removed -->
+                    <!-- Tab Header -->
+                    <div class="px-4 border-b border-slate-200 shrink-0 flex items-center gap-6 bg-white z-10">
+                        <button id="tab-solution-map" class="py-4 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors">
+                            Solution Map
+                        </button>
+                        <button id="tab-insight" class="py-4 text-sm font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition-colors">
+                            Competitive Insight
+                        </button>
                     </div>
                     
-                    <!-- Treemap Container (Modified to stack Domain sections) -->
+                    <!-- Treemap Container (Default View) -->
                     <div id="treemap-container" class="w-full min-h-[600px] relative bg-slate-50 flex flex-col p-8 gap-12">
                         <!-- Domain Section (Map + Insight) will be injected here -->
                     </div>
 
-                    <!-- Empty state overlay -->
-                    <div id="empty-state" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-white z-0">
+                    <!-- Insight Container (Hidden View) -->
+                    <div id="insight-container" class="hidden w-full min-h-[600px] bg-white flex flex-col p-8">
+                         <!-- Content injected by insight_renderer.js -->
+                    </div>
+
+                    <!-- Empty state overlay (Only for Treemap) -->
+                    <div id="empty-state" class="hidden absolute inset-0 top-[57px] flex flex-col items-center justify-center bg-white z-0">
                         <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
                         </div>
@@ -160,7 +181,7 @@
         </div>
     </div>
 
-    <!-- Solution Add/Edit Modal (Updated to Dark Theme) -->
+    <!-- Solution Add/Edit Modal -->
     <div id="solution-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity opacity-0" id="solution-modal-backdrop"></div>
         <div class="relative bg-black border border-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-lg transform scale-95 opacity-0 transition-all duration-200 max-h-[90vh] flex flex-col" id="solution-modal-panel">
@@ -221,7 +242,7 @@
         </div>
     </div>
 
-    <!-- Solution Detail Modal (New) -->
+    <!-- Solution Detail Modal -->
     <div id="solution-detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity opacity-0" id="detail-modal-backdrop"></div>
         <div class="relative bg-black border border-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-md transform scale-95 opacity-0 transition-all duration-200 max-h-[90vh] flex flex-col" id="detail-modal-panel">
