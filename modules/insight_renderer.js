@@ -195,16 +195,32 @@ ${categoryListString}
 1.  **## 1. 요약**
     - Brief executive summary favoring Our Product based on the customer's specific environment.
 
-2.  **## 2. 고객 사용 솔루션과의 통합성**
+2.  **## 2. 고객이 사용 중인 솔루션과의 통합성**
     (Leave a blank line here)
     **HTML Content Only**:
-    Wrap in \`<div class="mb-10 flex flex-col gap-6">\`:
-    - **Card 1 (${ourProduct})**: \`<div class="border border-blue-200 bg-blue-50/50 rounded-xl p-6 shadow-sm">\`
-        - Title: \`<h3 class="text-xl font-bold text-slate-700 mb-4 text-base">${ourProduct} (자사)</h3>\`
-        - List: \`<ul class="list-disc pl-5 space-y-1 text-base text-slate-700">...\</ul>\` (Compare integration with registered solutions).
-    - **Card 2 (${competitor})**: \`<div class="border border-slate-200 bg-slate-50/50 rounded-xl p-6 shadow-sm">\`
-        - Title: \`<h3 class="text-xl font-bold text-slate-700 mb-4 text-base">${competitor} (경쟁사)</h3>\`
-        - List: \`<ul class="list-disc pl-5 space-y-1 text-base text-slate-700">...\</ul>\` (Compare integration with registered solutions).
+    Wrap in \`<div class="mb-10 grid grid-cols-1 md:grid-cols-2 gap-6">\`:
+    
+    - **Left Column (${ourProduct})**: 
+        \`<div class="border border-blue-200 bg-blue-50/30 rounded-xl overflow-hidden shadow-sm">\`
+        - Header: \`<div class="bg-blue-100/50 px-5 py-4 border-b border-blue-200"><h3 class="font-bold text-blue-800 text-lg">${ourProduct} (자사)</h3></div>\`
+        - Body: \`<div class="p-5 space-y-3">\`
+            - Integration Items (Create 3-4 key integration points based on customer's map):
+              \`<div class="flex items-start gap-3 p-3 bg-white rounded-lg border border-blue-100 shadow-sm">\`
+                - Icon: \`<div class="shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 text-xs font-bold">✓</div>\`
+                - Text: \`<div><div class="font-bold text-slate-700 text-sm mb-0.5">[Target Solution] 연동</div><div class="text-sm text-slate-600 leading-snug">[Short description of benefit, e.g. Native API support provided]</div></div>\`
+              \`</div>\`
+        \`</div>\`
+    
+    - **Right Column (${competitor})**: 
+        \`<div class="border border-slate-200 bg-slate-50/30 rounded-xl overflow-hidden shadow-sm">\`
+        - Header: \`<div class="bg-slate-100/50 px-5 py-4 border-b border-slate-200"><h3 class="font-bold text-slate-700 text-lg">${competitor} (경쟁사)</h3></div>\`
+        - Body: \`<div class="p-5 space-y-3">\`
+            - Integration Items:
+              \`<div class="flex items-start gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm">\`
+                - Icon: \`<div class="shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 text-xs font-bold">-</div>\`
+                - Text: \`<div><div class="font-bold text-slate-700 text-sm mb-0.5">[Target Solution] 연동</div><div class="text-sm text-slate-600 leading-snug">[Short description, e.g. Requires 3rd party plugin]</div></div>\`
+              \`</div>\`
+        \`</div>\`
 
 3.  **## 3. 기능 상세 비교**
     (Leave a blank line here)
