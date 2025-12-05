@@ -1,5 +1,5 @@
 
-import { loadData } from './utils/localstorage.js'; // Kept ONLY for migration
+
 import { store } from './modules/data_model.js';
 import { initTreeBuilder } from './modules/tree_builder.js';
 import { initTreemap } from './modules/treemap_renderer.js';
@@ -80,100 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 5. Start at Home
     navigateTo(ROUTES.HOME);
-    
-    // 6. Attempt Automatic Migration (Optional - Silent Fail)
-    // checkAndMigrateData(); 
 });
-
-async function checkAndMigrateData() {
-    try {
-        const snapshot = await getDocs(collection(db, "customers"));
-        if (!snapshot.empty) return;
-        
-        // Use the manual function if auto detection passes
-        console.log("Auto-migrating...");
-        await manualMigrateData(true); 
-    } catch (e) {
-        console.warn("Auto migration skipped:", e);
-    }
-}
-
-async function manualMigrateData(silent = false) {
-    const loader = document.getElementById('app-loading');
-    
-    try {
-        if (!silent && !confirm('로컬스토리지의 데이터를 서버(Firebase)로 업로드하시겠습니까? \n이미 서버에 데이터가 있다면 중복되거나 덮어씌워질 수 있습니다.')) return;
-
-        if (loader) loader.classList.remove('hidden');
-        if (loader) loader.querySelector('p').textContent = "데이터 업로드 중...";
-
-        const localData = loadData();
-        if (!localData || !localData.customers || localData.customers.length === 0) {
-            if (!silent) alert('로컬스토리지에 저장된 데이터가 없습니다.');
-            return;
-        }
-
-        let count = 0;
-        
-        // Migrate Customers
-        for (const cust of localData.customers) {
-            // Ensure ID exists
-            if (cust.id) {
-                await setDoc(doc(db, "customers", cust.id), cust);
-            } else {
-                await addDoc(collection(db, "customers"), cust);
-            }
-            count++;
-        }
-
-        // Migrate Maps
-        if (localData.maps) {
-            for (const map of localData.maps) {
-                const cleanMap = { ...map };
-                if (!cleanMap.content) cleanMap.content = {};
-                // Clean system keys
-                const systemKeys = ['customers', 'maps', 'reports'];
-                systemKeys.forEach(key => delete cleanMap.content[key]);
-                
-                if (map.id) {
-                    await setDoc(doc(db, "maps", map.id), cleanMap);
-                } else {
-                    await addDoc(collection(db, "maps"), cleanMap);
-                }
-            }
-        }
-
-        // Migrate Reports
-        if (localData.reports) {
-            for (const rep of localData.reports) {
-                if (rep.id) {
-                    await setDoc(doc(db, "reports", rep.id), rep);
-                } else {
-                    await addDoc(collection(db, "reports"), rep);
-                }
-            }
-        }
-
-        if (!silent) {
-            alert(`성공적으로 데이터를 가져왔습니다! (고객 ${count}명)`);
-            // Reload isn't strictly necessary with reactive listeners, but good for a clean state
-            window.location.reload();
-        }
-
-    } catch (e) {
-        console.error("Migration Failed", e);
-        if (!silent) {
-            let msg = "오류가 발생했습니다.";
-            if (e.code === 'permission-denied' || e.message.includes('permission-denied')) {
-                msg = "권한 오류: Firebase Console > Firestore Database > 규칙(Rules) 탭에서\n 읽기/쓰기 권한을 허용(allow read, write: if true;) 해주세요.";
-            }
-            alert(msg);
-        }
-    } finally {
-        if (loader) loader.classList.add('hidden');
-        if (loader) loader.querySelector('p').textContent = "데이터를 불러오는 중...";
-    }
-}
 
 // --- Navigation / Routing ---
 
@@ -422,10 +329,6 @@ function renderStrategy(mapId) {
 function setupGlobalEvents() {
     // 1. Home Actions
     document.getElementById('btn-new-customer').onclick = openCustomerModal;
-    
-    // Import Data Trigger
-    const btnImport = document.getElementById('btn-import-data');
-    if (btnImport) btnImport.onclick = () => manualMigrateData(false);
     
     // 2. Workspace Actions
     document.getElementById('ws-btn-back').onclick = () => navigateTo(ROUTES.HOME);
