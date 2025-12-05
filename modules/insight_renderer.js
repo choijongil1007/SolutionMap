@@ -1,5 +1,3 @@
-
-
 import { store } from './data_model.js';
 import { showWarningModal } from '../utils/modal.js';
 
@@ -185,10 +183,10 @@ ${categoryListString}
 - **Tone**: For table cells and list items, use **concise, short noun-ending phrases** (e.g., "지원함", "연동 우수", "설치 필요", "미지원") instead of full sentences like "~합니다", "~습니다", or "~이다".
 - **Formatting**:
     - **NO MARKDOWN BOLD**: Do NOT use \`**\` characters anywhere in the response. Use HTML \`<b>\` tags if emphasis is needed.
-    - For HTML sections (2, 3, and 4), output **RAW HTML** directly.
-    - **DO NOT** wrap the HTML in markdown code blocks (\`\`\`html ... \`\`\`).
-    - **DO NOT INDENT** HTML tags. Start every HTML tag at the very beginning of the line.
-    - Font sizes for HTML content must be \`text-base\`.
+    - **NO CODE BLOCKS**: Do NOT wrap HTML in \`\`\`html ... \`\`\`.
+    - **DO NOT INDENT HTML**: Start every HTML tag at the very beginning of the line.
+    - **Headers**: Use Markdown (\`## Title\`) for the 4 main sections.
+    - **Spacing**: Ensure a blank line separates the Markdown header from the HTML content below it.
 
 **Report Structure:**
 
@@ -196,30 +194,36 @@ ${categoryListString}
     - Brief executive summary favoring Our Product based on the customer's specific environment.
 
 2.  **## 2. 고객 사용 솔루션과의 통합성**
-    - **Format**: HTML Block.
-    - **Layout**: Vertical Stack. Wrap everything in \`<div class="mb-10 flex flex-col gap-6">\`.
-    - **Card 1 (${ourProduct})**: Blue theme (\`bg-blue-50/50 border-blue-200\`).
-    - **Card 2 (${competitor})**: Slate theme (\`bg-slate-50/50 border-slate-200\`).
-    - **Content Logic**: Bulleted list (\`<ul class="list-disc pl-5 space-y-1 text-base text-slate-700">\`).
-    - **Items**: Compare integration with specific solutions found in the "Customer's Current Architecture" list.
+    (Leave a blank line here)
+    **HTML Content Only**:
+    Wrap in \`<div class="mb-10 flex flex-col gap-6">\`:
+    - **Card 1 (${ourProduct})**: \`<div class="border border-blue-200 bg-blue-50/50 rounded-xl p-6 shadow-sm">\`
+        - Title: \`<h3 class="text-xl font-bold text-slate-700 mb-4 text-base">${ourProduct} (자사)</h3>\`
+        - List: \`<ul class="list-disc pl-5 space-y-1 text-base text-slate-700">...\</ul>\` (Compare integration with registered solutions).
+    - **Card 2 (${competitor})**: \`<div class="border border-slate-200 bg-slate-50/50 rounded-xl p-6 shadow-sm">\`
+        - Title: \`<h3 class="text-xl font-bold text-slate-700 mb-4 text-base">${competitor} (경쟁사)</h3>\`
+        - List: \`<ul class="list-disc pl-5 space-y-1 text-base text-slate-700">...\</ul>\` (Compare integration with registered solutions).
 
 3.  **## 3. 기능 상세 비교**
-    - **Format**: HTML Table.
-    - **Layout**: Use \`<div class="mb-10"><table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden">\` ... \`</table></div>\`.
-    - **Column Config**: **YOU MUST USE** \`<colgroup><col style="width:10%"><col style="width:30%"><col style="width:30%"><col style="width:30%"></colgroup>\` to strictly set column widths (10%, 30%, 30%, 30%).
-    - **Headers**: \`<thead class="bg-slate-50 border-b border-slate-200"><tr><th class="p-3 border-r border-slate-200 text-slate-700 font-bold">구분</th><th class="p-3 border-r border-slate-200 text-blue-700 font-bold">${ourProduct} (자사)</th><th class="p-3 border-r border-slate-200 text-slate-600 font-bold">${competitor} (경쟁사)</th><th class="p-3 text-slate-600 font-bold">비고</th></tr></thead>\`.
-    - **Body**: \`<tbody class="text-slate-700 text-base">...</tbody>\`. Cells padding: \`p-3 border-b border-slate-200 border-r border-slate-200 last:border-r-0\`.
-    - **Rows**: 연동성, 기능 적합성, 성능, 리스크.
-    - **Content Style**: Use short noun phrases (e.g. "지원함", "우수함").
-    - **Remarks (비고)**: Keep content **extremely concise** (shorten by ~10% compared to normal).
+    (Leave a blank line here)
+    **HTML Content Only**:
+    Wrap in \`<div class="mb-10">\`:
+    - Table: \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden">\`
+    - Columns: **MUST INCLUDE** \`<colgroup><col style="width:10%"><col style="width:30%"><col style="width:30%"><col style="width:30%"></colgroup>\`
+    - Header: \`<thead class="bg-slate-50 border-b border-slate-200"><tr><th class="p-3 border-r border-slate-200 text-slate-700 font-bold">구분</th><th class="p-3 border-r border-slate-200 text-blue-700 font-bold">${ourProduct}</th><th class="p-3 border-r border-slate-200 text-slate-600 font-bold">${competitor}</th><th class="p-3 text-slate-600 font-bold">비고</th></tr></thead>\`
+    - Body: \`<tbody class="text-slate-700 text-base">...</tbody>\`
+    - Rows: 연동성, 기능 적합성, 성능, 리스크.
+    - Style: Cells \`p-3 border-b border-slate-200 border-r border-slate-200 last:border-r-0\`. Use concise noun-ending phrases.
+    - Note: Keep "비고" (Remarks) column content extremely concise.
 
 4.  **## 4. 차별화 메시지**
-    - **Format**: HTML Block.
-    - **Layout**: Vertical Stack. Wrap in \`<div class="mb-10 flex flex-col gap-4">\`.
-    - Create 3 Cards highlighting why Our Product is better for *this specific customer*.
-    - Card Style: \`border border-indigo-100 bg-white shadow-sm rounded-xl p-5 hover:shadow-md transition-all\`.
-    - Title Style: \`text-indigo-600 font-bold mb-2 text-base\`.
-    - Text Style: \`text-base text-slate-700 leading-relaxed\`.
+    (Leave a blank line here)
+    **HTML Content Only**:
+    Wrap in \`<div class="mb-10 flex flex-col gap-4">\`:
+    - Create 3 Cards highlighting competitive advantages.
+    - Card: \`<div class="border border-indigo-100 bg-white shadow-sm rounded-xl p-5 hover:shadow-md transition-all">\`
+    - Title: \`<div class="text-indigo-600 font-bold mb-2 text-base">...</div>\`
+    - Text: \`<div class="text-base text-slate-700 leading-relaxed">...</div>\`
 `;
 
     try {
@@ -251,9 +255,11 @@ ${categoryListString}
 
         // --- PRE-PROCESSING FIX ---
         // 1. Remove markdown code fences (```html, ```)
-        markdownText = markdownText.replace(/^```\w*\s*$/gm, "").replace(/```/g, "");
+        // Ensure we handle case insensitivity and optional text after backticks
+        markdownText = markdownText.replace(/```[a-zA-Z]*\n?/g, "").replace(/```/g, "");
 
         // 2. Remove indentation for HTML lines (prevents marked.js from treating them as code blocks)
+        // Only strip spaces at start of lines that look like HTML tags
         markdownText = markdownText.replace(/^[ \t]+(?=<)/gm, "");
         markdownText = markdownText.replace(/^[ \t]+(?=<\/)/gm, "");
 
