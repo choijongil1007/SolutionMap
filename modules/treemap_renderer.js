@@ -1,5 +1,3 @@
-
-
 import { store } from './data_model.js';
 import { showSolutionDetailModal } from '../utils/modal.js';
 
@@ -53,8 +51,11 @@ export function initTreemap(containerId) {
 
     // Subscribe to data changes
     store.subscribe(() => {
-        // Render specifically for this container
-        render(container, store.getData());
+        // Render specifically for this container.
+        // Wrap in requestAnimationFrame to ensure layout updates from UI changes (like adding a node) are ready
+        window.requestAnimationFrame(() => {
+            render(container, store.getData());
+        });
     });
 
     // Handle Resize
@@ -95,14 +96,9 @@ function render(container, data) {
     container.innerHTML = '';
     
     // Handle empty state
-    // Note: This logic assumes 'empty-state' ID is unique or handled externally. 
-    // If multiple maps exist on one page, this logic might need refinement, 
-    // but for now we only check if the current map has data.
     const domainEntries = Object.entries(data);
     const hasData = domainEntries.length > 0;
     
-    // Only toggle empty state if we are rendering the main editor map (heuristic check)
-    // or if the logic is generic enough.
     if (container.id === 'treemap-container') {
         const emptyState = document.getElementById('empty-state');
         if (emptyState) {

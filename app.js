@@ -86,7 +86,11 @@ function navigateTo(route, params = {}) {
                 if (params.mapId) {
                     // Use requestAnimationFrame to ensure the DOM has updated (removed hidden class)
                     // and layout metrics (clientWidth) are available for the Treemap renderer.
-                    requestAnimationFrame(() => renderEditor(params.mapId));
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                             renderEditor(params.mapId);
+                        });
+                    });
                 }
                 break;
             case ROUTES.MAP_DETAIL:
@@ -338,7 +342,8 @@ function setupGlobalEvents() {
 function setupModalEvents() {
     // Customer Modal
     modals.customer.btnCancel.onclick = closeCustomerModal;
-    modals.customer.btnSave.onclick = () => {
+    
+    const saveCustomer = () => {
         const name = modals.customer.input.value.trim();
         if(name) {
             store.addCustomer(name);
@@ -346,6 +351,16 @@ function setupModalEvents() {
             renderHome();
         }
     };
+
+    modals.customer.btnSave.onclick = saveCustomer;
+
+    // Add Enter Key Support
+    modals.customer.input.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter') {
+            e.preventDefault(); // Prevent default if necessary
+            modals.customer.btnSave.click(); // Click the button to trigger logic
+        }
+    });
 
     // Save Map Modal
     modals.saveMap.btnCancel.onclick = closeSaveMapModal;
