@@ -216,7 +216,8 @@ function renderWorkspace(customerId) {
         mapEmpty.classList.add('hidden');
         maps.forEach(map => {
             const el = document.createElement('div');
-            el.className = "bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between hover:border-blue-400 hover:shadow-md transition-all cursor-pointer";
+            // Modified: removed hover:border-blue-400, added hover:shadow-xl hover:-translate-y-1
+            el.className = "bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-200 cursor-pointer";
             el.innerHTML = `
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600">
@@ -260,7 +261,8 @@ function renderWorkspace(customerId) {
         repEmpty.classList.add('hidden');
         reports.forEach(rep => {
             const el = document.createElement('div');
-            el.className = "bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer";
+            // Modified: removed hover:border-indigo-400, added hover:shadow-xl hover:-translate-y-1
+            el.className = "bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between hover:shadow-xl hover:-translate-y-1 transition-all duration-200 cursor-pointer";
             el.innerHTML = `
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600">
@@ -385,6 +387,15 @@ function setupGlobalEvents() {
     document.getElementById('report-btn-export').onclick = () => {
         window.print();
     };
+    
+    // New: Go to Workspace from Report Detail
+    const btnReportWorkspace = document.getElementById('report-btn-workspace');
+    if (btnReportWorkspace) {
+        btnReportWorkspace.onclick = () => {
+            const customer = store.getCurrentCustomer();
+            navigateTo(ROUTES.WORKSPACE, { customerId: customer?.id });
+        };
+    }
 
     // 6. Strategy Maker Actions
     document.getElementById('strategy-btn-back').onclick = () => {

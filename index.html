@@ -213,10 +213,15 @@
                     </button>
                     <h1 id="report-title" class="text-xl font-bold text-slate-900">Report Title</h1>
                 </div>
-                <button id="report-btn-export" class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    PDF 내보내기
-                </button>
+                <div class="flex items-center gap-2">
+                    <button id="report-btn-workspace" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-200 transition-colors hidden-print">
+                        워크스페이스로 가기
+                    </button>
+                    <button id="report-btn-export" class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        PDF 내보내기
+                    </button>
+                </div>
             </header>
             <main class="p-10 bg-white rounded-b-2xl report-content max-w-4xl mx-auto" id="report-content-body">
                 <!-- Report Content Injected Here -->
