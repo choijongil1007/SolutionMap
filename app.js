@@ -1,5 +1,3 @@
-
-
 import { loadData, saveData } from './utils/localstorage.js';
 import { store } from './modules/data_model.js';
 import { initTreeBuilder } from './modules/tree_builder.js';
@@ -268,14 +266,6 @@ function renderMapDetail(mapId) {
     const map = store.getCurrentMap();
     if(map) {
         document.getElementById('detail-map-title').textContent = map.title;
-        
-        // Re-use treemap renderer but targeting the detail container
-        // The initTreemap was called with 'detail-treemap-area'
-        // We just need to ensure the renderer knows which data to render.
-        // The renderer subscribes to store. So selecting map updates it.
-        // However, we have 2 renderers (editor, detail). 
-        // We need to trigger a specific update or rely on the store broadcast.
-        // Store broadcast updates ALL subscribed renderers with current map data.
         store.notify(); 
     }
 }
@@ -294,6 +284,14 @@ function renderReportDetail(reportId) {
 function setupGlobalEvents() {
     // 1. Home Actions
     document.getElementById('btn-new-customer').onclick = openCustomerModal;
+    
+    // Reset Data Button
+    document.getElementById('btn-reset-app').onclick = () => {
+        showConfirmModal("정말 모든 데이터를 삭제하고 앱을 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.", () => {
+            localStorage.clear();
+            window.location.reload();
+        });
+    };
 
     // 2. Workspace Actions
     document.getElementById('ws-btn-back').onclick = () => navigateTo(ROUTES.HOME);

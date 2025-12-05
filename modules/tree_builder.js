@@ -49,21 +49,22 @@ function render(data) {
     const scrollTop = container.scrollTop;
 
     container.innerHTML = '';
-    const domainKeys = Object.keys(data);
+    const domainKeys = Object.keys(data || {});
 
-    if (domainKeys.length === 0) {
-        // Only show empty message if no temp inputs exist
-        if (document.querySelectorAll('.temp-input-row').length === 0) {
-             container.innerHTML = `
-                <div id="empty-msg" class="flex flex-col items-center justify-center h-48 text-slate-400">
-                    <p class="text-sm font-medium">데이터가 없습니다</p>
-                    <p class="text-xs mt-1 text-slate-400">'대분류 추가' 버튼을 눌러 시작하세요.</p>
-                </div>`;
-        }
-    }
+    // Check if we have valid domains
+    let hasValidDomains = false;
 
     domainKeys.forEach(domainName => {
         const categories = data[domainName];
+
+        // CRITICAL FIX: Skip if the value is an Array or null. 
+        // Domains must be Objects (containing categories).
+        // This prevents 'customers', 'maps' lists from being rendered as domains.
+        if (!categories || typeof categories !== 'object' || Array.isArray(categories)) {
+            return;
+        }
+
+        hasValidDomains = true;
         const isExpanded = expandedState.has(`d-${domainName}`);
         
         // 1. Domain Wrapper
@@ -199,6 +200,17 @@ function render(data) {
         }
         container.appendChild(domainEl);
     });
+
+    if (!hasValidDomains) {
+        // Only show empty message if no temp inputs exist
+        if (document.querySelectorAll('.temp-input-row').length === 0) {
+             container.innerHTML = `
+                <div id="empty-msg" class="flex flex-col items-center justify-center h-48 text-slate-400">
+                    <p class="text-sm font-medium">데이터가 없습니다</p>
+                    <p class="text-xs mt-1 text-slate-400">'대분류 추가' 버튼을 눌러 시작하세요.</p>
+                </div>`;
+        }
+    }
     
     // Restore scroll
     container.scrollTop = scrollTop;

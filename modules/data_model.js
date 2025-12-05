@@ -27,18 +27,33 @@ class DataModelStore {
             this.state.reports = Array.isArray(initialData.reports) ? initialData.reports : [];
         }
         
-        // Migration: Rename 'General' to 'K 금융사' if it exists (User Request)
+        // --- SANITIZATION & MIGRATION ---
+
+        // 1. Data Cleaning: Remove system keys if they accidentally got saved into map content
+        // This fixes the issue where 'customers', 'maps' appear as tree nodes
+        const systemKeys = ['customers', 'maps', 'reports', 'currentCustomerId', 'currentMapId', 'currentReportId'];
+        this.state.maps.forEach(map => {
+            if (map.content) {
+                systemKeys.forEach(key => {
+                    if (key in map.content) {
+                        delete map.content[key];
+                    }
+                });
+            }
+        });
+
+        // 2. Migration: Rename 'General' to 'K 금융사'
         const generalCust = this.state.customers.find(c => c.name === "General");
         if (generalCust) {
             generalCust.name = "K 금융사";
         }
 
-        // Migration for legacy data (maps without customerId)
-        // Assign them to a "K 금융사" customer if they exist
+        // 3. Migration: Handle orphaned maps
         const orphanedMaps = this.state.maps.filter(m => !m.customerId);
         if (orphanedMaps.length > 0) {
             let defaultCustomer = this.state.customers.find(c => c.name === "K 금융사");
             if (!defaultCustomer) {
+                // If even 'K 금융사' doesn't exist, create it
                 defaultCustomer = { id: crypto.randomUUID(), name: "K 금융사", createdAt: Date.now() };
                 this.state.customers.push(defaultCustomer);
             }
@@ -80,7 +95,8 @@ class DataModelStore {
 
     getData() {
         const map = this.getCurrentMap();
-        return map ? map.content : {};
+        // Return a defensive copy or ensure it's an object
+        return map ? (map.content || {}) : {};
     }
 
     getSolutionContextString() {
@@ -88,7 +104,11 @@ class DataModelStore {
         const lines = [];
         
         Object.entries(data).forEach(([domain, categories]) => {
+            // Guard against corrupted data structure
+            if (typeof categories !== 'object' || Array.isArray(categories)) return;
+
             Object.entries(categories).forEach(([category, solutions]) => {
+                if (!Array.isArray(solutions)) return;
                 solutions.forEach(sol => {
                     const mf = sol.manufacturer ? `[${sol.manufacturer}] ` : '';
                     lines.push(`- ${domain} > ${category}: ${mf}${sol.name}`);
