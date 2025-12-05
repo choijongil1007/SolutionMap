@@ -116,7 +116,7 @@
             </div>
         </div>
 
-        <!-- VIEW 3: EDITOR (Same as before but refined) -->
+        <!-- VIEW 3: EDITOR -->
         <div id="view-editor" class="hidden view-section bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col min-h-[700px]">
             <header class="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shrink-0 rounded-t-2xl z-20">
                 <div class="flex items-center gap-4">
@@ -137,7 +137,7 @@
                 <!-- Tree Builder -->
                 <section class="w-full md:w-[320px] flex flex-col bg-slate-50/50 shrink-0">
                     <div class="p-4 border-b border-slate-200/60 flex justify-between items-center">
-                        <h2 class="text-sm font-bold text-slate-600">구조 편집</h2>
+                        <h2 class="text-lg font-bold text-slate-800">솔루션 맵 작성</h2>
                         <button id="btn-add-domain" class="text-xs bg-white border border-blue-200 text-blue-600 px-2 py-1 rounded hover:bg-blue-50">대분류 추가</button>
                     </div>
                     <div id="tree-container" class="p-4 space-y-3 flex-1 overflow-y-auto max-h-[600px]"></div>
@@ -148,13 +148,13 @@
 
                 <!-- Visualization Area -->
                 <section class="flex-1 flex flex-col bg-white relative">
-                    <div class="px-6 border-b border-slate-200 flex items-center gap-6 bg-white z-10 sticky top-0">
-                        <button id="tab-solution-map" class="py-4 text-lg font-bold text-blue-600 border-b-2 border-blue-600">Solution Map</button>
-                        <button id="tab-insight" class="py-4 text-lg font-bold text-slate-500 border-b-2 border-transparent hover:text-slate-800">Competitive Insight</button>
+                    <!-- Changed: Removed Tabs, replaced with simple header -->
+                    <div class="px-6 py-4 border-b border-slate-200 flex items-center bg-white z-10 sticky top-0">
+                        <h2 class="text-lg font-bold text-slate-800">Solution Map</h2>
                     </div>
                     
                     <div id="treemap-container" class="w-full min-h-[600px] p-8 bg-slate-50"></div>
-                    <div id="insight-container" class="hidden w-full min-h-[600px] p-8 bg-white"></div>
+                    <!-- Insight Container Removed -->
                     
                     <div id="empty-state" class="hidden absolute inset-0 top-[60px] flex flex-col items-center justify-center bg-white z-0">
                         <p class="text-slate-400">데이터를 추가하여 시각화하세요.</p>

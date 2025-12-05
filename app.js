@@ -2,7 +2,7 @@ import { loadData, saveData } from './utils/localstorage.js';
 import { store } from './modules/data_model.js';
 import { initTreeBuilder } from './modules/tree_builder.js';
 import { initTreemap } from './modules/treemap_renderer.js';
-import { initInsightRenderer } from './modules/insight_renderer.js';
+// Removed insight renderer import
 import { showConfirmModal, showWarningModal } from './utils/modal.js';
 
 // --- Router State ---
@@ -47,13 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Also init treemap for detail view
     initTreemap('detail-treemap-area'); 
     
-    initInsightRenderer(
-        'insight-container',
-        'tab-solution-map',
-        'tab-insight',
-        'treemap-container',
-        'empty-state'
-    );
+    // Removed initInsightRenderer call
 
     // 2. Load Data
     const initialData = loadData();
