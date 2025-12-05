@@ -3,12 +3,7 @@
 import { store } from './data_model.js';
 import { showWarningModal } from '../utils/modal.js';
 
-let container = null;
-let tabMap = null;
-let tabInsight = null;
-let treemapContainer = null;
 let insightContainer = null;
-let emptyStateEl = null;
 
 // GAS Proxy URL provided
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzcdRKb5yBKr5bu9uvGt28KTQqUkPsAR80GwbURPzFeOmaRY2_i1lA4Kk_GsuNpBZuVRA/exec";
@@ -23,68 +18,23 @@ const saveModal = {
     btnCancel: document.getElementById('btn-cancel-save-report')
 };
 
-// Initialize the module
-export function initInsightRenderer(containerId, tabMapId, tabInsightId, treemapId, emptyStateId) {
+// Initialize the module for Strategy View
+export function initStrategyRenderer(containerId) {
     insightContainer = document.getElementById(containerId);
-    tabMap = document.getElementById(tabMapId);
-    tabInsight = document.getElementById(tabInsightId);
-    treemapContainer = document.getElementById(treemapId);
-    emptyStateEl = document.getElementById(emptyStateId);
+    if (!insightContainer) return;
 
-    if (!insightContainer || !tabMap || !tabInsight) return;
-
-    // Render Initial UI for Insight Tab
+    // Render Initial UI
     renderUI();
-
-    // Tab Events
-    tabMap.addEventListener('click', () => switchTab('map'));
-    tabInsight.addEventListener('click', () => switchTab('insight'));
 
     // Setup Save Modal Events
     setupSaveModal();
-}
-
-function switchTab(mode) {
-    if (mode === 'map') {
-        // Tab Styles
-        tabMap.classList.replace('border-transparent', 'border-blue-600');
-        tabMap.classList.replace('text-slate-500', 'text-blue-600');
-        
-        tabInsight.classList.replace('border-blue-600', 'border-transparent');
-        tabInsight.classList.replace('text-blue-600', 'text-slate-500');
-
-        // Content Visibility
-        insightContainer.classList.add('hidden');
-        treemapContainer.classList.remove('hidden');
-        
-        // Handle Empty State Visibility
-        const hasData = Object.keys(store.getData()).length > 0;
-        if (!hasData) {
-            emptyStateEl.classList.remove('hidden');
-        } else {
-            emptyStateEl.classList.add('hidden');
-        }
-
-    } else {
-        // Tab Styles
-        tabInsight.classList.replace('border-transparent', 'border-blue-600');
-        tabInsight.classList.replace('text-slate-500', 'text-blue-600');
-        
-        tabMap.classList.replace('border-blue-600', 'border-transparent');
-        tabMap.classList.replace('text-blue-600', 'text-slate-500');
-
-        // Content Visibility
-        treemapContainer.classList.add('hidden');
-        emptyStateEl.classList.add('hidden'); // Always hide empty state in Insight view
-        insightContainer.classList.remove('hidden');
-    }
 }
 
 function renderUI() {
     insightContainer.innerHTML = `
         <div class="flex flex-col h-full gap-6">
             <!-- Input Section -->
-            <div class="bg-slate-50 border border-slate-200 rounded-xl p-6">
+            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                 <h3 class="text-lg font-bold text-slate-800 mb-4">경쟁 분석 파라미터</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>

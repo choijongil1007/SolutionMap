@@ -2,7 +2,7 @@ import { loadData, saveData } from './utils/localstorage.js';
 import { store } from './modules/data_model.js';
 import { initTreeBuilder } from './modules/tree_builder.js';
 import { initTreemap } from './modules/treemap_renderer.js';
-// Removed insight renderer import
+import { initStrategyRenderer } from './modules/insight_renderer.js';
 import { showConfirmModal, showWarningModal } from './utils/modal.js';
 
 // --- Router State ---
@@ -11,7 +11,8 @@ const ROUTES = {
     WORKSPACE: 'view-workspace',
     EDITOR: 'view-editor',
     MAP_DETAIL: 'view-map-detail',
-    REPORT_DETAIL: 'view-report-detail'
+    REPORT_DETAIL: 'view-report-detail',
+    STRATEGY: 'view-strategy'
 };
 
 // --- DOM References ---
@@ -46,8 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initTreemap('treemap-container');
     // Also init treemap for detail view
     initTreemap('detail-treemap-area'); 
-    
-    // Removed initInsightRenderer call
+    // Init Strategy Renderer
+    initStrategyRenderer('strategy-container');
 
     // 2. Load Data
     const initialData = loadData();
@@ -67,7 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function navigateTo(route, params = {}) {
     // Hide all views
-    Object.values(views).forEach(el => el.classList.add('hidden'));
+    Object.values(views).forEach(el => {
+        if(el) el.classList.add('hidden');
+    });
     
     // Show target view
     const target = views[route];
@@ -100,6 +103,11 @@ function navigateTo(route, params = {}) {
                 break;
             case ROUTES.REPORT_DETAIL:
                 if (params.reportId) renderReportDetail(params.reportId);
+                break;
+            case ROUTES.STRATEGY:
+                if (params.mapId) {
+                    renderStrategy(params.mapId);
+                }
                 break;
         }
     }
@@ -260,8 +268,6 @@ function renderEditor(mapId) {
     const map = store.getCurrentMap();
     if (map) {
         document.getElementById('editor-map-title').textContent = map.title;
-        // Trigger re-render of tree/treemap implicitly via subscribers
-        // But for editor specific UI:
     }
 }
 
@@ -280,6 +286,16 @@ function renderReportDetail(reportId) {
     if(report) {
         document.getElementById('report-title').textContent = report.title;
         document.getElementById('report-content-body').innerHTML = report.contentHTML;
+    }
+}
+
+function renderStrategy(mapId) {
+    store.setCurrentMap(mapId);
+    const map = store.getCurrentMap();
+    if(map) {
+        // Strategy view doesn't necessarily have a "title" element for the map name, 
+        // but we can set one if added to HTML.
+        // For now, it just uses current map context for generation.
     }
 }
 
@@ -325,6 +341,10 @@ function setupGlobalEvents() {
         const map = store.getCurrentMap();
         if(map) navigateTo(ROUTES.EDITOR, { mapId: map.id });
     };
+    document.getElementById('detail-btn-strategy').onclick = () => {
+        const map = store.getCurrentMap();
+        if(map) navigateTo(ROUTES.STRATEGY, { mapId: map.id });
+    };
 
     // 5. Report Detail Actions
     document.getElementById('report-btn-back').onclick = () => {
@@ -335,7 +355,13 @@ function setupGlobalEvents() {
         window.print();
     };
 
-    // 6. Modal Events
+    // 6. Strategy Maker Actions
+    document.getElementById('strategy-btn-back').onclick = () => {
+        const map = store.getCurrentMap();
+        if(map) navigateTo(ROUTES.MAP_DETAIL, { mapId: map.id });
+    };
+
+    // 7. Modal Events
     setupModalEvents();
 }
 
