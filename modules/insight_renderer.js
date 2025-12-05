@@ -32,7 +32,7 @@ export function initStrategyRenderer(containerId) {
 
 function renderUI() {
     insightContainer.innerHTML = `
-        <div class="flex flex-col h-full gap-6">
+        <div class="flex flex-col gap-6">
             <!-- Input Section -->
             <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                 <h3 class="text-lg font-bold text-slate-800 mb-4">경쟁 분석 파라미터</h3>
@@ -57,7 +57,6 @@ function renderUI() {
             </div>
 
             <!-- Result Section -->
-            <!-- Changed: Removed fixed height constraints and overflow-hidden to allow natural page scrolling -->
             <div class="flex flex-col min-h-[400px] border border-slate-100 rounded-xl bg-white shadow-inner relative" id="insight-result-container">
                 
                 <!-- Content Area: Static position to flow naturally. Added padding bottom for the action bar -->
@@ -179,7 +178,8 @@ ${categoryListString}
 **Requirements:**
 - Output specifically in **Korean**.
 - **Important**: In the HTML sections, **DO NOT** use Markdown bold syntax (like \`**text**\`). Use \`<b>\` tags or CSS classes instead.
-- **CRITICAL**: For HTML sections (2 and 4), output **RAW HTML** directly. **DO NOT** wrap the HTML in markdown code blocks (like \`\`\`html ... \`\`\`). This is vital for rendering.
+- **CRITICAL**: For HTML sections (2 and 4), output **RAW HTML** directly. **DO NOT** wrap the HTML in markdown code blocks.
+- **CRITICAL**: Do NOT indent HTML tags. Start them at the beginning of the line.
 - **Important**: Font sizes for HTML content must be \`text-base\`.
 
 **Report Structure:**
@@ -244,9 +244,11 @@ ${categoryListString}
         }
 
         // --- PRE-PROCESSING FIX ---
-        // Clean up any markdown code blocks that the LLM might have added around HTML content
-        // This regex removes ```html and ``` tokens but leaves the inner content
-        markdownText = markdownText.replace(/```html/gi, "").replace(/```/g, "");
+        // 1. Remove markdown code fences (```html, ```)
+        markdownText = markdownText.replace(/^```\w*\s*$/gm, "").replace(/```/g, "");
+
+        // 2. Remove indentation for HTML lines (prevents marked.js from treating them as code blocks)
+        markdownText = markdownText.replace(/^\s+(<[a-z/])/gim, "$1");
 
         if (window.marked) {
             resultArea.innerHTML = window.marked.parse(markdownText);
