@@ -1,4 +1,5 @@
 
+
 import { db } from '../utils/firebase.js';
 import { 
     collection, 
@@ -29,6 +30,9 @@ class DataModelStore {
             currentMapId: null,
             currentReportId: null
         };
+        
+        // Draft Map State (Not persisted yet)
+        this.draftMap = null;
         
         this.listeners = [];
         this.unsubscribes = [];
@@ -97,7 +101,11 @@ class DataModelStore {
     }
 
     getCurrentMap() {
-        return this.state.maps.find(m => m.id === this.state.currentMapId);
+        if (this.state.currentMapId) {
+            return this.state.maps.find(m => m.id === this.state.currentMapId);
+        }
+        // If no ID is selected, return the draft map if it exists
+        return this.draftMap;
     }
 
     getCurrentReport() {
@@ -130,7 +138,6 @@ class DataModelStore {
     }
 
     getFullState() {
-        // Only for debug or local backup, not used for persistence anymore
         return {
             customers: this.state.customers,
             maps: this.state.maps,
@@ -163,14 +170,11 @@ class DataModelStore {
 
     async deleteCustomer(id) {
         try {
-            // Delete customer doc
             await deleteDoc(doc(db, "customers", id));
             
-            // Delete related maps (In a real backend this should be a cloud function, here client-side)
             const mapIds = this.state.maps.filter(m => m.customerId === id).map(m => m.id);
             mapIds.forEach(mid => deleteDoc(doc(db, "maps", mid)));
 
-            // Delete related reports
             const repIds = this.state.reports.filter(r => r.customerId === id).map(r => r.id);
             repIds.forEach(rid => deleteDoc(doc(db, "reports", rid)));
             
@@ -186,24 +190,44 @@ class DataModelStore {
     }
 
     // Map Actions
-    async createMap(customerId, title) {
+
+    // Initialize a draft map in memory (Do not save to DB yet)
+    initDraftMap(customerId) {
+        this.state.currentMapId = null;
+        this.draftMap = {
+            customerId: customerId,
+            title: "새 솔루션 맵",
+            updatedAt: Date.now(),
+            content: {}
+        };
+        this.notify();
+    }
+
+    // Save the draft map to Firestore
+    async saveDraftToFirestore(title) {
+        if (!this.draftMap) return null;
+        
         try {
-            const docRef = await addDoc(collection(db, "maps"), {
-                customerId: customerId,
-                title: title || "새 솔루션 맵",
-                updatedAt: Date.now(),
-                content: {}
-            });
+            this.draftMap.title = title || "새 솔루션 맵";
+            this.draftMap.updatedAt = Date.now();
+
+            const docRef = await addDoc(collection(db, "maps"), this.draftMap);
+            
+            // Set as current active map and clear draft
             this.state.currentMapId = docRef.id;
+            this.draftMap = null;
+            
             this.notify();
             return docRef.id;
         } catch (e) {
-            console.error("Error creating map: ", e);
+            console.error("Error saving draft map: ", e);
+            throw e;
         }
     }
 
     setCurrentMap(id) {
         this.state.currentMapId = id;
+        this.draftMap = null; // Clear draft when switching to real map
         this.notify();
     }
 
@@ -242,23 +266,33 @@ class DataModelStore {
     }
 
     // --- Editor Actions (Operate on currentMap) ---
-    // These methods modify content locally and then push the update to Firestore
 
     _getCloneContent() {
         const map = this.getCurrentMap();
         if (!map) return null;
-        // Deep clone content to modify
         return JSON.parse(JSON.stringify(map.content || {}));
     }
 
     async _saveContent(newContent) {
         const map = this.getCurrentMap();
         if (!map) return;
-        const mapRef = doc(db, "maps", map.id);
-        await updateDoc(mapRef, {
-            content: newContent,
-            updatedAt: Date.now()
-        });
+        
+        // Optimistic update in memory is already handled by caller changing map.content
+        // We just need to persist if it's a real map
+        if (map.id) {
+            try {
+                const mapRef = doc(db, "maps", map.id);
+                await updateDoc(mapRef, {
+                    content: newContent,
+                    updatedAt: Date.now()
+                });
+            } catch (e) {
+                console.error("Error saving content:", e);
+            }
+        } else {
+            // It's a draft, just update timestamp in memory
+            map.updatedAt = Date.now();
+        }
     }
 
     addDomain(name) {
@@ -268,7 +302,6 @@ class DataModelStore {
         
         content[name] = {};
         
-        // Optimistic update
         const map = this.getCurrentMap();
         map.content = content; 
         this.notify();

@@ -106,12 +106,12 @@ function navigateTo(route, params = {}) {
                 if (params.customerId) renderWorkspace(params.customerId);
                 break;
             case ROUTES.EDITOR:
+                // Handle draft vs existing
                 if (params.mapId) {
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                             renderEditor(params.mapId);
-                        });
-                    });
+                     renderEditor(params.mapId);
+                } else {
+                     // If no mapId, assume Draft is already init via store.initDraftMap
+                     renderEditor(null);
                 }
                 break;
             case ROUTES.MAP_DETAIL:
@@ -297,7 +297,11 @@ function renderWorkspace(customerId) {
 }
 
 function renderEditor(mapId) {
-    store.setCurrentMap(mapId);
+    if (mapId) {
+        store.setCurrentMap(mapId);
+    } 
+    // If mapId is null, store.getCurrentMap() will return draftMap which is set by initDraftMap
+
     const map = store.getCurrentMap();
     if (map) {
         document.getElementById('editor-map-title').textContent = map.title;
@@ -334,11 +338,13 @@ function setupGlobalEvents() {
     
     // 2. Workspace Actions
     document.getElementById('ws-btn-back').onclick = () => navigateTo(ROUTES.HOME);
+    
+    // Changed: Don't create DB entry immediately. Use Draft.
     document.getElementById('ws-btn-create-map').onclick = async () => {
         const customer = store.getCurrentCustomer();
         if(customer) {
-            const mapId = await store.createMap(customer.id);
-            navigateTo(ROUTES.EDITOR, { mapId });
+            store.initDraftMap(customer.id);
+            navigateTo(ROUTES.EDITOR); // No mapId param
         }
     };
 
@@ -352,7 +358,12 @@ function setupGlobalEvents() {
     if(btnGotoMap) {
         btnGotoMap.onclick = () => {
             const map = store.getCurrentMap();
-            if(map) navigateTo(ROUTES.MAP_DETAIL, { mapId: map.id });
+            // If it's a draft (no id), we cannot go to map detail
+            if(map && map.id) {
+                navigateTo(ROUTES.MAP_DETAIL, { mapId: map.id });
+            } else {
+                showWarningModal("저장되지 않은 맵입니다. 먼저 저장해주세요.");
+            }
         };
     }
     
@@ -439,25 +450,42 @@ function setupModalEvents() {
 
     // Save Map Modal
     modals.saveMap.btnCancel.onclick = closeSaveMapModal;
+    
     modals.saveMap.btnConfirm.onclick = async () => {
         const name = modals.saveMap.input.value.trim();
         if(name) {
             const map = store.getCurrentMap();
             if(map) {
-                await store.updateMapTitle(map.id, name);
-                
-                // Show toast
-                const toast = document.getElementById('save-toast');
-                toast.classList.remove('hidden');
-                toast.classList.add('toast-visible');
-                setTimeout(() => toast.classList.add('hidden'), 2500);
-
-                document.getElementById('editor-map-title').textContent = name;
-                closeSaveMapModal();
-                navigateTo(ROUTES.MAP_DETAIL, { mapId: map.id });
+                // Check if it's existing or draft
+                if (map.id) {
+                    // Update existing
+                    await store.updateMapTitle(map.id, name);
+                    showToast();
+                    document.getElementById('editor-map-title').textContent = name;
+                    closeSaveMapModal();
+                } else {
+                    // Save draft to DB
+                    try {
+                        const newId = await store.saveDraftToFirestore(name);
+                        showToast();
+                        document.getElementById('editor-map-title').textContent = name;
+                        closeSaveMapModal();
+                        // Navigate to avoid URL/state mismatch issues
+                        navigateTo(ROUTES.EDITOR, { mapId: newId });
+                    } catch (e) {
+                        showWarningModal("저장 중 오류가 발생했습니다.");
+                    }
+                }
             }
         }
     };
+}
+
+function showToast() {
+    const toast = document.getElementById('save-toast');
+    toast.classList.remove('hidden');
+    toast.classList.add('toast-visible');
+    setTimeout(() => toast.classList.add('hidden'), 2500);
 }
 
 // --- Modal Logic ---
@@ -481,11 +509,20 @@ function closeCustomerModal() {
 
 function openSaveMapModal() {
     const map = store.getCurrentMap();
+    if (!map) return;
+    
+    // VALIDATION: Check if map content is empty
+    const mapData = map.content || {};
+    if (Object.keys(mapData).length === 0) {
+        showWarningModal("데이터를 입력해주세요. 빈 맵은 저장할 수 없습니다.");
+        return;
+    }
+
     const customer = store.getCurrentCustomer();
     
     let suggestedName = map.title;
     if (map.title === "새 솔루션 맵" && customer) {
-        const domains = Object.keys(map.content || {});
+        const domains = Object.keys(mapData);
         const mainCategory = domains.length > 0 ? domains[0] : "General";
         suggestedName = `${customer.name}_${mainCategory}_SolutionMap`;
     }
