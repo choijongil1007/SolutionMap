@@ -242,15 +242,32 @@ ${categoryListString}
         const responseText = await response.text();
         let markdownText = responseText;
 
+        // Improved Error Handling Logic
         try {
             const json = JSON.parse(responseText);
+            
+            // 1. Check for API Error explicitly
+            if (json.error) {
+                const code = json.error.code;
+                const msg = json.error.message;
+                // Propagate to outer catch with structure
+                throw new Error(JSON.stringify({ code, message: msg }));
+            }
+
+            // 2. Check for successful content
             if (json.candidates && json.candidates[0] && json.candidates[0].content && json.candidates[0].content.parts) {
                 markdownText = json.candidates[0].content.parts[0].text;
-            } else if (json.error) {
-                throw new Error(json.error.message || "API Error");
-            }
+            } 
         } catch (e) {
-            // Ignore
+            // If it's the specific error we threw above, re-throw it to outer catch
+            try {
+                const errObj = JSON.parse(e.message);
+                if (errObj && errObj.code) {
+                    throw e; 
+                }
+            } catch (inner) {
+                // Not our JSON error, so it might be just a text parsing error (which is fine, we use responseText)
+            }
         }
 
         // --- PRE-PROCESSING FIX ---
@@ -276,10 +293,29 @@ ${categoryListString}
     } catch (error) {
         console.error("Gemini Error:", error);
         loading.classList.add('hidden');
+        
+        let errorMessage = error.message;
+        let errorTitle = "분석 중 오류가 발생했습니다.";
+
+        // Handle JSON error message from inner try/catch
+        try {
+            const errObj = JSON.parse(error.message);
+            
+            // Handle 503 Overloaded or 'overloaded' message string
+            if (errObj.code === 503 || errObj.status === 'UNAVAILABLE' || (typeof errObj.message === 'string' && errObj.message.includes('overloaded'))) {
+                errorTitle = "AI 서비스 과부하";
+                errorMessage = "현재 사용자가 많아 AI 모델 응답이 지연되고 있습니다. 잠시 후(약 30초) 다시 버튼을 눌러주세요.";
+            } else if (errObj.message) {
+                errorMessage = errObj.message;
+            }
+        } catch(e) {
+            // fallback to raw message
+        }
+
         resultArea.innerHTML = `
             <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                <h4 class="font-bold mb-1">분석 중 오류가 발생했습니다.</h4>
-                <p class="text-sm">${error.message}</p>
+                <h4 class="font-bold mb-1">${errorTitle}</h4>
+                <p class="text-sm">${errorMessage}</p>
             </div>
         `;
         resultArea.classList.remove('hidden');
