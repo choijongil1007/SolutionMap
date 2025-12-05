@@ -1,7 +1,6 @@
 
 
 import { store } from './data_model.js';
-import { GoogleGenAI } from "@google/genai";
 
 let container = null;
 let tabMap = null;
@@ -9,6 +8,9 @@ let tabInsight = null;
 let treemapContainer = null;
 let insightContainer = null;
 let emptyStateEl = null;
+
+// GAS Proxy URL provided
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzcdRKb5yBKr5bu9uvGt28KTQqUkPsAR80GwbURPzFeOmaRY2_i1lA4Kk_GsuNpBZuVRA/exec";
 
 // Initialize the module
 export function initInsightRenderer(containerId, tabMapId, tabInsightId, treemapId, emptyStateId) {
@@ -138,13 +140,6 @@ async function generateInsight() {
     const currentMapContext = store.getSolutionContextString();
 
     try {
-        const apiKey = process.env.API_KEY; // Using env variable as per strict instructions
-        if (!apiKey) {
-           throw new Error("API Key is missing. Please configure process.env.API_KEY in index.html.");
-        }
-
-        const ai = new GoogleGenAI({ apiKey: apiKey });
-        
         let prompt = `
 You are an expert Solution Architect and Technology Consultant.
 I need a competitive analysis report based on the following context.
@@ -172,13 +167,36 @@ Do not include any introductory fluff. Start directly with the Report Title.
 Language: Korean.
 `;
 
-        // Upgraded to gemini-3-pro-preview for complex reasoning tasks (Architecture analysis)
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: prompt,
+        // Use standard fetch to call GAS Proxy
+        const url = `${GAS_URL}?q=${encodeURIComponent(prompt)}&prompt=${encodeURIComponent(prompt)}`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            mode: 'cors',
+            redirect: 'follow',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            }
         });
 
-        const markdownText = response.text;
+        if (!response.ok) {
+            throw new Error(`API Request Failed: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        let markdownText = responseText;
+
+        // Try to parse as JSON (in case GAS returns the raw Gemini structure)
+        try {
+            const json = JSON.parse(responseText);
+            if (json.candidates && json.candidates[0] && json.candidates[0].content && json.candidates[0].content.parts) {
+                // Extract the actual text content from Gemini JSON structure
+                markdownText = json.candidates[0].content.parts[0].text;
+            }
+        } catch (e) {
+            // Not valid JSON or different structure, treat as plain text
+            console.log("Response was not JSON, treating as raw text.");
+        }
 
         // Render Markdown
         if (window.marked) {
@@ -194,11 +212,11 @@ Language: Korean.
         console.error("Gemini Error:", error);
         loading.classList.add('hidden');
         
-        // Show friendly error with raw details if dev
+        // Show friendly error with raw details
         resultArea.innerHTML = `
             <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
                 <h4 class="font-bold mb-1">분석 중 오류가 발생했습니다.</h4>
-                <p class="text-sm">API 설정을 확인하거나 잠시 후 다시 시도해주세요.</p>
+                <p class="text-sm">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>
                 <p class="text-xs mt-2 text-red-500 font-mono">${error.message}</p>
             </div>
         `;
