@@ -1,3 +1,4 @@
+
 import { db } from '../utils/firebase.js';
 import { 
     collection, 
@@ -37,28 +38,43 @@ class DataModelStore {
     async init() {
         if (this.initialized) return;
 
+        const loadPromises = [];
+
+        // Helper to wrap onSnapshot in a Promise that resolves on first emit
+        const subscribeWithPromise = (q, updateFn) => {
+            return new Promise((resolve) => {
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    updateFn(snapshot);
+                    this.notify();
+                    resolve(); // Resolve promise on first data arrival
+                }, (error) => {
+                    console.error("Firestore sync error:", error);
+                    resolve(); // Resolve even on error to allow app to start
+                });
+                this.unsubscribes.push(unsubscribe);
+            });
+        };
+
         // Subscribe to Customers
         const qCust = query(collection(db, "customers"), orderBy("createdAt", "desc"));
-        const unsubCust = onSnapshot(qCust, (snapshot) => {
+        loadPromises.push(subscribeWithPromise(qCust, (snapshot) => {
             this.state.customers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            this.notify();
-        });
+        }));
 
         // Subscribe to Maps
         const qMaps = query(collection(db, "maps"), orderBy("updatedAt", "desc"));
-        const unsubMaps = onSnapshot(qMaps, (snapshot) => {
+        loadPromises.push(subscribeWithPromise(qMaps, (snapshot) => {
             this.state.maps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            this.notify();
-        });
+        }));
 
         // Subscribe to Reports
         const qReps = query(collection(db, "reports"), orderBy("createdAt", "desc"));
-        const unsubReps = onSnapshot(qReps, (snapshot) => {
+        loadPromises.push(subscribeWithPromise(qReps, (snapshot) => {
             this.state.reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            this.notify();
-        });
+        }));
 
-        this.unsubscribes.push(unsubCust, unsubMaps, unsubReps);
+        // Wait for all initial data to load
+        await Promise.all(loadPromises);
         this.initialized = true;
     }
 
