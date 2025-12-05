@@ -142,6 +142,17 @@ async function generateInsight() {
 
     const currentMapContext = store.getSolutionContextString();
     
+    // Extract actual categories from the store to use as criteria
+    const mapData = store.getData();
+    const categoriesSet = new Set();
+    Object.values(mapData).forEach(domainCats => {
+        Object.keys(domainCats).forEach(cat => categoriesSet.add(cat));
+    });
+    // Fallback if no categories exist yet
+    const categoryListString = categoriesSet.size > 0 
+        ? Array.from(categoriesSet).join(', ') 
+        : "주요 아키텍처 시스템(DB, API, 보안 등)";
+
     // Construct Prompt
     let prompt = `
 You are an expert Solution Architect and Pre-sales Technology Consultant.
@@ -174,13 +185,15 @@ Provide a **concise**, visually appealing, and persuasive report that highlights
     - **Card 2 (Bottom)**: Analysis for **${competitor}**. Style: \`border border-slate-200 bg-slate-50/50 rounded-xl p-5 w-full\`.
     - Inside each card:
         - Title: \`<h4 class="font-bold mb-3 text-lg text-slate-800">Title</h4>\`
-        - Content: Use an unordered list for points: \`<ul class="list-disc pl-5 space-y-1 text-sm text-slate-700"><li>Point 1</li><li>Point 2</li></ul>\`.
+        - Content: Use an unordered list (\`<ul>\`). **Analyze integration capability specifically against the customer's map categories: ${categoryListString}**. Ensure each point addresses how the product connects with these specific systems.
     - **Sub-section: 통합 편의성 비교 (Integration Convenience)**
-        - Immediately after the cards, insert a small HTML table (not markdown) summarizing integration.
-        - Style: \`w-full mt-4 text-sm text-center border-collapse\`. Headers: [구분 | ${ourProduct} | ${competitor}].
-        - Rows: DB 연동, API 유연성, 보안 규정 준수.
-        - Values: Use symbols strictly: 🟢 (High/Good), 🟡 (Medium), 🔴 (Low/Bad).
-        - Add a title before the table: \`<h4 class="text-md font-bold text-slate-700 mt-6 mb-2">통합 편의성 비교</h4>\`
+        - Immediately after the cards, insert a small HTML table (not markdown).
+        - Style: \`w-full mt-4 text-sm text-center border-collapse\`. 
+        - Headers: [구분 | ${ourProduct} | ${competitor}].
+        - Rows: **Use the actual categories from the map as rows: ${categoryListString}.**
+        - Values: Use symbols strictly: **O** (Excellent), **△** (Average), **X** (Poor). 
+        - Text Alignment: Center all cells.
+        - Add a title before the table: \`<h4 class="text-md font-bold text-slate-700 mt-6 mb-2">통합 편의성 요약</h4>\`
 
 3.  **## 3. 상세 비교표**
     - Standard Markdown Table.
