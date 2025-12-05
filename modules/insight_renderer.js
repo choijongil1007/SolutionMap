@@ -1,4 +1,5 @@
 
+
 import { store } from './data_model.js';
 
 let container = null;
@@ -166,13 +167,14 @@ Do not include any introductory fluff. Start directly with the Report Title.
 Language: Korean.
 `;
 
-        // Switch to POST using URLSearchParams to handle long prompts and avoid CORS preflight (Simple Request)
+        // Switch to POST with JSON body (text/plain) to avoid GAS CORS preflight and form-data echoing issues
         const response = await fetch(GAS_URL, {
             method: 'POST',
-            body: new URLSearchParams({
+            body: JSON.stringify({
                 'q': prompt,
                 'prompt': prompt
             })
+            // Do NOT set Content-Type header; let browser default to text/plain
         });
 
         if (!response.ok) {
@@ -182,16 +184,25 @@ Language: Korean.
         const responseText = await response.text();
         let markdownText = responseText;
 
-        // Try to parse as JSON (in case GAS returns the raw Gemini structure)
         try {
             const json = JSON.parse(responseText);
+            
+            // Check if response is valid JSON but just an echo of input (common GAS error)
+            if (json.q && !json.candidates) {
+                throw new Error("GAS Script echoed request. Please check server script.");
+            }
+
             if (json.candidates && json.candidates[0] && json.candidates[0].content && json.candidates[0].content.parts) {
-                // Extract the actual text content from Gemini JSON structure
                 markdownText = json.candidates[0].content.parts[0].text;
+            } else if (json.error) {
+                throw new Error(json.error.message || "API Error");
             }
         } catch (e) {
-            // Not valid JSON or different structure, treat as plain text
-            console.log("Response was not JSON, treating as raw text.");
+            // If JSON parse fails, check if the response looks like URL-encoded query parameters
+            if (responseText.startsWith('q=') || responseText.includes('%0A')) {
+                throw new Error("Server returned raw request body. The GAS script may not support POST requests correctly.");
+            }
+            // Otherwise, treat as raw text (maybe the script returned raw markdown)
         }
 
         // Render Markdown
@@ -208,12 +219,14 @@ Language: Korean.
         console.error("Gemini Error:", error);
         loading.classList.add('hidden');
         
-        // Show friendly error with raw details
+        let errorMsg = error.message;
+        if (errorMsg.includes("Unexpected token")) errorMsg = "응답 형식이 올바르지 않습니다.";
+
         resultArea.innerHTML = `
             <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
                 <h4 class="font-bold mb-1">분석 중 오류가 발생했습니다.</h4>
-                <p class="text-sm">서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.</p>
-                <p class="text-xs mt-2 text-red-500 font-mono">${error.message}</p>
+                <p class="text-sm">서버 응답을 처리할 수 없습니다.</p>
+                <p class="text-xs mt-2 text-red-500 font-mono bg-white p-2 rounded border border-red-100">${errorMsg}</p>
             </div>
         `;
         resultArea.classList.remove('hidden');

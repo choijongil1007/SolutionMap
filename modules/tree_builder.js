@@ -1,4 +1,5 @@
 
+
 import { store } from './data_model.js';
 import { showWarningModal, showConfirmModal } from '../utils/modal.js';
 
@@ -306,13 +307,14 @@ async function fetchPainPoints() {
         
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzcdRKb5yBKr5bu9uvGt28KTQqUkPsAR80GwbURPzFeOmaRY2_i1lA4Kk_GsuNpBZuVRA/exec";
         
-        // Switch to POST using URLSearchParams for "Simple Request" (No CORS preflight)
+        // Switch to POST with JSON body (text/plain) to avoid GAS CORS preflight and form-data echoing issues
         const response = await fetch(GAS_URL, {
             method: 'POST',
-            body: new URLSearchParams({
+            body: JSON.stringify({
                 'q': prompt,
                 'prompt': prompt
             })
+            // Do NOT set Content-Type header; let browser default to text/plain
         });
 
         if (!response.ok) throw new Error(`API Request Failed: ${response.status}`);
@@ -323,11 +325,21 @@ async function fetchPainPoints() {
         // Try to parse as JSON (Gemini API format) in case GAS returns full JSON response
         try {
             const json = JSON.parse(responseText);
+
+            // Check if response is valid JSON but just an echo of input (common GAS error)
+            if (json.q && !json.candidates) {
+                throw new Error("GAS Echo Error");
+            }
+
             if (json.candidates && json.candidates[0] && json.candidates[0].content && json.candidates[0].content.parts) {
                 // Extract the actual text content from Gemini JSON structure
                 rawContent = json.candidates[0].content.parts[0].text;
             }
         } catch (e) {
+            // If JSON parse fails, check if the response looks like URL-encoded query parameters
+            if (responseText.startsWith('q=') || responseText.startsWith('{"q":')) {
+                throw new Error("Server returned raw request body.");
+            }
             // Not valid JSON or different structure, treat as plain text
         }
         
@@ -349,6 +361,9 @@ async function fetchPainPoints() {
         // Handle the specific error message the user reported
         if (error.message && error.message.includes("message port closed")) {
             msg = "브라우저 연결 오류입니다. 다시 시도해주세요.";
+        }
+        if (error.message && (error.message.includes("GAS Echo Error") || error.message.includes("request body"))) {
+             msg = "서버 설정 오류: 스크립트가 요청을 처리하지 못하고 있습니다.";
         }
         listContainer.innerHTML = `<p class="text-xs text-red-400 text-center py-4">${msg}</p>`;
     } finally {
