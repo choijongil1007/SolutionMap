@@ -1,3 +1,4 @@
+
 import { loadData } from './utils/localstorage.js'; // Kept ONLY for migration
 import { store } from './modules/data_model.js';
 import { initTreeBuilder } from './modules/tree_builder.js';
@@ -5,7 +6,7 @@ import { initTreemap } from './modules/treemap_renderer.js';
 import { initStrategyRenderer } from './modules/insight_renderer.js';
 import { showConfirmModal, showWarningModal } from './utils/modal.js';
 import { db } from './utils/firebase.js';
-import { collection, getDocs, doc, setDoc } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, addDoc } from "firebase/firestore";
 
 // --- Router State ---
 const ROUTES = {
@@ -16,6 +17,8 @@ const ROUTES = {
     REPORT_DETAIL: 'view-report-detail',
     STRATEGY: 'view-strategy'
 };
+
+let currentRoute = null;
 
 // --- DOM References ---
 const views = {};
@@ -60,12 +63,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 3. Setup Global Events
     setupGlobalEvents();
 
+    // 4. Reactive UI Updates
+    // This connects the Firestore data stream to the main views (Home/Workspace)
+    store.subscribe(() => {
+        if (currentRoute === ROUTES.HOME) {
+            renderHome();
+        } else if (currentRoute === ROUTES.WORKSPACE) {
+            const currentCus = store.getCurrentCustomer();
+            if (currentCus) {
+                renderWorkspace(currentCus.id);
+            }
+        }
+    });
+
     if(loader) loader.classList.add('hidden');
 
-    // 4. Start at Home
+    // 5. Start at Home
     navigateTo(ROUTES.HOME);
     
-    // 5. Attempt Automatic Migration (Optional - Silent Fail)
+    // 6. Attempt Automatic Migration (Optional - Silent Fail)
     // checkAndMigrateData(); 
 });
 
@@ -101,7 +117,12 @@ async function manualMigrateData(silent = false) {
         
         // Migrate Customers
         for (const cust of localData.customers) {
-            await setDoc(doc(db, "customers", cust.id), cust);
+            // Ensure ID exists
+            if (cust.id) {
+                await setDoc(doc(db, "customers", cust.id), cust);
+            } else {
+                await addDoc(collection(db, "customers"), cust);
+            }
             count++;
         }
 
@@ -113,19 +134,29 @@ async function manualMigrateData(silent = false) {
                 // Clean system keys
                 const systemKeys = ['customers', 'maps', 'reports'];
                 systemKeys.forEach(key => delete cleanMap.content[key]);
-                await setDoc(doc(db, "maps", map.id), cleanMap);
+                
+                if (map.id) {
+                    await setDoc(doc(db, "maps", map.id), cleanMap);
+                } else {
+                    await addDoc(collection(db, "maps"), cleanMap);
+                }
             }
         }
 
         // Migrate Reports
         if (localData.reports) {
             for (const rep of localData.reports) {
-                await setDoc(doc(db, "reports", rep.id), rep);
+                if (rep.id) {
+                    await setDoc(doc(db, "reports", rep.id), rep);
+                } else {
+                    await addDoc(collection(db, "reports"), rep);
+                }
             }
         }
 
         if (!silent) {
-            alert(`성공적으로 데이터를 가져왔습니다! (고객 ${count}명)\n최신 정보를 반영하기 위해 화면을 새로고침합니다.`);
+            alert(`성공적으로 데이터를 가져왔습니다! (고객 ${count}명)`);
+            // Reload isn't strictly necessary with reactive listeners, but good for a clean state
             window.location.reload();
         }
 
@@ -147,6 +178,8 @@ async function manualMigrateData(silent = false) {
 // --- Navigation / Routing ---
 
 function navigateTo(route, params = {}) {
+    currentRoute = route; // Update current route state
+
     // Hide all views
     Object.values(views).forEach(el => {
         if(el) el.classList.add('hidden');
@@ -248,7 +281,6 @@ function renderHome() {
             e.stopPropagation();
             showConfirmModal(`'${c.name}' 고객과 관련된 모든 맵과 보고서가 삭제됩니다. 계속하시겠습니까?`, () => {
                 store.deleteCustomer(c.id);
-                // No need to manually re-render, onSnapshot will trigger it
             });
         });
 
@@ -259,7 +291,7 @@ function renderHome() {
 function renderWorkspace(customerId) {
     const customer = store.getCurrentCustomer();
     if (!customer) {
-        // navigateTo(ROUTES.HOME); // Avoid immediate redirect on refresh race condition
+        // Data might not be loaded yet, wait for subscription update
         return;
     }
 
