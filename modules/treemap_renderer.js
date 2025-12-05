@@ -53,8 +53,9 @@ export function initTreemap(containerId) {
     render(store.getData());
 
     // Subscribe to data changes
-    store.subscribe((data) => {
-        render(data);
+    store.subscribe(() => {
+        // FIX: Only render the current map's content
+        render(store.getData());
     });
 
     // Handle Resize

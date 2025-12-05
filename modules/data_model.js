@@ -27,13 +27,19 @@ class DataModelStore {
             this.state.reports = Array.isArray(initialData.reports) ? initialData.reports : [];
         }
         
+        // Migration: Rename 'General' to 'K 금융사' if it exists (User Request)
+        const generalCust = this.state.customers.find(c => c.name === "General");
+        if (generalCust) {
+            generalCust.name = "K 금융사";
+        }
+
         // Migration for legacy data (maps without customerId)
-        // Assign them to a "General" customer if they exist
+        // Assign them to a "K 금융사" customer if they exist
         const orphanedMaps = this.state.maps.filter(m => !m.customerId);
         if (orphanedMaps.length > 0) {
-            let defaultCustomer = this.state.customers.find(c => c.name === "General");
+            let defaultCustomer = this.state.customers.find(c => c.name === "K 금융사");
             if (!defaultCustomer) {
-                defaultCustomer = { id: crypto.randomUUID(), name: "General", createdAt: Date.now() };
+                defaultCustomer = { id: crypto.randomUUID(), name: "K 금융사", createdAt: Date.now() };
                 this.state.customers.push(defaultCustomer);
             }
             orphanedMaps.forEach(m => m.customerId = defaultCustomer.id);

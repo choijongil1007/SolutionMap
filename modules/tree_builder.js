@@ -36,8 +36,9 @@ export function initTreeBuilder(elementId) {
     // Initialize Solution Modal Events
     setupSolutionModal();
 
-    store.subscribe((data) => {
-        render(data);
+    store.subscribe(() => {
+        // FIX: Only render the current map's content, not the entire app state
+        render(store.getData());
     });
 }
 
