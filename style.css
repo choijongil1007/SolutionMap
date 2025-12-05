@@ -159,15 +159,15 @@ body {
     font-weight: 600;
 }
 
-/* Table Styles - Improved for Responsiveness */
+/* Table Styles - Improved for Responsiveness and Visibility */
 .report-content table {
-    display: table; /* Reverted to table for better auto-layout if possible, or keep block if scrolling needed */
+    display: table; /* Reverted to table for better auto-layout */
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     border-collapse: collapse;
     margin: 1.5em 0; /* More margin around table */
-    font-size: 0.85em; /* Smaller font for table */
+    font-size: 0.95rem; /* Increased font size to match body text */
     border-radius: 8px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     background-color: white;
@@ -177,16 +177,16 @@ body {
     background-color: #f8fafc; /* Slate 50 */
     color: #334155;
     font-weight: 700;
-    text-align: left;
-    padding: 8px 12px; /* Reduced padding */
+    text-align: center; /* Center aligned headers */
+    padding: 10px 12px;
     border-bottom: 2px solid #e2e8f0;
-    white-space: nowrap; /* Keep headers on one line if possible */
+    white-space: nowrap; 
 }
 
 .report-content td {
-    padding: 8px 12px; /* Reduced padding */
+    padding: 10px 12px;
     border-bottom: 1px solid #f1f5f9;
-    vertical-align: top;
+    vertical-align: middle;
     line-height: 1.4;
 }
 

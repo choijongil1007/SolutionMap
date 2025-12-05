@@ -35,13 +35,9 @@ function switchTab(mode) {
         // Tab Styles
         tabMap.classList.replace('border-transparent', 'border-blue-600');
         tabMap.classList.replace('text-slate-500', 'text-blue-600');
-        tabMap.classList.remove('font-medium');
-        tabMap.classList.add('font-bold');
-
+        
         tabInsight.classList.replace('border-blue-600', 'border-transparent');
         tabInsight.classList.replace('text-blue-600', 'text-slate-500');
-        tabInsight.classList.remove('font-bold');
-        tabInsight.classList.add('font-medium');
 
         // Content Visibility
         insightContainer.classList.add('hidden');
@@ -59,13 +55,9 @@ function switchTab(mode) {
         // Tab Styles
         tabInsight.classList.replace('border-transparent', 'border-blue-600');
         tabInsight.classList.replace('text-slate-500', 'text-blue-600');
-        tabInsight.classList.remove('font-medium');
-        tabInsight.classList.add('font-bold');
-
+        
         tabMap.classList.replace('border-blue-600', 'border-transparent');
         tabMap.classList.replace('text-blue-600', 'text-slate-500');
-        tabMap.classList.remove('font-bold');
-        tabMap.classList.add('font-medium');
 
         // Content Visibility
         treemapContainer.classList.add('hidden');
@@ -149,86 +141,72 @@ async function generateInsight() {
         Object.keys(domainCats).forEach(cat => categoriesSet.add(cat));
     });
     // Fallback if no categories exist yet
-    const categoryListString = categoriesSet.size > 0 
-        ? Array.from(categoriesSet).join(', ') 
-        : "주요 아키텍처 시스템(DB, API, 보안 등)";
+    const categoryListArray = Array.from(categoriesSet);
+    const categoryListString = categoryListArray.length > 0 
+        ? categoryListArray.join(', ') 
+        : "주요 시스템(DB, API, 보안 등)";
 
     // Construct Prompt
     let prompt = `
-You are an expert Solution Architect and Pre-sales Technology Consultant.
-Perform a detailed competitive analysis comparing two products within the specific context of the customer's current environment.
+You are an expert Solution Architect.
+Perform a detailed competitive analysis comparing "**${ourProduct}**" (Our Product) and "**${competitor}**" (Competitor Product) within the context of the customer's current environment.
 
-**Context: Customer's Current Solution Architecture (Installed Base):**
+**Customer's Current Architecture:**
 ${currentMapContext}
 
-**Products to Compare:**
-1. **Our Product (My Company):** ${ourProduct}
-2. **Competitor Product:** ${competitor}
+**Reference Categories for Analysis:**
+${categoryListString}
 
-**Objective:**
-Compare "Our Product" and "Competitor Product" specifically regarding how they fit into the customer's current architecture. 
-Provide a **concise**, visually appealing, and persuasive report that highlights why "Our Product" is better.
-**Reduce the total output length by 20% compared to a standard verbose report. Be direct and impactful.**
+**Requirements:**
+- Output specifically in **Korean**.
+- **Important**: In the HTML sections, **DO NOT** use Markdown bold syntax (like \`**text**\`). Use \`<b>\` tags or CSS classes instead to prevent rendering errors.
+- **Important**: Font sizes for HTML content must be \`text-base\` (not small).
 
-**Report Structure & Formatting Requirements:**
+**Report Structure:**
 
 1.  **## 1. 요약**
-    - Very brief overview (2-3 sentences) and strategic recommendation.
-    - Use Markdown H2 (##).
+    - Brief executive summary favoring Our Product.
 
 2.  **## 2. 아키텍처 통합성**
-    - **CRITICAL**: Do NOT use plain text paragraphs. Do NOT use markdown bold syntax (like \`**text**\`) inside the HTML cards, as it breaks rendering. Use \`<b>\` tags or plain text inside HTML.
-    - **Output this section strictly as HTML** using standard Tailwind CSS classes.
-    - Layout: **Vertical Stack** (One card below another).
-    - Container: \`<div class="flex flex-col gap-6 w-full">\`
-    - **Card 1 (Top)**: Analysis for **${ourProduct}**. Style: \`border border-blue-200 bg-blue-50/50 rounded-xl p-5 w-full\`.
-    - **Card 2 (Bottom)**: Analysis for **${competitor}**. Style: \`border border-slate-200 bg-slate-50/50 rounded-xl p-5 w-full\`.
-    - Inside each card:
-        - Title: \`<h4 class="font-bold mb-3 text-lg text-slate-800">Title</h4>\`
-        - Content: Use an unordered list (\`<ul>\`). **Analyze integration capability specifically against the customer's map categories: ${categoryListString}**. Ensure each point addresses how the product connects with these specific systems.
-    - **Sub-section: 통합 편의성 비교 (Integration Convenience)**
-        - Immediately after the cards, insert a small HTML table (not markdown).
-        - Style: \`w-full mt-4 text-sm text-center border-collapse\`. 
-        - Headers: [구분 | ${ourProduct} | ${competitor}].
-        - Rows: **Use the actual categories from the map as rows: ${categoryListString}.**
-        - Values: Use symbols strictly: **O** (Excellent), **△** (Average), **X** (Poor). 
-        - Text Alignment: Center all cells.
-        - Add a title before the table: \`<h4 class="text-md font-bold text-slate-700 mt-6 mb-2">통합 편의성 요약</h4>\`
+    - **Format**: HTML Block (Tailwind CSS).
+    - **Layout**: Vertical Stack (\`flex flex-col gap-6\`).
+    - **Card 1 (${ourProduct})**: Blue theme (\`bg-blue-50/50 border-blue-200\`).
+    - **Card 2 (${competitor})**: Slate theme (\`bg-slate-50/50 border-slate-200\`).
+    - **Content Logic**: Inside each card, provide a bulleted list (\`<ul class="list-disc pl-5 space-y-1 text-base text-slate-700">\`).
+    - **CRITICAL**: The list items MUST correspond to the **Reference Categories** listed above (e.g., "Integration with [Category Name]"). Explain how the product integrates with each category found in the customer's map.
+    - **Sub-section: 통합 편의성 요약 (Integration Convenience)**
+        - Create an HTML Table **immediately after the cards**.
+        - Style: \`w-full mt-6 text-base border-collapse text-center table-fixed\`.
+        - Title before table: \`<h4 class="text-lg font-bold text-slate-700 mb-3 text-center">통합 편의성 비교</h4>\`
+        - Headers: [구분 | ${ourProduct} | ${competitor}]. Add \`bg-slate-100 font-bold p-2\` to headers.
+        - Rows: **Generate a row for each category in [${categoryListString}]**.
+        - Cell Values: Use ONLY these symbols: **O** (Good), **△** (Fair), **X** (Poor). Center align all cells.
 
 3.  **## 3. 상세 비교표**
-    - Standard Markdown Table.
+    - **Format**: Markdown Table.
     - Columns: [구분 | ${ourProduct} (자사) | ${competitor} (경쟁사) | 비고].
-    - Rows: **연동성, 기능 적합성, 성능, 리스크** (Use strictly these Korean terms).
-    - **Constraint**: Keep text in cells **extremely concise** (short phrases) to prevent the table from becoming too tall vertically. Minimize row height.
+    - Rows: 연동성, 기능 적합성, 성능, 리스크.
+    - Keep content concise.
 
 4.  **## 4. 핵심 차별화 요소**
-    - **CRITICAL**: Do NOT use plain text or bullet points. Do NOT use markdown bold syntax inside HTML.
-    - **Output this section strictly as HTML** using Tailwind CSS classes.
-    - Layout: **Vertical Stack** (One card below another).
-    - Container: \`<div class="flex flex-col gap-4 w-full">\`
-    - Each card represents a key selling point (Winning Point).
-    - Card Style: \`border border-indigo-100 bg-white shadow-sm rounded-xl p-4 hover:shadow-md transition-shadow w-full\`.
-    - Inside Card:
-      - **DO NOT** use text like "POINT 1".
-      - Title: \`<div class="text-indigo-600 font-bold mb-1 text-sm uppercase tracking-wide">Key Benefit Title</div>\`
-      - Content: Brief description.
+    - **Format**: HTML Block.
+    - **Layout**: Vertical Stack (\`flex flex-col gap-4\`).
+    - Create 3 Cards highlighting why Our Product wins.
+    - Card Style: \`border border-indigo-100 bg-white shadow-sm rounded-xl p-5 hover:shadow-md transition-all\`.
+    - Title Style: \`text-indigo-600 font-bold mb-2 text-base\`.
+    - Text Style: \`text-base text-slate-700 leading-relaxed\`.
+    - **Do NOT** use "POINT 1" labels. Just the title and description.
+    - **Do NOT** use markdown \`**\` bolding.
 
-**Strict Output Rules:**
-- **Language**: Korean (한국어) ONLY.
-- **Format**: Mixed Markdown and embedded HTML (for cards).
-- **Table**: Use short separator lines (e.g., \`|---|---|---|---|\`). **DO NOT** use excessive dashes. **DO NOT** use double pipes (\`||\`).
-- **Tone**: Professional, objective, yet persuasive for 'Our Product'.
 `;
 
     try {
-        // Switch to POST with JSON body (text/plain) to avoid GAS CORS preflight and form-data echoing issues
         const response = await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({
                 'q': prompt,
                 'prompt': prompt
             })
-            // Do NOT set Content-Type header; let browser default to text/plain
         });
 
         if (!response.ok) {
@@ -240,29 +218,16 @@ Provide a **concise**, visually appealing, and persuasive report that highlights
 
         try {
             const json = JSON.parse(responseText);
-            
-            // Check if response is valid JSON but just an echo of input (common GAS error)
-            if (json.q && !json.candidates) {
-                throw new Error("GAS Script echoed request. Please check server script.");
-            }
-
             if (json.candidates && json.candidates[0] && json.candidates[0].content && json.candidates[0].content.parts) {
                 markdownText = json.candidates[0].content.parts[0].text;
             } else if (json.error) {
                 throw new Error(json.error.message || "API Error");
             }
         } catch (e) {
-            // If JSON parse fails, check if the response looks like URL-encoded query parameters
-            if (responseText.startsWith('q=') || responseText.includes('%0A')) {
-                throw new Error("Server returned raw request body. The GAS script may not support POST requests correctly.");
-            }
-            // Otherwise, treat as raw text (maybe the script returned raw markdown)
+            // Ignore JSON parse error, treat as text
         }
 
-        // Render Markdown
         if (window.marked) {
-            // Configure marked to allow HTML
-            // Note: marked usually allows HTML by default, but ensuring it's not sanitized if specific config used
             resultArea.innerHTML = window.marked.parse(markdownText);
         } else {
             resultArea.innerText = markdownText;
@@ -274,15 +239,10 @@ Provide a **concise**, visually appealing, and persuasive report that highlights
     } catch (error) {
         console.error("Gemini Error:", error);
         loading.classList.add('hidden');
-        
-        let errorMsg = error.message;
-        if (errorMsg.includes("Unexpected token")) errorMsg = "응답 형식이 올바르지 않습니다.";
-
         resultArea.innerHTML = `
             <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
                 <h4 class="font-bold mb-1">분석 중 오류가 발생했습니다.</h4>
-                <p class="text-sm">서버 응답을 처리할 수 없습니다.</p>
-                <p class="text-xs mt-2 text-red-500 font-mono bg-white p-2 rounded border border-red-100">${errorMsg}</p>
+                <p class="text-sm">${error.message}</p>
             </div>
         `;
         resultArea.classList.remove('hidden');
