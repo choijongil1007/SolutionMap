@@ -163,10 +163,10 @@ Provide a **concise**, visually appealing, and persuasive report that highlights
 
 1.  **## 1. 요약**
     - Very brief overview (2-3 sentences) and strategic recommendation.
-    - Use Markdown H2 (##) so it matches the style of other titles. Do NOT use English subtitles like "(Executive Summary)".
+    - Use Markdown H2 (##).
 
 2.  **## 2. 아키텍처 통합성**
-    - **CRITICAL**: Do NOT use plain text paragraphs.
+    - **CRITICAL**: Do NOT use plain text paragraphs. Do NOT use markdown bold syntax (like \`**text**\`) inside the HTML cards, as it breaks rendering. Use \`<b>\` tags or plain text inside HTML.
     - **Output this section strictly as HTML** using standard Tailwind CSS classes.
     - Layout: **Vertical Stack** (One card below another).
     - Container: \`<div class="flex flex-col gap-6 w-full">\`
@@ -175,6 +175,12 @@ Provide a **concise**, visually appealing, and persuasive report that highlights
     - Inside each card:
         - Title: \`<h4 class="font-bold mb-3 text-lg text-slate-800">Title</h4>\`
         - Content: Use an unordered list for points: \`<ul class="list-disc pl-5 space-y-1 text-sm text-slate-700"><li>Point 1</li><li>Point 2</li></ul>\`.
+    - **Sub-section: 통합 편의성 비교 (Integration Convenience)**
+        - Immediately after the cards, insert a small HTML table (not markdown) summarizing integration.
+        - Style: \`w-full mt-4 text-sm text-center border-collapse\`. Headers: [구분 | ${ourProduct} | ${competitor}].
+        - Rows: DB 연동, API 유연성, 보안 규정 준수.
+        - Values: Use symbols strictly: 🟢 (High/Good), 🟡 (Medium), 🔴 (Low/Bad).
+        - Add a title before the table: \`<h4 class="text-md font-bold text-slate-700 mt-6 mb-2">통합 편의성 비교</h4>\`
 
 3.  **## 3. 상세 비교표**
     - Standard Markdown Table.
@@ -183,19 +189,19 @@ Provide a **concise**, visually appealing, and persuasive report that highlights
     - **Constraint**: Keep text in cells **extremely concise** (short phrases) to prevent the table from becoming too tall vertically. Minimize row height.
 
 4.  **## 4. 핵심 차별화 요소**
-    - **CRITICAL**: Do NOT use plain text or bullet points.
+    - **CRITICAL**: Do NOT use plain text or bullet points. Do NOT use markdown bold syntax inside HTML.
     - **Output this section strictly as HTML** using Tailwind CSS classes.
     - Layout: **Vertical Stack** (One card below another).
     - Container: \`<div class="flex flex-col gap-4 w-full">\`
     - Each card represents a key selling point (Winning Point).
     - Card Style: \`border border-indigo-100 bg-white shadow-sm rounded-xl p-4 hover:shadow-md transition-shadow w-full\`.
     - Inside Card:
-      - **DO NOT** use text like "POINT 1", "POINT 2".
-      - Title: \`<div class="text-indigo-600 font-bold mb-1 text-sm uppercase tracking-wide">Key Benefit</div>\` (Or a relevant short title).
+      - **DO NOT** use text like "POINT 1".
+      - Title: \`<div class="text-indigo-600 font-bold mb-1 text-sm uppercase tracking-wide">Key Benefit Title</div>\`
       - Content: Brief description.
 
 **Strict Output Rules:**
-- **Language**: Korean (한국어) ONLY. No English in Section Titles.
+- **Language**: Korean (한국어) ONLY.
 - **Format**: Mixed Markdown and embedded HTML (for cards).
 - **Table**: Use short separator lines (e.g., \`|---|---|---|---|\`). **DO NOT** use excessive dashes. **DO NOT** use double pipes (\`||\`).
 - **Tone**: Professional, objective, yet persuasive for 'Our Product'.
