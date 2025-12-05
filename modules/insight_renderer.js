@@ -1,5 +1,6 @@
 
 
+
 import { store } from './data_model.js';
 
 let container = null;
@@ -159,14 +160,21 @@ ${currentMapContext}
 
         prompt += `
 
-**Report Requirements (Strict Output Format):**
-1.  **Executive Summary**: Start with a distinct "Executive Summary" section. Summarize the key findings and recommendation in 2-3 concise sentences.
-2.  **Compatibility Assessment**: Provide a rating (e.g., "High", "Medium", "Low") for integration compatibility with the current stack, followed by a brief reason.
-3.  **Comparison Table**: Use a Markdown Table to compare key aspects (e.g., Features, Integration, Cost/Complexity, Ecosystem).
-4.  **Key Analysis**: Use bullet points to detail specific strengths, weaknesses, and integration risks.
-5.  **Language**: Korean.
-6.  **Style**: Professional, objective, and concise. Use bold text for emphasis. Do NOT include greeting or introductory fluff.
+**Strict Output Requirements:**
+1.  **Language**: **Korean (한국어)**. The entire response, including table contents, headers, and descriptions, MUST be in Korean. Technical terms can remain in English if they are standard industry terms, but provide context in Korean.
+2.  **Formatting**: Valid Markdown.
+3.  **Table Formatting**:
+    - Use a standard Markdown table.
+    - **DO NOT** use excessive dashes for the separator line. Use short separators like \`| --- | --- |\`.
+    - Ensure there is a blank line before and after the table.
+    - Ensure the table syntax is correct (no double pipes \`||\` or missing pipes).
+4.  **Structure**:
+    - **Executive Summary** (요약): 2-3 sentences.
+    - **Compatibility Assessment** (호환성 평가): High/Medium/Low with reason.
+    - **Comparison Table** (비교표): Columns should be [항목, 기존/자사, 경쟁사, 비교/설명]. Content MUST be in Korean.
+    - **Key Analysis** (주요 분석): Bullet points.
 
+**Generate the report now in Korean.**
 `;
 
         // Switch to POST with JSON body (text/plain) to avoid GAS CORS preflight and form-data echoing issues
