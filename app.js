@@ -1,3 +1,4 @@
+
 import { loadData, saveData } from './utils/localstorage.js';
 import { store } from './modules/data_model.js';
 import { initTreeBuilder } from './modules/tree_builder.js';
@@ -377,6 +378,15 @@ function setupGlobalEvents() {
         const map = store.getCurrentMap();
         if(map) navigateTo(ROUTES.MAP_DETAIL, { mapId: map.id });
     };
+
+    // New: Go to Map Button
+    const btnStrategyMap = document.getElementById('strategy-btn-goto-map');
+    if(btnStrategyMap) {
+        btnStrategyMap.onclick = () => {
+            const map = store.getCurrentMap();
+            if(map) navigateTo(ROUTES.MAP_DETAIL, { mapId: map.id });
+        };
+    }
 
     // 7. Modal Events
     setupModalEvents();
