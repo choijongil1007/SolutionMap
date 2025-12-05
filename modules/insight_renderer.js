@@ -170,9 +170,9 @@ You are an expert Solution Architect.
 Perform a detailed competitive analysis comparing "**${ourProduct}**" (Our Product) and "**${competitor}**" (Competitor Product) within the context of the customer's current environment.
 
 **Analysis Context (CRITICAL):**
-All analysis must be strictly based on compatibility and integration with the solutions currently registered in the **Customer's Current Architecture** provided below. 
+All analysis must be strictly based on compatibility and integration with the solutions **CURRENTLY REGISTERED** in the Customer's Current Architecture provided below. 
 For example, if 'RHEL' is registered in the OS area of the architecture, you must compare how well ${ourProduct} and ${competitor} integrate specifically with RHEL.
-If a category in the Solution Map is empty or no relevant solutions are listed, note that comparison is not applicable for that specific integration point.
+**IF A CATEGORY IS NOT PRESENT IN THE SOLUTION MAP, DO NOT INVENT DATA.** State that integration analysis is not applicable due to missing context.
 
 **Customer's Current Architecture:**
 ${currentMapContext}
@@ -182,11 +182,11 @@ ${categoryListString}
 
 **Requirements:**
 - Output specifically in **Korean**.
-- **Tone**: For table cells and bullet points, use concise, short noun-ending phrases (e.g., "지원함", "연동 우수", "설치 필요", "미지원") instead of full sentences like "~합니다" or "~습니다".
+- **Tone**: For table cells and list items, use **concise, short noun-ending phrases** (e.g., "지원함", "연동 우수", "설치 필요", "미지원") instead of full sentences like "~합니다", "~습니다", or "~이다".
 - **Formatting**:
-    - In HTML sections, **DO NOT** use Markdown bold syntax (like \`**text**\`). Use \`<b>\` tags or CSS classes instead.
-    - **CRITICAL**: For HTML sections (2, 3, and 4), output **RAW HTML** directly. **DO NOT** wrap the HTML in markdown code blocks (\`\`\`html ... \`\`\`).
-    - **CRITICAL**: Do NOT indent HTML tags. Start them at the beginning of the line to prevent them from being rendered as code blocks.
+    - For HTML sections (2, 3, and 4), output **RAW HTML** directly.
+    - **DO NOT** wrap the HTML in markdown code blocks (\`\`\`html ... \`\`\`).
+    - **DO NOT INDENT** HTML tags. Start every HTML tag at the very beginning of the line to prevent them from being rendered as code blocks.
     - Font sizes for HTML content must be \`text-base\`.
 
 **Report Structure:**
@@ -209,7 +209,7 @@ ${categoryListString}
     - **Headers**: \`<thead class="bg-slate-50 border-b border-slate-200"><tr><th class="p-3 border-r border-slate-200 text-slate-700 font-bold">구분</th><th class="p-3 border-r border-slate-200 text-blue-700 font-bold">${ourProduct} (자사)</th><th class="p-3 border-r border-slate-200 text-slate-600 font-bold">${competitor} (경쟁사)</th><th class="p-3 text-slate-600 font-bold">비고</th></tr></thead>\`.
     - **Body**: \`<tbody class="text-slate-700 text-base">...</tbody>\`. Cells padding: \`p-3 border-b border-slate-200 border-r border-slate-200 last:border-r-0\`.
     - **Rows**: 연동성, 기능 적합성, 성능, 리스크.
-    - **Content Style**: Use short noun phrases (e.g. "지원함", "우수함"). 
+    - **Content Style**: Use short noun phrases (e.g. "지원함", "우수함").
     - **Remarks (비고)**: Keep content **extremely concise** (shorten by ~10% compared to normal).
 
 4.  **## 4. 핵심 차별화 요소**
@@ -253,8 +253,8 @@ ${categoryListString}
         markdownText = markdownText.replace(/^```\w*\s*$/gm, "").replace(/```/g, "");
 
         // 2. Remove indentation for HTML lines (prevents marked.js from treating them as code blocks)
-        // This regex looks for start of line, optional whitespace, then a < tag.
         markdownText = markdownText.replace(/^[ \t]+(?=<)/gm, "");
+        markdownText = markdownText.replace(/^[ \t]+(?=<\/)/gm, "");
 
         if (window.marked) {
             resultArea.innerHTML = window.marked.parse(markdownText);
