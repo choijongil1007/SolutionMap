@@ -184,9 +184,10 @@ ${categoryListString}
 - Output specifically in **Korean**.
 - **Tone**: For table cells and list items, use **concise, short noun-ending phrases** (e.g., "지원함", "연동 우수", "설치 필요", "미지원") instead of full sentences like "~합니다", "~습니다", or "~이다".
 - **Formatting**:
+    - **NO MARKDOWN BOLD**: Do NOT use \`**\` characters anywhere in the response. Use HTML \`<b>\` tags if emphasis is needed.
     - For HTML sections (2, 3, and 4), output **RAW HTML** directly.
     - **DO NOT** wrap the HTML in markdown code blocks (\`\`\`html ... \`\`\`).
-    - **DO NOT INDENT** HTML tags. Start every HTML tag at the very beginning of the line to prevent them from being rendered as code blocks.
+    - **DO NOT INDENT** HTML tags. Start every HTML tag at the very beginning of the line.
     - Font sizes for HTML content must be \`text-base\`.
 
 **Report Structure:**
@@ -194,17 +195,17 @@ ${categoryListString}
 1.  **## 1. 요약**
     - Brief executive summary favoring Our Product based on the customer's specific environment.
 
-2.  **## 2. 아키텍처 통합성**
+2.  **## 2. 고객 사용 솔루션과의 통합성**
     - **Format**: HTML Block.
-    - **Layout**: Vertical Stack (\`flex flex-col gap-6\`).
+    - **Layout**: Vertical Stack. Wrap everything in \`<div class="mb-10 flex flex-col gap-6">\`.
     - **Card 1 (${ourProduct})**: Blue theme (\`bg-blue-50/50 border-blue-200\`).
     - **Card 2 (${competitor})**: Slate theme (\`bg-slate-50/50 border-slate-200\`).
     - **Content Logic**: Bulleted list (\`<ul class="list-disc pl-5 space-y-1 text-base text-slate-700">\`).
     - **Items**: Compare integration with specific solutions found in the "Customer's Current Architecture" list.
 
-3.  **## 3. 상세 비교표**
+3.  **## 3. 기능 상세 비교**
     - **Format**: HTML Table.
-    - **Layout**: Use \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden">\`.
+    - **Layout**: Use \`<div class="mb-10"><table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden">\` ... \`</table></div>\`.
     - **Column Config**: **YOU MUST USE** \`<colgroup><col style="width:10%"><col style="width:30%"><col style="width:30%"><col style="width:30%"></colgroup>\` to strictly set column widths (10%, 30%, 30%, 30%).
     - **Headers**: \`<thead class="bg-slate-50 border-b border-slate-200"><tr><th class="p-3 border-r border-slate-200 text-slate-700 font-bold">구분</th><th class="p-3 border-r border-slate-200 text-blue-700 font-bold">${ourProduct} (자사)</th><th class="p-3 border-r border-slate-200 text-slate-600 font-bold">${competitor} (경쟁사)</th><th class="p-3 text-slate-600 font-bold">비고</th></tr></thead>\`.
     - **Body**: \`<tbody class="text-slate-700 text-base">...</tbody>\`. Cells padding: \`p-3 border-b border-slate-200 border-r border-slate-200 last:border-r-0\`.
@@ -212,9 +213,9 @@ ${categoryListString}
     - **Content Style**: Use short noun phrases (e.g. "지원함", "우수함").
     - **Remarks (비고)**: Keep content **extremely concise** (shorten by ~10% compared to normal).
 
-4.  **## 4. 핵심 차별화 요소**
+4.  **## 4. 차별화 메시지**
     - **Format**: HTML Block.
-    - **Layout**: Vertical Stack.
+    - **Layout**: Vertical Stack. Wrap in \`<div class="mb-10 flex flex-col gap-4">\`.
     - Create 3 Cards highlighting why Our Product is better for *this specific customer*.
     - Card Style: \`border border-indigo-100 bg-white shadow-sm rounded-xl p-5 hover:shadow-md transition-all\`.
     - Title Style: \`text-indigo-600 font-bold mb-2 text-base\`.
