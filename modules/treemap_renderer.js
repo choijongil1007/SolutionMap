@@ -80,6 +80,7 @@ function render(data) {
     
     // Check width BEFORE clearing.
     const containerWidth = container.clientWidth;
+    // Safety check: if width is 0 (hidden), don't try to render as it might break layout calculations
     if (containerWidth === 0) return;
 
     // FIX: Calculate available width by subtracting padding AND border offset
@@ -347,6 +348,12 @@ function buildDomainTree(domainName, categories) {
                 catNode.children.push(unknownNode);
                 catNode.value += unknownNode.value;
             }
+        }
+        
+        // Fix for Real-time Display: 
+        // If a category has no solutions, give it a small value so it renders as a placeholder box.
+        if (catNode.value === 0) {
+            catNode.value = 10;
         }
 
         if (catNode.value > 0) {

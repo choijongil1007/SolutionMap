@@ -83,10 +83,16 @@ function navigateTo(route, params = {}) {
                 if (params.customerId) renderWorkspace(params.customerId);
                 break;
             case ROUTES.EDITOR:
-                if (params.mapId) renderEditor(params.mapId);
+                if (params.mapId) {
+                    // Use requestAnimationFrame to ensure the DOM has updated (removed hidden class)
+                    // and layout metrics (clientWidth) are available for the Treemap renderer.
+                    requestAnimationFrame(() => renderEditor(params.mapId));
+                }
                 break;
             case ROUTES.MAP_DETAIL:
-                if (params.mapId) renderMapDetail(params.mapId);
+                if (params.mapId) {
+                    requestAnimationFrame(() => renderMapDetail(params.mapId));
+                }
                 break;
             case ROUTES.REPORT_DETAIL:
                 if (params.reportId) renderReportDetail(params.reportId);
