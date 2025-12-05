@@ -1,6 +1,4 @@
 
-
-
 import { store } from './data_model.js';
 
 let container = null;
@@ -83,20 +81,20 @@ function renderUI() {
                 <h3 class="text-lg font-bold text-slate-800 mb-4">경쟁 분석 파라미터</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1.5">경쟁사 제품 (필수)</label>
-                        <input type="text" id="insight-competitor" class="input-premium w-full" placeholder="예: ServiceNow ITOM">
-                        <p class="text-xs text-slate-400 mt-1">분석 대상(공격 대상) 경쟁 제품을 입력하세요.</p>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1.5">자사 제품 (필수)</label>
+                        <input type="text" id="insight-our-product" class="input-premium w-full" placeholder="예: Atlassian Jira">
+                        <p class="text-xs text-slate-400 mt-1">분석의 기준이 될 자사 솔루션을 입력하세요.</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1.5">자사 제품 (선택)</label>
-                        <input type="text" id="insight-our-product" class="input-premium w-full" placeholder="예: Atlassian Jira">
-                        <p class="text-xs text-slate-400 mt-1">입력 시 자사 제품의 강점 위주로 비교 분석합니다.</p>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1.5">경쟁사 제품 (필수)</label>
+                        <input type="text" id="insight-competitor" class="input-premium w-full" placeholder="예: ServiceNow ITOM">
+                        <p class="text-xs text-slate-400 mt-1">비교 분석할 경쟁 제품을 입력하세요.</p>
                     </div>
                 </div>
                 <div class="flex justify-end">
                     <button id="btn-generate-insight" class="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all text-sm font-bold shadow-md shadow-indigo-500/20 active:scale-95">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                        AI 분석 리포트 생성
+                        AI 경쟁 분석 실행
                     </button>
                 </div>
             </div>
@@ -108,7 +106,7 @@ function renderUI() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
                     </div>
                     <p class="font-medium text-slate-500">분석 결과가 여기에 표시됩니다</p>
-                    <p class="text-sm mt-1">제품명을 입력하고 분석 버튼을 눌러주세요.</p>
+                    <p class="text-sm mt-1">자사 및 경쟁사 제품명을 모두 입력하고 분석 버튼을 눌러주세요.</p>
                 </div>
                 <div id="insight-loading" class="hidden absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-10">
                     <div class="spinner border-indigo-600 border-t-transparent w-10 h-10 mb-3"></div>
@@ -130,8 +128,8 @@ async function generateInsight() {
     const placeholder = document.getElementById('insight-placeholder');
     const loading = document.getElementById('insight-loading');
 
-    if (!competitor) {
-        alert("경쟁사 제품명을 입력해주세요.");
+    if (!competitor || !ourProduct) {
+        alert("자사 제품과 경쟁사 제품명을 모두 입력해주세요.");
         return;
     }
 
@@ -143,68 +141,40 @@ async function generateInsight() {
 
     const currentMapContext = store.getSolutionContextString();
     
-    // Construct Prompt based on scenario
+    // Construct Prompt
     let prompt = `
 You are an expert Solution Architect and Pre-sales Technology Consultant.
-I need a professional, strategic analysis report based on the customer's current environment.
+Perform a detailed competitive analysis comparing two products within the specific context of the customer's current environment.
 
 **Context: Customer's Current Solution Architecture (Installed Base):**
 ${currentMapContext}
 
-`;
-
-    if (ourProduct) {
-        // Scenario 2: Competitor vs Our Product (Win-Back / Defense)
-        prompt += `
-**Task: Competitive Analysis (Our Product vs Competitor)**
-**My Product (Us):** ${ourProduct}
-**Target Competitor Product:** ${competitor}
+**Products to Compare:**
+1. **Our Product (My Company):** ${ourProduct}
+2. **Competitor Product:** ${competitor}
 
 **Objective:**
-Prove that "My Product" is the superior choice for this specific customer environment compared to the "Competitor Product".
+Compare "Our Product" and "Competitor Product" specifically regarding how they fit into the customer's current architecture. Analyze strengths, weaknesses, and integration capabilities for BOTH products, while highlighting the competitive advantages of "Our Product".
 
 **Analysis Requirements:**
-1.  **Integration Synergy**: Analyze why "My Product" integrates better with the **Current Solution Architecture** (Context provided above) than the Competitor.
-2.  **Highlight Strengths**: Emphasize the unique strengths of "My Product" relevant to this stack.
-3.  **Expose Weaknesses**: Identify specific weaknesses, risks, or integration complexities of the "Competitor Product" in this specific environment.
+1.  **Integration Fit**: Evaluate how well each product integrates with the existing tools listed in the Context.
+2.  **SW Analysis**: Analyze Strengths and Weaknesses for BOTH products in this specific environment.
+3.  **Differentiation**: Identify clear differentiators where "Our Product" wins over the "Competitor Product".
 
-**Structure:**
-1.  **Executive Summary** (요약): Persuasive summary of why 'My Product' is better.
-2.  **Architectural Fit** (아키텍처 적합성): Why we fit better.
-3.  **Comparison Table** (비교표): Columns must be [평가 항목, ${ourProduct} (자사 강점), ${competitor} (경쟁사 약점), 비고].
-4.  **Key Selling Points** (핵심 제안 포인트): 3 bullet points to use in a meeting.
-`;
-    } else {
-        // Scenario 1: Competitor Risk Analysis (Attack)
-        prompt += `
-**Task: Competitor Weakness & Risk Analysis**
-**Target Competitor Product:** ${competitor}
+**Report Structure:**
+1.  **Executive Summary** (요약): Brief overview and strategic recommendation.
+2.  **Integration & Compatibility** (아키텍처 통합성): Compare how each product connects with the customer's existing stack (Context).
+3.  **Detailed Comparison Table** (상세 비교표):
+    - Create a standard Markdown table.
+    - Columns: [구분 (Category), ${ourProduct} (자사), ${competitor} (경쟁사), 비고 (Notes)].
+    - Include rows for: Integration Support, Key Features, Scalability/Performance, and Pros/Cons.
+4.  **Key Selling Points** (핵심 차별화 요소): 3 main reasons to choose "Our Product" in this specific customer scenario.
 
-**Objective:**
-Analyze the "Competitor Product" to identify technical risks, integration issues, and weaknesses specifically regarding the **Current Solution Architecture**.
-
-**Analysis Requirements:**
-1.  **Integration Risks**: Identify how the competitor product might clash or fail to integrate smoothly with the existing tools listed in the context.
-2.  **Weakness Identification**: Find specific functional or architectural weaknesses of the competitor product in this environment.
-3.  **Technical Debt**: highlight potential overheads (cost, complexity) if the customer chooses this competitor.
-
-**Structure:**
-1.  **Executive Summary** (요약): Assessment of risks.
-2.  **Integration Risks** (통합 및 기술 리스크): Detail the problems.
-3.  **Comparison Table** (비교표): Columns must be [평가 항목, 현재 아키텍처 영향 (Impact), 경쟁사 리스크/약점 (${competitor}), 비고].
-4.  **Counter-Arguments** (대응 논리): Questions to ask the customer to expose these weaknesses.
-`;
-    }
-
-    prompt += `
-**Strict Output Requirements:**
-1.  **Language**: **Korean (한국어)**. The entire response MUST be in Korean.
-2.  **Formatting**: Valid Markdown.
-3.  **Table Formatting**:
-    - Use a standard Markdown table.
-    - **DO NOT** use excessive dashes for the separator line. Use short separators like \`| --- | --- |\`.
-    - Ensure the table syntax is correct (no double pipes \`||\`).
-4.  **Tone**: Professional, persuasive, and analytical.
+**Strict Output Rules:**
+- **Language**: Korean (한국어) ONLY.
+- **Format**: Valid Markdown.
+- **Table**: Use short separator lines (e.g., \`|---|---|---|---|\`). **DO NOT** use excessive dashes. **DO NOT** use double pipes (\`||\`).
+- **Tone**: Professional, objective, yet persuasive for 'Our Product'.
 `;
 
     try {
