@@ -7,27 +7,48 @@ import { initTreemap } from './modules/treemap_renderer.js';
 import { initInsightRenderer } from './modules/insight_renderer.js';
 import { showConfirmModal, showWarningModal } from './utils/modal.js';
 
-// DOM Elements
-const views = {
-    home: document.getElementById('view-home'),
-    editor: document.getElementById('view-editor')
+// --- Router State ---
+const ROUTES = {
+    HOME: 'view-home',
+    WORKSPACE: 'view-workspace',
+    EDITOR: 'view-editor',
+    MAP_DETAIL: 'view-map-detail',
+    REPORT_DETAIL: 'view-report-detail'
 };
-const mapListContainer = document.getElementById('map-list-container');
-const homeEmptyState = document.getElementById('home-empty-state');
-const mapTitleInput = document.getElementById('map-title-input');
 
-// Modal Elements
-const createModal = document.getElementById('create-modal');
-const createModalBackdrop = document.getElementById('create-modal-backdrop');
-const createModalPanel = document.getElementById('create-modal-panel');
-const createInput = document.getElementById('new-map-title');
+// --- DOM References ---
+const views = {};
+Object.values(ROUTES).forEach(id => views[id] = document.getElementById(id));
+
+// Modals
+const modals = {
+    customer: {
+        el: document.getElementById('modal-customer'),
+        bg: document.getElementById('modal-customer-bg'),
+        panel: document.getElementById('modal-customer-panel'),
+        input: document.getElementById('input-customer-name'),
+        btnSave: document.getElementById('btn-save-customer'),
+        btnCancel: document.getElementById('btn-cancel-customer')
+    },
+    saveMap: {
+        el: document.getElementById('modal-save-map'),
+        bg: document.getElementById('modal-save-map-bg'),
+        panel: document.getElementById('modal-save-map-panel'),
+        input: document.getElementById('input-map-name'),
+        btnConfirm: document.getElementById('btn-confirm-save-map'),
+        btnCancel: document.getElementById('btn-cancel-save-map')
+    }
+};
+
+// --- Initialization ---
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("Solution Map App initialized (v4).");
-
-    // 1. Initialize Components
+    // 1. Init Components
     initTreeBuilder('tree-container');
     initTreemap('treemap-container');
+    // Also init treemap for detail view
+    initTreemap('detail-treemap-area'); 
+    
     initInsightRenderer(
         'insight-container',
         'tab-solution-map',
@@ -36,209 +57,367 @@ document.addEventListener('DOMContentLoaded', () => {
         'empty-state'
     );
 
-    // 2. Load Data from Storage
+    // 2. Load Data
     const initialData = loadData();
     store.init(initialData);
 
-    // 3. Listeners
-    store.subscribeList(renderHomeList); // Update Home when list changes
-    
-    // Auto-save whenever *anything* changes (content or list)
-    const handleAutoSave = () => saveData(store.getFullState());
-    store.subscribe(handleAutoSave);
-    store.subscribeList(handleAutoSave);
+    // 3. Auto-save
+    store.subscribe(() => saveData(store.getFullState()));
 
-    // 4. Setup Interactions
-    setupHomeActions();
-    setupEditorActions();
-    setupCreateModal();
+    // 4. Setup Global Events
+    setupGlobalEvents();
 
-    // 5. Initial Render
-    showHome();
+    // 5. Start at Home
+    navigateTo(ROUTES.HOME);
 });
 
-// --- View Switching ---
+// --- Navigation / Routing ---
 
-function showHome() {
-    views.editor.classList.add('hidden');
-    views.home.classList.remove('hidden');
-    renderHomeList({ maps: store.getMaps() });
-}
-
-function showEditor(mapId) {
-    // 1. Switch View First (Ensure container is visible for renderer dimensions)
-    views.home.classList.add('hidden');
-    views.editor.classList.remove('hidden');
+function navigateTo(route, params = {}) {
+    // Hide all views
+    Object.values(views).forEach(el => el.classList.add('hidden'));
     
-    // 2. Select Map (Triggers subscribers -> Render)
-    store.selectMap(mapId);
-    
-    // 3. Update Title Input
-    const map = store.getCurrentMap();
-    if (map) {
-        mapTitleInput.value = map.title;
+    // Show target view
+    const target = views[route];
+    if (target) {
+        target.classList.remove('hidden');
+        
+        // View-specific initialization
+        switch(route) {
+            case ROUTES.HOME:
+                renderHome();
+                break;
+            case ROUTES.WORKSPACE:
+                if (params.customerId) renderWorkspace(params.customerId);
+                break;
+            case ROUTES.EDITOR:
+                if (params.mapId) renderEditor(params.mapId);
+                break;
+            case ROUTES.MAP_DETAIL:
+                if (params.mapId) renderMapDetail(params.mapId);
+                break;
+            case ROUTES.REPORT_DETAIL:
+                if (params.reportId) renderReportDetail(params.reportId);
+                break;
+        }
     }
 }
 
-// --- Home Screen Logic ---
+// --- View Logics ---
 
-function renderHomeList({ maps }) {
-    mapListContainer.innerHTML = '';
+function renderHome() {
+    const listEl = document.getElementById('customer-list');
+    const emptyEl = document.getElementById('home-empty');
+    const customers = store.getCustomers();
 
-    if (maps.length === 0) {
-        homeEmptyState.classList.remove('hidden');
-        mapListContainer.classList.add('hidden');
+    listEl.innerHTML = '';
+    
+    if (customers.length === 0) {
+        emptyEl.classList.remove('hidden');
         return;
     }
+    emptyEl.classList.add('hidden');
 
-    homeEmptyState.classList.add('hidden');
-    mapListContainer.classList.remove('hidden');
-
-    maps.forEach(map => {
+    customers.forEach(c => {
+        const mapCount = store.getMapsByCustomer(c.id).length;
+        const reportCount = store.getReportsByCustomer(c.id).length;
+        
         const card = document.createElement('div');
-        card.className = "bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group relative card-hover-effect flex flex-col h-40";
-        
-        // Korean Date Format
-        const dateStr = new Date(map.updatedAt).toLocaleDateString('ko-KR', {
-            year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-        });
-
-        // Calculate stats
-        const domainCount = Object.keys(map.content || {}).length;
-        
+        card.className = "bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer group";
         card.innerHTML = `
-            <div class="flex-1 cursor-pointer" onclick="this.closest('.group').dispatchEvent(new CustomEvent('open-map'))">
-                <h3 class="font-bold text-lg text-slate-800 mb-1 line-clamp-1 group-hover:text-blue-600 transition-colors">${escapeHtml(map.title)}</h3>
-                <p class="text-xs text-slate-400 font-medium mb-4">${dateStr}</p>
-                <div class="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 inline-block px-2 py-1 rounded-md border border-slate-100">
-                    <span class="font-bold text-slate-700">${domainCount}</span>개 대분류
+            <div class="flex justify-between items-start mb-4">
+                <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-bold text-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    ${c.name.charAt(0).toUpperCase()}
+                </div>
+                <button class="btn-delete-customer p-2 hover:bg-red-50 text-slate-300 hover:text-red-500 rounded-lg transition-colors" title="삭제">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                </button>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 mb-1">${c.name}</h3>
+            <p class="text-sm text-slate-500 mb-6">등록일: ${new Date(c.createdAt).toLocaleDateString()}</p>
+            <div class="flex gap-4">
+                <div class="flex-1 bg-slate-50 rounded-lg p-3 text-center">
+                    <div class="text-lg font-bold text-slate-800">${mapCount}</div>
+                    <div class="text-xs text-slate-500">Maps</div>
+                </div>
+                <div class="flex-1 bg-slate-50 rounded-lg p-3 text-center">
+                    <div class="text-lg font-bold text-slate-800">${reportCount}</div>
+                    <div class="text-xs text-slate-500">Reports</div>
                 </div>
             </div>
-            
-            <div class="flex items-center justify-end gap-2 mt-auto pt-3 border-t border-slate-50">
-                <button class="btn-edit text-slate-400 hover:text-blue-600 p-1.5 hover:bg-blue-50 rounded-lg transition-colors" title="수정">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                </button>
-                <button class="btn-delete text-slate-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors" title="삭제">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                </button>
-            </div>
         `;
-
-        // Event Listeners
-        card.addEventListener('open-map', () => showEditor(map.id));
         
-        card.querySelector('.btn-edit').addEventListener('click', (e) => {
-            e.stopPropagation();
-            showEditor(map.id);
+        // Navigate to Workspace
+        card.addEventListener('click', (e) => {
+            if (!e.target.closest('.btn-delete-customer')) {
+                store.setCurrentCustomer(c.id);
+                navigateTo(ROUTES.WORKSPACE, { customerId: c.id });
+            }
         });
 
-        card.querySelector('.btn-delete').addEventListener('click', (e) => {
+        // Delete Action
+        card.querySelector('.btn-delete-customer').addEventListener('click', (e) => {
             e.stopPropagation();
-            showConfirmModal(`'${map.title}' 맵을 정말 삭제하시겠습니까?`, () => {
-                store.deleteMap(map.id);
+            showConfirmModal(`'${c.name}' 고객과 관련된 모든 맵과 보고서가 삭제됩니다. 계속하시겠습니까?`, () => {
+                store.deleteCustomer(c.id);
+                renderHome(); // Re-render
             });
         });
 
-        mapListContainer.appendChild(card);
+        listEl.appendChild(card);
     });
 }
 
-function setupHomeActions() {
-    const createBtn = document.getElementById('btn-create-map');
-    createBtn.addEventListener('click', openCreateModal);
-}
+function renderWorkspace(customerId) {
+    const customer = store.getCurrentCustomer();
+    if (!customer) {
+        navigateTo(ROUTES.HOME);
+        return;
+    }
 
-// --- Create Modal Logic ---
-
-function openCreateModal() {
-    createInput.value = '';
-    createModal.classList.remove('hidden');
-    requestAnimationFrame(() => {
-        createModalBackdrop.classList.remove('opacity-0');
-        createModalPanel.classList.remove('opacity-0', 'scale-95');
-        createModalPanel.classList.add('opacity-100', 'scale-100');
-    });
-    createInput.focus();
-}
-
-function closeCreateModal() {
-    createModalBackdrop.classList.add('opacity-0');
-    createModalPanel.classList.remove('opacity-100', 'scale-100');
-    createModalPanel.classList.add('opacity-0', 'scale-95');
-    setTimeout(() => {
-        createModal.classList.add('hidden');
-    }, 200);
-}
-
-function setupCreateModal() {
-    const cancelBtn = document.getElementById('create-modal-cancel');
-    const confirmBtn = document.getElementById('create-modal-confirm');
-
-    cancelBtn.addEventListener('click', closeCreateModal);
+    document.getElementById('ws-customer-name').textContent = customer.name;
     
-    const handleCreate = () => {
-        const title = createInput.value.trim();
-        if (!title) {
-            createInput.focus();
-            return;
-        }
-        const newId = store.createMap(title);
-        closeCreateModal();
-        showEditor(newId);
-    };
-
-    confirmBtn.addEventListener('click', handleCreate);
-    createInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') handleCreate();
-        if (e.key === 'Escape') closeCreateModal();
-    });
-}
-
-// --- Editor Actions ---
-
-function setupEditorActions() {
-    // Back Button
-    document.getElementById('btn-back').addEventListener('click', () => {
-        showHome();
-    });
-
-    // Title Input
-    mapTitleInput.addEventListener('change', (e) => {
-        const val = e.target.value.trim();
-        if (val) {
-            store.updateCurrentMapTitle(val);
-        } else {
-            // Revert if empty
-            const map = store.getCurrentMap();
-            if (map) e.target.value = map.title;
-        }
-    });
-
-    // Manual Save Button
-    const saveBtn = document.getElementById('btn-manual-save');
-    const toast = document.getElementById('save-toast');
+    // Render Maps
+    const maps = store.getMapsByCustomer(customerId);
+    const mapList = document.getElementById('ws-map-list');
+    const mapEmpty = document.getElementById('ws-map-empty');
     
-    if (saveBtn) {
-        saveBtn.addEventListener('click', () => {
-            store.saveCurrentMap(); // Updates timestamp
-            saveData(store.getFullState()); // Persist to storage
+    mapList.innerHTML = '';
+    if (maps.length === 0) {
+        mapEmpty.classList.remove('hidden');
+    } else {
+        mapEmpty.classList.add('hidden');
+        maps.forEach(map => {
+            const el = document.createElement('div');
+            el.className = "bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between hover:border-blue-400 hover:shadow-md transition-all cursor-pointer";
+            el.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800">${map.title}</h4>
+                        <p class="text-xs text-slate-400">${new Date(map.updatedAt).toLocaleDateString()}</p>
+                    </div>
+                </div>
+            `;
+            el.onclick = () => navigateTo(ROUTES.MAP_DETAIL, { mapId: map.id });
+            mapList.appendChild(el);
+        });
+    }
+
+    // Render Reports
+    const reports = store.getReportsByCustomer(customerId);
+    const repList = document.getElementById('ws-report-list');
+    const repEmpty = document.getElementById('ws-report-empty');
+
+    repList.innerHTML = '';
+    if (reports.length === 0) {
+        repEmpty.classList.remove('hidden');
+    } else {
+        repEmpty.classList.add('hidden');
+        reports.forEach(rep => {
+            const el = document.createElement('div');
+            el.className = "bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer";
+            el.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800">${rep.title}</h4>
+                        <p class="text-xs text-slate-400">${new Date(rep.createdAt).toLocaleDateString()}</p>
+                    </div>
+                </div>
+                <button class="btn-del-rep p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded" title="삭제">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                </button>
+            `;
             
-            // Show Feedback
-            if (toast) {
-                toast.classList.remove('hidden');
-                toast.classList.add('toast-visible');
-                setTimeout(() => {
-                    toast.classList.remove('toast-visible');
-                    toast.classList.add('hidden');
-                }, 2500);
-            }
+            el.onclick = (e) => {
+                if(!e.target.closest('.btn-del-rep')) {
+                    navigateTo(ROUTES.REPORT_DETAIL, { reportId: rep.id });
+                }
+            };
+            
+            el.querySelector('.btn-del-rep').onclick = (e) => {
+                e.stopPropagation();
+                showConfirmModal("이 보고서를 삭제하시겠습니까?", () => {
+                    store.deleteReport(rep.id);
+                    renderWorkspace(customerId);
+                });
+            };
+
+            repList.appendChild(el);
         });
     }
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function renderEditor(mapId) {
+    store.setCurrentMap(mapId);
+    const map = store.getCurrentMap();
+    if (map) {
+        document.getElementById('editor-map-title').textContent = map.title;
+        // Trigger re-render of tree/treemap implicitly via subscribers
+        // But for editor specific UI:
+    }
+}
+
+function renderMapDetail(mapId) {
+    store.setCurrentMap(mapId);
+    const map = store.getCurrentMap();
+    if(map) {
+        document.getElementById('detail-map-title').textContent = map.title;
+        
+        // Re-use treemap renderer but targeting the detail container
+        // The initTreemap was called with 'detail-treemap-area'
+        // We just need to ensure the renderer knows which data to render.
+        // The renderer subscribes to store. So selecting map updates it.
+        // However, we have 2 renderers (editor, detail). 
+        // We need to trigger a specific update or rely on the store broadcast.
+        // Store broadcast updates ALL subscribed renderers with current map data.
+        store.notify(); 
+    }
+}
+
+function renderReportDetail(reportId) {
+    store.setCurrentReport(reportId);
+    const report = store.getCurrentReport();
+    if(report) {
+        document.getElementById('report-title').textContent = report.title;
+        document.getElementById('report-content-body').innerHTML = report.contentHTML;
+    }
+}
+
+// --- Global Events Setup ---
+
+function setupGlobalEvents() {
+    // 1. Home Actions
+    document.getElementById('btn-new-customer').onclick = openCustomerModal;
+
+    // 2. Workspace Actions
+    document.getElementById('ws-btn-back').onclick = () => navigateTo(ROUTES.HOME);
+    document.getElementById('ws-btn-create-map').onclick = () => {
+        const customer = store.getCurrentCustomer();
+        if(customer) {
+            const mapId = store.createMap(customer.id);
+            navigateTo(ROUTES.EDITOR, { mapId });
+        }
+    };
+
+    // 3. Editor Actions
+    document.getElementById('editor-btn-back').onclick = () => {
+        const customer = store.getCurrentCustomer();
+        navigateTo(ROUTES.WORKSPACE, { customerId: customer?.id });
+    };
+    
+    // Save Button -> Open Name Modal
+    document.getElementById('btn-manual-save').onclick = openSaveMapModal;
+
+    // 4. Map Detail Actions
+    document.getElementById('detail-btn-back').onclick = () => {
+        const customer = store.getCurrentCustomer();
+        navigateTo(ROUTES.WORKSPACE, { customerId: customer?.id });
+    };
+    document.getElementById('detail-btn-edit').onclick = () => {
+        const map = store.getCurrentMap();
+        if(map) navigateTo(ROUTES.EDITOR, { mapId: map.id });
+    };
+
+    // 5. Report Detail Actions
+    document.getElementById('report-btn-back').onclick = () => {
+        const customer = store.getCurrentCustomer();
+        navigateTo(ROUTES.WORKSPACE, { customerId: customer?.id });
+    };
+    document.getElementById('report-btn-export').onclick = () => {
+        window.print();
+    };
+
+    // 6. Modal Events
+    setupModalEvents();
+}
+
+function setupModalEvents() {
+    // Customer Modal
+    modals.customer.btnCancel.onclick = closeCustomerModal;
+    modals.customer.btnSave.onclick = () => {
+        const name = modals.customer.input.value.trim();
+        if(name) {
+            store.addCustomer(name);
+            closeCustomerModal();
+            renderHome();
+        }
+    };
+
+    // Save Map Modal
+    modals.saveMap.btnCancel.onclick = closeSaveMapModal;
+    modals.saveMap.btnConfirm.onclick = () => {
+        const name = modals.saveMap.input.value.trim();
+        if(name) {
+            const map = store.getCurrentMap();
+            if(map) {
+                store.updateMapTitle(map.id, name);
+                store.notify(); // Save to storage
+                
+                // Show toast
+                const toast = document.getElementById('save-toast');
+                toast.classList.remove('hidden');
+                toast.classList.add('toast-visible');
+                setTimeout(() => toast.classList.add('hidden'), 2500);
+
+                // Update UI title
+                document.getElementById('editor-map-title').textContent = name;
+                
+                closeSaveMapModal();
+            }
+        }
+    };
+}
+
+// --- Modal Logic ---
+
+function openCustomerModal() {
+    modals.customer.input.value = '';
+    modals.customer.el.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        modals.customer.bg.classList.remove('opacity-0');
+        modals.customer.panel.classList.remove('scale-95', 'opacity-0');
+        modals.customer.panel.classList.add('scale-100', 'opacity-100');
+    });
+    modals.customer.input.focus();
+}
+
+function closeCustomerModal() {
+    modals.customer.bg.classList.add('opacity-0');
+    modals.customer.panel.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => modals.customer.el.classList.add('hidden'), 200);
+}
+
+function openSaveMapModal() {
+    const map = store.getCurrentMap();
+    const customer = store.getCurrentCustomer();
+    
+    // Suggest Name: Customer_Category_Map (Using Domain keys as proxy for Category/Type)
+    let suggestedName = map.title;
+    if (map.title === "새 솔루션 맵" && customer) {
+        // Find largest domain to hint category
+        const domains = Object.keys(map.content || {});
+        const mainCategory = domains.length > 0 ? domains[0] : "General";
+        suggestedName = `${customer.name}_${mainCategory}_SolutionMap`;
+    }
+
+    modals.saveMap.input.value = suggestedName;
+    modals.saveMap.el.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        modals.saveMap.bg.classList.remove('opacity-0');
+        modals.saveMap.panel.classList.remove('scale-95', 'opacity-0');
+        modals.saveMap.panel.classList.add('scale-100', 'opacity-100');
+    });
+    modals.saveMap.input.focus();
+}
+
+function closeSaveMapModal() {
+    modals.saveMap.bg.classList.add('opacity-0');
+    modals.saveMap.panel.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => modals.saveMap.el.classList.add('hidden'), 200);
 }

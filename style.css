@@ -5,17 +5,17 @@
 */
 
 html {
-    overflow-y: auto; /* Changed from hidden to auto to allow scrolling */
+    overflow-y: auto;
 }
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #f3f4f6; /* Slate-100 equivalent for outer background */
+    background-color: #f3f4f6; 
 }
 
-/* 1. Custom Scrollbar (Subtle) */
+/* 1. Scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -31,7 +31,7 @@ body {
     background: #D1D5DB;
 }
 
-/* 2. Loader (Elegant) */
+/* 2. Loader */
 .spinner {
     width: 32px;
     height: 32px;
@@ -75,38 +75,25 @@ body {
     color: #9CA3AF;
 }
 
-/* Dark Theme Input */
 .input-dark {
-    background-color: #1f2937; /* Gray 800 */
-    border: 1px solid #374151; /* Gray 700 */
+    background-color: #1f2937;
+    border: 1px solid #374151;
     border-radius: 8px; 
     padding: 8px 12px;
     font-size: 0.875rem;
     transition: all 0.2s ease;
-    color: #F9FAFB; /* Gray 50 */
+    color: #F9FAFB;
     width: 100%;
 }
 
 .input-dark:focus {
     outline: none;
-    border-color: #3B82F6; /* Blue 500 */
+    border-color: #3B82F6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    background-color: #111827; /* Gray 900 */
+    background-color: #111827;
 }
 
-.input-dark::placeholder {
-    color: #6B7280; /* Gray 500 */
-}
-
-.btn-pill {
-    border-radius: 9999px;
-    transition: all 0.2s ease;
-}
-.btn-pill:active {
-    transform: scale(0.96);
-}
-
-/* 4. Animations (Preserved from original) */
+/* 4. Animations */
 @keyframes fadeInOut {
     0% { opacity: 0; transform: translateY(-10px); }
     10% { opacity: 1; transform: translateY(0); }
@@ -128,20 +115,19 @@ body {
     animation: slideDown 0.2s ease-out forwards;
 }
 
-/* 5. Professional Report Styles (For Competitive Insight) */
+/* 5. Report Styles */
 .report-content {
-    color: #334155; /* Slate 700 */
+    color: #334155;
     line-height: 1.6;
     font-size: 0.95rem;
-    overflow-x: hidden; /* Prevent horizontal scroll on body */
 }
 
 .report-content h1, 
 .report-content h2, 
 .report-content h3 {
-    color: #1e293b; /* Slate 800 */
+    color: #1e293b;
     font-weight: 700;
-    margin-top: 2.5em; /* Increased spacing between sections */
+    margin-top: 2.5em; 
     margin-bottom: 0.8em;
     letter-spacing: -0.02em;
 }
@@ -151,33 +137,31 @@ body {
 .report-content h3 { font-size: 1.1em; color: #475569; margin-top: 1.5em; }
 
 .report-content p {
-    margin-bottom: 0.5em; /* Reduced paragraph spacing */
+    margin-bottom: 0.5em; 
 }
 
 .report-content strong {
-    color: #0f172a; /* Slate 900 */
+    color: #0f172a; 
     font-weight: 600;
 }
 
-/* Table Styles - Improved for Responsiveness and Visibility */
 .report-content table {
-    display: table; /* Reverted to table for better auto-layout */
+    display: table; 
     width: 100%;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
     border-collapse: collapse;
-    margin: 1.5em 0; /* More margin around table */
-    font-size: 0.95rem; /* Increased font size to match body text */
+    margin: 1.5em 0; 
+    font-size: 0.95rem; 
     border-radius: 8px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     background-color: white;
 }
 
 .report-content th {
-    background-color: #f8fafc; /* Slate 50 */
+    background-color: #f8fafc; 
     color: #334155;
     font-weight: 700;
-    text-align: center; /* Center aligned headers */
+    text-align: center; 
     padding: 10px 12px;
     border-bottom: 2px solid #e2e8f0;
     white-space: nowrap; 
@@ -190,32 +174,38 @@ body {
     line-height: 1.4;
 }
 
-.report-content tr:last-child td {
-    border-bottom: none;
-}
+.report-content tr:last-child td { border-bottom: none; }
+.report-content tr:nth-child(even) { background-color: #fcfcfd; }
 
-.report-content tr:nth-child(even) {
-    background-color: #fcfcfd;
-}
-
-/* List Styles */
 .report-content ul, .report-content ol {
     margin: 0.5em 0;
     padding-left: 1.5em;
 }
 
-.report-content li {
-    margin-bottom: 0.25em;
-}
+.report-content li { margin-bottom: 0.25em; }
 
-/* Blockquote (Insight Box) */
-.report-content blockquote {
-    margin: 1em 0;
-    padding: 0.75em 1em;
-    background-color: #f8fafc;
-    border-left: 4px solid #3b82f6; /* Blue border */
-    border-radius: 4px;
-    color: #475569;
-    font-style: italic;
-    font-size: 0.9em;
+/* 6. Print Styles */
+@media print {
+    body {
+        background-color: white;
+        padding: 0;
+    }
+    
+    .view-section {
+        display: block !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    
+    header, button, .hidden-print {
+        display: none !important;
+    }
+    
+    #view-report-detail {
+        display: block !important;
+    }
+    
+    .report-content {
+        font-size: 11pt;
+    }
 }

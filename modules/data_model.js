@@ -2,50 +2,81 @@
 
 /**
  * DataModelStore
- * Manages the application state (list of maps + current active map) and notifies listeners.
+ * Manages the application state: Customers, Maps, Reports
  */
 class DataModelStore {
     constructor() {
         this.state = {
-            maps: [], // Array of { id, title, updatedAt, content: {} }
-            currentMapId: null
+            customers: [], // { id, name, createdAt }
+            maps: [],      // { id, customerId, title, updatedAt, content: {} }
+            reports: [],   // { id, customerId, title, createdAt, contentHTML, type }
+            
+            // Current Context
+            currentCustomerId: null,
+            currentMapId: null,
+            currentReportId: null
         };
-        // Listeners for active map content changes (Tree/Map renderers)
-        this.contentListeners = [];
-        // Listeners for map list changes (Home screen)
-        this.listListeners = [];
+        
+        this.listeners = [];
     }
 
     init(initialData) {
-        if (initialData && Array.isArray(initialData.maps)) {
-            this.state.maps = initialData.maps;
-        } else {
-            this.state.maps = [];
+        if (initialData) {
+            this.state.customers = Array.isArray(initialData.customers) ? initialData.customers : [];
+            this.state.maps = Array.isArray(initialData.maps) ? initialData.maps : [];
+            this.state.reports = Array.isArray(initialData.reports) ? initialData.reports : [];
         }
-        this.notifyList();
+        
+        // Migration for legacy data (maps without customerId)
+        // Assign them to a "General" customer if they exist
+        const orphanedMaps = this.state.maps.filter(m => !m.customerId);
+        if (orphanedMaps.length > 0) {
+            let defaultCustomer = this.state.customers.find(c => c.name === "General");
+            if (!defaultCustomer) {
+                defaultCustomer = { id: crypto.randomUUID(), name: "General", createdAt: Date.now() };
+                this.state.customers.push(defaultCustomer);
+            }
+            orphanedMaps.forEach(m => m.customerId = defaultCustomer.id);
+        }
+
+        this.notify();
     }
 
-    // --- State Accessors ---
+    // --- Accessors ---
 
-    getMaps() {
-        // Sort by updatedAt desc
-        return [...this.state.maps].sort((a, b) => b.updatedAt - a.updatedAt);
+    getCustomers() {
+        return [...this.state.customers].sort((a, b) => b.createdAt - a.createdAt);
+    }
+
+    getCurrentCustomer() {
+        return this.state.customers.find(c => c.id === this.state.currentCustomerId);
+    }
+
+    getMapsByCustomer(customerId) {
+        return this.state.maps
+            .filter(m => m.customerId === customerId)
+            .sort((a, b) => b.updatedAt - a.updatedAt);
+    }
+
+    getReportsByCustomer(customerId) {
+        return this.state.reports
+            .filter(r => r.customerId === customerId)
+            .sort((a, b) => b.createdAt - a.createdAt);
     }
 
     getCurrentMap() {
         return this.state.maps.find(m => m.id === this.state.currentMapId);
     }
 
-    // Returns just the 'content' object for the active map (for tree/treemap renderers)
-    getData() {
-        const current = this.getCurrentMap();
-        return current ? current.content : {};
+    getCurrentReport() {
+        return this.state.reports.find(r => r.id === this.state.currentReportId);
     }
 
-    /**
-     * Returns a flat text representation of the current solution map.
-     * Used for providing context to the AI model.
-     */
+    getData() {
+        const map = this.getCurrentMap();
+        return map ? map.content : {};
+    }
+
     getSolutionContextString() {
         const data = this.getData();
         const lines = [];
@@ -59,108 +90,122 @@ class DataModelStore {
             });
         });
 
-        if (lines.length === 0) return "No solutions defined in the current architecture.";
+        if (lines.length === 0) return "No solutions defined.";
         return lines.join('\n');
     }
 
-    // --- Subscription ---
-
-    subscribe(listener) {
-        this.contentListeners.push(listener);
+    getFullState() {
+        return {
+            customers: this.state.customers,
+            maps: this.state.maps,
+            reports: this.state.reports
+        };
     }
 
-    subscribeList(listener) {
-        this.listListeners.push(listener);
+    // --- Actions ---
+
+    subscribe(listener) {
+        this.listeners.push(listener);
     }
 
     notify() {
-        // Notify components watching the Active Map's content
-        const data = this.getData();
-        this.contentListeners.forEach(listener => listener(data));
+        this.listeners.forEach(listener => listener(this.getFullState()));
     }
-
-    notifyList() {
-        // Notify components watching the Map List (Home Screen)
-        const maps = this.getMaps();
-        this.listListeners.forEach(listener => listener({ maps }));
-    }
-
-    getFullState() {
-        return { maps: this.state.maps };
-    }
-
-    // --- Map Management Actions ---
-
-    createMap(title) {
-        const newMap = {
-            id: crypto.randomUUID(),
-            title: title || "Untitled Map",
-            updatedAt: Date.now(),
-            content: {} 
-        };
-        this.state.maps.push(newMap);
-        this.state.currentMapId = newMap.id;
-        
-        this.notifyList();
-        this.notify();
-        return newMap.id;
-    }
-
-    selectMap(id) {
-        const map = this.state.maps.find(m => m.id === id);
-        if (map) {
-            this.state.currentMapId = id;
-            this.notify();
-        }
-    }
-
-    deleteMap(id) {
-        this.state.maps = this.state.maps.filter(m => m.id !== id);
-        if (this.state.currentMapId === id) {
-            this.state.currentMapId = null;
-        }
-        this.notifyList();
-    }
-
-    updateCurrentMapTitle(newTitle) {
-        const map = this.getCurrentMap();
-        if (map) {
-            map.title = newTitle;
-            map.updatedAt = Date.now();
-            this.notifyList();
-        }
-    }
-
-    saveCurrentMap() {
-        const map = this.getCurrentMap();
-        if (map) {
-            map.updatedAt = Date.now();
-            this.notifyList();
-            return this.getFullState(); // Return full state for LocalStorage
-        }
-        return null;
-    }
-
-    // --- Content Manipulation Actions (Operates on Current Map) ---
 
     _touch() {
         const map = this.getCurrentMap();
         if (map) map.updatedAt = Date.now();
     }
 
-    resetData() {
-        const map = this.getCurrentMap();
+    // Customer Actions
+    addCustomer(name) {
+        const newCustomer = {
+            id: crypto.randomUUID(),
+            name: name,
+            createdAt: Date.now()
+        };
+        this.state.customers.push(newCustomer);
+        this.notify();
+        return newCustomer.id;
+    }
+
+    deleteCustomer(id) {
+        this.state.customers = this.state.customers.filter(c => c.id !== id);
+        this.state.maps = this.state.maps.filter(m => m.customerId !== id);
+        this.state.reports = this.state.reports.filter(r => r.customerId !== id);
+        this.notify();
+    }
+
+    setCurrentCustomer(id) {
+        this.state.currentCustomerId = id;
+        this.notify();
+    }
+
+    // Map Actions
+    createMap(customerId, title) {
+        const newMap = {
+            id: crypto.randomUUID(),
+            customerId: customerId,
+            title: title || "새 솔루션 맵",
+            updatedAt: Date.now(),
+            content: {}
+        };
+        this.state.maps.push(newMap);
+        this.state.currentMapId = newMap.id;
+        this.notify();
+        return newMap.id;
+    }
+
+    setCurrentMap(id) {
+        this.state.currentMapId = id;
+        this.notify(); // Triggers renderers
+    }
+
+    updateMapTitle(id, newTitle) {
+        const map = this.state.maps.find(m => m.id === id);
         if (map) {
-            map.content = {};
-            this._touch();
+            map.title = newTitle;
+            map.updatedAt = Date.now();
             this.notify();
         }
     }
 
+    deleteMap(id) {
+        this.state.maps = this.state.maps.filter(m => m.id !== id);
+        if (this.state.currentMapId === id) this.state.currentMapId = null;
+        this.notify();
+    }
+
+    // Report Actions
+    addReport(customerId, title, contentHTML, type = 'competitive_insight') {
+        const newReport = {
+            id: crypto.randomUUID(),
+            customerId: customerId,
+            title: title,
+            contentHTML: contentHTML,
+            type: type,
+            createdAt: Date.now()
+        };
+        this.state.reports.push(newReport);
+        this.notify();
+        return newReport.id;
+    }
+
+    deleteReport(id) {
+        this.state.reports = this.state.reports.filter(r => r.id !== id);
+        this.notify();
+    }
+
+    setCurrentReport(id) {
+        this.state.currentReportId = id;
+        this.notify();
+    }
+
+    // --- Editor Actions (Operate on currentMap) ---
+
     addDomain(name) {
         const map = this.getCurrentMap();
         if (!map) return false;
-        
         if (!name || map.content[name]) return false;
         map.content[name] = {};
         this._touch();
@@ -171,7 +216,6 @@ class DataModelStore {
     renameDomain(oldName, newName) {
         const map = this.getCurrentMap();
         if (!map) return false;
-
         if (!newName || oldName === newName) return true;
         if (map.content[newName]) return false; 
         
@@ -195,7 +239,6 @@ class DataModelStore {
     addCategory(domain, name) {
         const map = this.getCurrentMap();
         if (!map) return false;
-
         if (!name || !map.content[domain]) return false;
         if (map.content[domain][name]) return false;
         
@@ -208,7 +251,6 @@ class DataModelStore {
     renameCategory(domain, oldName, newName) {
         const map = this.getCurrentMap();
         if (!map) return false;
-
         if (!newName || oldName === newName) return true;
         if (map.content[domain][newName]) return false;
 
@@ -229,57 +271,34 @@ class DataModelStore {
         }
     }
 
-    addSolution(domain, category, name, share, manufacturer = "", painPoints = [], note = "") {
+    addSolution(domain, category, name, share, manufacturer, painPoints, note) {
         const map = this.getCurrentMap();
         if (!map) return 'ERROR';
-        if (!map.content[domain] || !map.content[domain][category]) return 'INVALID_TARGET';
-        
-        const solutions = map.content[domain][category];
+        const solutions = map.content[domain]?.[category];
+        if (!solutions) return 'INVALID_TARGET';
         
         if (solutions.some(s => s.name === name)) return 'DUPLICATE';
+        const total = solutions.reduce((sum, s) => sum + s.share, 0);
+        if (total + share > 100) return 'OVERFLOW';
 
-        const currentTotal = solutions.reduce((sum, s) => sum + s.share, 0);
-        if (currentTotal + share > 100) return 'OVERFLOW';
-
-        solutions.push({ 
-            name, 
-            share,
-            manufacturer: manufacturer || "",
-            painPoints: painPoints || [],
-            note: note || ""
-        });
-        
+        solutions.push({ name, share, manufacturer, painPoints, note });
         this._touch();
         this.notify();
         return 'SUCCESS';
     }
 
-    updateSolution(domain, category, index, newName, newShare, newManufacturer, newPainPoints, newNote) {
+    updateSolution(domain, category, index, name, share, manufacturer, painPoints, note) {
         const map = this.getCurrentMap();
         if (!map) return 'ERROR';
+        const solutions = map.content[domain]?.[category];
+        if (!solutions || !solutions[index]) return 'INVALID_INDEX';
 
-        if (!map.content[domain] || !map.content[domain][category]) return 'INVALID_TARGET';
-        const solutions = map.content[domain][category];
+        if (solutions[index].name !== name && solutions.some(s => s.name === name)) return 'DUPLICATE';
         
-        if (!solutions[index]) return 'INVALID_INDEX';
+        const otherSum = solutions.reduce((sum, s, i) => i === index ? sum : sum + s.share, 0);
+        if (otherSum + share > 100) return 'OVERFLOW';
 
-        if (solutions[index].name !== newName && solutions.some((s, i) => i !== index && s.name === newName)) {
-            return 'DUPLICATE';
-        }
-
-        const otherShares = solutions.reduce((sum, s, i) => i === index ? sum : sum + s.share, 0);
-        if (otherShares + newShare > 100) return 'OVERFLOW';
-
-        // Merge existing fields with updates if not provided (optional safety, though UI provides all)
-        const existing = solutions[index];
-        solutions[index] = { 
-            name: newName, 
-            share: newShare,
-            manufacturer: newManufacturer !== undefined ? newManufacturer : existing.manufacturer,
-            painPoints: newPainPoints !== undefined ? newPainPoints : existing.painPoints,
-            note: newNote !== undefined ? newNote : existing.note
-        };
-        
+        solutions[index] = { name, share, manufacturer, painPoints, note };
         this._touch();
         this.notify();
         return 'SUCCESS';
@@ -287,7 +306,7 @@ class DataModelStore {
 
     deleteSolution(domain, category, index) {
         const map = this.getCurrentMap();
-        if (map && map.content[domain] && map.content[domain][category]) {
+        if (map?.content[domain]?.[category]) {
             map.content[domain][category].splice(index, 1);
             this._touch();
             this.notify();
