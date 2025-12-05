@@ -99,7 +99,7 @@ function renderUI() {
             </div>
 
             <!-- Result Section -->
-            <div class="flex-1 min-h-[400px] border border-slate-100 rounded-xl p-8 overflow-y-auto bg-white relative" id="insight-result-area">
+            <div class="flex-1 min-h-[400px] border border-slate-100 rounded-xl p-8 overflow-y-auto bg-white relative shadow-inner" id="insight-result-area">
                 <div id="insight-placeholder" class="flex flex-col items-center justify-center h-full text-slate-400">
                     <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
@@ -111,7 +111,8 @@ function renderUI() {
                     <div class="spinner border-indigo-600 border-t-transparent w-10 h-10 mb-3"></div>
                     <p class="text-indigo-600 font-bold animate-pulse">Gemini가 분석 보고서를 작성 중입니다...</p>
                 </div>
-                <div id="insight-content" class="hidden prose prose-slate max-w-none prose-headings:text-slate-800 prose-p:text-slate-600 prose-li:text-slate-600 prose-strong:text-indigo-700"></div>
+                <!-- Added 'report-content' class for custom styling -->
+                <div id="insight-content" class="hidden report-content"></div>
             </div>
         </div>
     `;
@@ -142,29 +143,30 @@ async function generateInsight() {
     try {
         let prompt = `
 You are an expert Solution Architect and Technology Consultant.
-I need a competitive analysis report based on the following context.
+I need a professional, structured Competitive Analysis Report based on the context below.
 
-**Current Solution Architecture (My Existing Tech Stack):**
+**Context: Current Solution Architecture (Existing Tech Stack):**
 ${currentMapContext}
 
-**Analysis Task:**
+**Analysis Target:**
 `;
 
         if (ourProduct) {
-            prompt += `Compare the competitor product "${competitor}" against our product "${ourProduct}". 
-            Focus specifically on which product serves the "Current Solution Architecture" better in terms of integration, compatibility, and ecosystem synergy.`;
+            prompt += `Compare the competitor product "**${competitor}**" against our product "**${ourProduct}**".`;
         } else {
-            prompt += `Analyze the competitor product "${competitor}". 
-            Identify its potential weaknesses, limitations, or verification points specifically regarding its integration with the "Current Solution Architecture" listed above.
-            Find points where this competitor product might struggle to connect or exchange data with the existing solutions.`;
+            prompt += `Analyze the competitor product "**${competitor}**" focusing on its integration risks and weaknesses relative to the current architecture.`;
         }
 
         prompt += `
 
-**Output Format:**
-Provide the response in structured Markdown (headings, bullet points, bold text). 
-Do not include any introductory fluff. Start directly with the Report Title.
-Language: Korean.
+**Report Requirements (Strict Output Format):**
+1.  **Executive Summary**: Start with a distinct "Executive Summary" section. Summarize the key findings and recommendation in 2-3 concise sentences.
+2.  **Compatibility Assessment**: Provide a rating (e.g., "High", "Medium", "Low") for integration compatibility with the current stack, followed by a brief reason.
+3.  **Comparison Table**: Use a Markdown Table to compare key aspects (e.g., Features, Integration, Cost/Complexity, Ecosystem).
+4.  **Key Analysis**: Use bullet points to detail specific strengths, weaknesses, and integration risks.
+5.  **Language**: Korean.
+6.  **Style**: Professional, objective, and concise. Use bold text for emphasis. Do NOT include greeting or introductory fluff.
+
 `;
 
         // Switch to POST with JSON body (text/plain) to avoid GAS CORS preflight and form-data echoing issues
