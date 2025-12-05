@@ -1,3 +1,4 @@
+
 import { store } from './data_model.js';
 import { showSolutionDetailModal } from '../utils/modal.js';
 
@@ -226,7 +227,7 @@ function generateDomainInsights(domainName, categories) {
     wrapper.appendChild(insightHeader);
     
     const grid = document.createElement('div');
-    grid.className = "grid grid-cols-1 gap-4";
+    grid.className = "grid grid-cols-1 md:grid-cols-2 gap-4";
 
     Object.entries(categories).forEach(([catName, solutions]) => {
         solutions.forEach(sol => {
