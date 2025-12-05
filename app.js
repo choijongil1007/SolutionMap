@@ -329,6 +329,15 @@ function setupGlobalEvents() {
         navigateTo(ROUTES.WORKSPACE, { customerId: customer?.id });
     };
     
+    // Editor: Go to Map Button
+    const btnGotoMap = document.getElementById('editor-btn-goto-map');
+    if(btnGotoMap) {
+        btnGotoMap.onclick = () => {
+            const map = store.getCurrentMap();
+            if(map) navigateTo(ROUTES.MAP_DETAIL, { mapId: map.id });
+        };
+    }
+    
     // Save Button -> Open Name Modal
     document.getElementById('btn-manual-save').onclick = openSaveMapModal;
 
@@ -416,6 +425,9 @@ function setupModalEvents() {
                 document.getElementById('editor-map-title').textContent = name;
                 
                 closeSaveMapModal();
+
+                // Redirect to Map Detail after save
+                navigateTo(ROUTES.MAP_DETAIL, { mapId: map.id });
             }
         }
     };

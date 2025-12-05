@@ -1,3 +1,5 @@
+
+
 import { store } from './data_model.js';
 import { showWarningModal } from '../utils/modal.js';
 
@@ -33,7 +35,7 @@ function renderUI() {
         <div class="flex flex-col gap-6">
             <!-- Input Section -->
             <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                <h3 class="text-lg font-bold text-slate-800 mb-4">경쟁 분석 파라미터</h3>
+                <h3 class="text-lg font-bold text-slate-800 mb-4">경쟁 제품</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-600 mb-1.5">자사 제품 (필수)</label>
@@ -72,7 +74,7 @@ function renderUI() {
                 <!-- Loading Overlay: Absolute to cover the container -->
                 <div id="insight-loading" class="hidden absolute inset-0 bg-white/95 flex flex-col items-center justify-center z-20 rounded-xl">
                     <div class="spinner border-indigo-600 border-t-transparent w-10 h-10 mb-3"></div>
-                    <p class="text-indigo-600 font-bold animate-pulse">Gemini가 아키텍처 호환성 및 경쟁 우위를 분석 중입니다...</p>
+                    <p class="text-indigo-600 font-bold animate-pulse">아키텍처 호환성 및 경쟁 우위를 분석 중...</p>
                 </div>
 
                 <!-- Save Button Overlay: Absolute bottom -->
