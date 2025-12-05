@@ -1,72 +1,71 @@
-
+import { db } from '../utils/firebase.js';
+import { 
+    collection, 
+    addDoc, 
+    updateDoc, 
+    deleteDoc, 
+    doc, 
+    onSnapshot, 
+    query, 
+    orderBy,
+    setDoc,
+    serverTimestamp
+} from "firebase/firestore";
 
 /**
  * DataModelStore
- * Manages the application state: Customers, Maps, Reports
+ * Manages the application state synced with Firestore
  */
 class DataModelStore {
     constructor() {
         this.state = {
-            customers: [], // { id, name, createdAt }
-            maps: [],      // { id, customerId, title, updatedAt, content: {} }
-            reports: [],   // { id, customerId, title, createdAt, contentHTML, type }
+            customers: [], 
+            maps: [],      
+            reports: [],   
             
-            // Current Context
+            // Current Context (Local Only)
             currentCustomerId: null,
             currentMapId: null,
             currentReportId: null
         };
         
         this.listeners = [];
+        this.unsubscribes = [];
+        this.initialized = false;
     }
 
-    init(initialData) {
-        if (initialData) {
-            this.state.customers = Array.isArray(initialData.customers) ? initialData.customers : [];
-            this.state.maps = Array.isArray(initialData.maps) ? initialData.maps : [];
-            this.state.reports = Array.isArray(initialData.reports) ? initialData.reports : [];
-        }
-        
-        // --- SANITIZATION & MIGRATION ---
+    async init() {
+        if (this.initialized) return;
 
-        // 1. Data Cleaning: Remove system keys if they accidentally got saved into map content
-        // This fixes the issue where 'customers', 'maps' appear as tree nodes
-        const systemKeys = ['customers', 'maps', 'reports', 'currentCustomerId', 'currentMapId', 'currentReportId'];
-        this.state.maps.forEach(map => {
-            if (map.content) {
-                systemKeys.forEach(key => {
-                    if (key in map.content) {
-                        delete map.content[key];
-                    }
-                });
-            }
+        // Subscribe to Customers
+        const qCust = query(collection(db, "customers"), orderBy("createdAt", "desc"));
+        const unsubCust = onSnapshot(qCust, (snapshot) => {
+            this.state.customers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            this.notify();
         });
 
-        // 2. Migration: Rename 'General' to 'K 금융사'
-        const generalCust = this.state.customers.find(c => c.name === "General");
-        if (generalCust) {
-            generalCust.name = "K 금융사";
-        }
+        // Subscribe to Maps
+        const qMaps = query(collection(db, "maps"), orderBy("updatedAt", "desc"));
+        const unsubMaps = onSnapshot(qMaps, (snapshot) => {
+            this.state.maps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            this.notify();
+        });
 
-        // 3. Migration: Handle orphaned maps
-        const orphanedMaps = this.state.maps.filter(m => !m.customerId);
-        if (orphanedMaps.length > 0) {
-            let defaultCustomer = this.state.customers.find(c => c.name === "K 금융사");
-            if (!defaultCustomer) {
-                // If even 'K 금융사' doesn't exist, create it
-                defaultCustomer = { id: crypto.randomUUID(), name: "K 금융사", createdAt: Date.now() };
-                this.state.customers.push(defaultCustomer);
-            }
-            orphanedMaps.forEach(m => m.customerId = defaultCustomer.id);
-        }
+        // Subscribe to Reports
+        const qReps = query(collection(db, "reports"), orderBy("createdAt", "desc"));
+        const unsubReps = onSnapshot(qReps, (snapshot) => {
+            this.state.reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            this.notify();
+        });
 
-        this.notify();
+        this.unsubscribes.push(unsubCust, unsubMaps, unsubReps);
+        this.initialized = true;
     }
 
     // --- Accessors ---
 
     getCustomers() {
-        return [...this.state.customers].sort((a, b) => b.createdAt - a.createdAt);
+        return this.state.customers;
     }
 
     getCurrentCustomer() {
@@ -74,15 +73,11 @@ class DataModelStore {
     }
 
     getMapsByCustomer(customerId) {
-        return this.state.maps
-            .filter(m => m.customerId === customerId)
-            .sort((a, b) => b.updatedAt - a.updatedAt);
+        return this.state.maps.filter(m => m.customerId === customerId);
     }
 
     getReportsByCustomer(customerId) {
-        return this.state.reports
-            .filter(r => r.customerId === customerId)
-            .sort((a, b) => b.createdAt - a.createdAt);
+        return this.state.reports.filter(r => r.customerId === customerId);
     }
 
     getCurrentMap() {
@@ -95,7 +90,6 @@ class DataModelStore {
 
     getData() {
         const map = this.getCurrentMap();
-        // Return a defensive copy or ensure it's an object
         return map ? (map.content || {}) : {};
     }
 
@@ -104,7 +98,6 @@ class DataModelStore {
         const lines = [];
         
         Object.entries(data).forEach(([domain, categories]) => {
-            // Guard against corrupted data structure
             if (typeof categories !== 'object' || Array.isArray(categories)) return;
 
             Object.entries(categories).forEach(([category, solutions]) => {
@@ -121,6 +114,7 @@ class DataModelStore {
     }
 
     getFullState() {
+        // Only for debug or local backup, not used for persistence anymore
         return {
             customers: this.state.customers,
             maps: this.state.maps,
@@ -138,28 +132,36 @@ class DataModelStore {
         this.listeners.forEach(listener => listener(this.getFullState()));
     }
 
-    _touch() {
-        const map = this.getCurrentMap();
-        if (map) map.updatedAt = Date.now();
-    }
-
     // Customer Actions
-    addCustomer(name) {
-        const newCustomer = {
-            id: crypto.randomUUID(),
-            name: name,
-            createdAt: Date.now()
-        };
-        this.state.customers.push(newCustomer);
-        this.notify();
-        return newCustomer.id;
+    async addCustomer(name) {
+        try {
+            const docRef = await addDoc(collection(db, "customers"), {
+                name: name,
+                createdAt: Date.now()
+            });
+            return docRef.id;
+        } catch (e) {
+            console.error("Error adding customer: ", e);
+        }
     }
 
-    deleteCustomer(id) {
-        this.state.customers = this.state.customers.filter(c => c.id !== id);
-        this.state.maps = this.state.maps.filter(m => m.customerId !== id);
-        this.state.reports = this.state.reports.filter(r => r.customerId !== id);
-        this.notify();
+    async deleteCustomer(id) {
+        try {
+            // Delete customer doc
+            await deleteDoc(doc(db, "customers", id));
+            
+            // Delete related maps (In a real backend this should be a cloud function, here client-side)
+            const mapIds = this.state.maps.filter(m => m.customerId === id).map(m => m.id);
+            mapIds.forEach(mid => deleteDoc(doc(db, "maps", mid)));
+
+            // Delete related reports
+            const repIds = this.state.reports.filter(r => r.customerId === id).map(r => r.id);
+            repIds.forEach(rid => deleteDoc(doc(db, "reports", rid)));
+            
+            if (this.state.currentCustomerId === id) this.state.currentCustomerId = null;
+        } catch (e) {
+            console.error("Error deleting customer: ", e);
+        }
     }
 
     setCurrentCustomer(id) {
@@ -168,58 +170,54 @@ class DataModelStore {
     }
 
     // Map Actions
-    createMap(customerId, title) {
-        const newMap = {
-            id: crypto.randomUUID(),
-            customerId: customerId,
-            title: title || "새 솔루션 맵",
-            updatedAt: Date.now(),
-            content: {}
-        };
-        this.state.maps.push(newMap);
-        this.state.currentMapId = newMap.id;
-        this.notify();
-        return newMap.id;
+    async createMap(customerId, title) {
+        try {
+            const docRef = await addDoc(collection(db, "maps"), {
+                customerId: customerId,
+                title: title || "새 솔루션 맵",
+                updatedAt: Date.now(),
+                content: {}
+            });
+            this.state.currentMapId = docRef.id;
+            this.notify();
+            return docRef.id;
+        } catch (e) {
+            console.error("Error creating map: ", e);
+        }
     }
 
     setCurrentMap(id) {
         this.state.currentMapId = id;
-        this.notify(); // Triggers renderers
-    }
-
-    updateMapTitle(id, newTitle) {
-        const map = this.state.maps.find(m => m.id === id);
-        if (map) {
-            map.title = newTitle;
-            map.updatedAt = Date.now();
-            this.notify();
-        }
-    }
-
-    deleteMap(id) {
-        this.state.maps = this.state.maps.filter(m => m.id !== id);
-        if (this.state.currentMapId === id) this.state.currentMapId = null;
         this.notify();
     }
 
+    async updateMapTitle(id, newTitle) {
+        const mapRef = doc(db, "maps", id);
+        await updateDoc(mapRef, {
+            title: newTitle,
+            updatedAt: Date.now()
+        });
+    }
+
+    async deleteMap(id) {
+        await deleteDoc(doc(db, "maps", id));
+        if (this.state.currentMapId === id) this.state.currentMapId = null;
+    }
+
     // Report Actions
-    addReport(customerId, title, contentHTML, type = 'competitive_insight') {
-        const newReport = {
-            id: crypto.randomUUID(),
+    async addReport(customerId, title, contentHTML, type = 'competitive_insight') {
+        const docRef = await addDoc(collection(db, "reports"), {
             customerId: customerId,
             title: title,
             contentHTML: contentHTML,
             type: type,
             createdAt: Date.now()
-        };
-        this.state.reports.push(newReport);
-        this.notify();
-        return newReport.id;
+        });
+        return docRef.id;
     }
 
-    deleteReport(id) {
-        this.state.reports = this.state.reports.filter(r => r.id !== id);
-        this.notify();
+    async deleteReport(id) {
+        await deleteDoc(doc(db, "reports", id));
     }
 
     setCurrentReport(id) {
@@ -228,79 +226,121 @@ class DataModelStore {
     }
 
     // --- Editor Actions (Operate on currentMap) ---
+    // These methods modify content locally and then push the update to Firestore
+
+    _getCloneContent() {
+        const map = this.getCurrentMap();
+        if (!map) return null;
+        // Deep clone content to modify
+        return JSON.parse(JSON.stringify(map.content || {}));
+    }
+
+    async _saveContent(newContent) {
+        const map = this.getCurrentMap();
+        if (!map) return;
+        const mapRef = doc(db, "maps", map.id);
+        await updateDoc(mapRef, {
+            content: newContent,
+            updatedAt: Date.now()
+        });
+    }
 
     addDomain(name) {
+        const content = this._getCloneContent();
+        if (!content) return false;
+        if (!name || content[name]) return false;
+        
+        content[name] = {};
+        
+        // Optimistic update
         const map = this.getCurrentMap();
-        if (!map) return false;
-        if (!name || map.content[name]) return false;
-        map.content[name] = {};
-        this._touch();
+        map.content = content; 
         this.notify();
+
+        this._saveContent(content);
         return true;
     }
 
     renameDomain(oldName, newName) {
-        const map = this.getCurrentMap();
-        if (!map) return false;
+        const content = this._getCloneContent();
+        if (!content) return false;
         if (!newName || oldName === newName) return true;
-        if (map.content[newName]) return false; 
+        if (content[newName]) return false; 
         
-        const content = map.content[oldName];
-        delete map.content[oldName];
-        map.content[newName] = content;
-        this._touch();
+        content[newName] = content[oldName];
+        delete content[oldName];
+        
+        const map = this.getCurrentMap();
+        map.content = content;
         this.notify();
+
+        this._saveContent(content);
         return true;
     }
 
     deleteDomain(name) {
-        const map = this.getCurrentMap();
-        if (map) {
-            delete map.content[name];
-            this._touch();
+        const content = this._getCloneContent();
+        if (content) {
+            delete content[name];
+            
+            const map = this.getCurrentMap();
+            map.content = content;
             this.notify();
+
+            this._saveContent(content);
         }
     }
 
     addCategory(domain, name) {
-        const map = this.getCurrentMap();
-        if (!map) return false;
-        if (!name || !map.content[domain]) return false;
-        if (map.content[domain][name]) return false;
+        const content = this._getCloneContent();
+        if (!content) return false;
+        if (!name || !content[domain]) return false;
+        if (content[domain][name]) return false;
         
-        map.content[domain][name] = [];
-        this._touch();
+        content[domain][name] = [];
+        
+        const map = this.getCurrentMap();
+        map.content = content;
         this.notify();
+
+        this._saveContent(content);
         return true;
     }
 
     renameCategory(domain, oldName, newName) {
-        const map = this.getCurrentMap();
-        if (!map) return false;
+        const content = this._getCloneContent();
+        if (!content) return false;
         if (!newName || oldName === newName) return true;
-        if (map.content[domain][newName]) return false;
+        if (content[domain][newName]) return false;
 
-        const content = map.content[domain][oldName];
-        delete map.content[domain][oldName];
-        map.content[domain][newName] = content;
-        this._touch();
+        content[domain][newName] = content[domain][oldName];
+        delete content[domain][oldName];
+
+        const map = this.getCurrentMap();
+        map.content = content;
         this.notify();
+
+        this._saveContent(content);
         return true;
     }
 
     deleteCategory(domain, name) {
-        const map = this.getCurrentMap();
-        if (map && map.content[domain]) {
-            delete map.content[domain][name];
-            this._touch();
+        const content = this._getCloneContent();
+        if (content && content[domain]) {
+            delete content[domain][name];
+            
+            const map = this.getCurrentMap();
+            map.content = content;
             this.notify();
+
+            this._saveContent(content);
         }
     }
 
     addSolution(domain, category, name, share, manufacturer, painPoints, note) {
-        const map = this.getCurrentMap();
-        if (!map) return 'ERROR';
-        const solutions = map.content[domain]?.[category];
+        const content = this._getCloneContent();
+        if (!content) return 'ERROR';
+        const solutions = content[domain]?.[category];
         if (!solutions) return 'INVALID_TARGET';
         
         if (solutions.some(s => s.name === name)) return 'DUPLICATE';
@@ -308,15 +348,19 @@ class DataModelStore {
         if (total + share > 100) return 'OVERFLOW';
 
         solutions.push({ name, share, manufacturer, painPoints, note });
-        this._touch();
+        
+        const map = this.getCurrentMap();
+        map.content = content;
         this.notify();
+
+        this._saveContent(content);
         return 'SUCCESS';
     }
 
     updateSolution(domain, category, index, name, share, manufacturer, painPoints, note) {
-        const map = this.getCurrentMap();
-        if (!map) return 'ERROR';
-        const solutions = map.content[domain]?.[category];
+        const content = this._getCloneContent();
+        if (!content) return 'ERROR';
+        const solutions = content[domain]?.[category];
         if (!solutions || !solutions[index]) return 'INVALID_INDEX';
 
         if (solutions[index].name !== name && solutions.some(s => s.name === name)) return 'DUPLICATE';
@@ -325,17 +369,25 @@ class DataModelStore {
         if (otherSum + share > 100) return 'OVERFLOW';
 
         solutions[index] = { name, share, manufacturer, painPoints, note };
-        this._touch();
+        
+        const map = this.getCurrentMap();
+        map.content = content;
         this.notify();
+
+        this._saveContent(content);
         return 'SUCCESS';
     }
 
     deleteSolution(domain, category, index) {
-        const map = this.getCurrentMap();
-        if (map?.content[domain]?.[category]) {
-            map.content[domain][category].splice(index, 1);
-            this._touch();
+        const content = this._getCloneContent();
+        if (content?.content?.[domain]?.[category] || content?.[domain]?.[category]) {
+            content[domain][category].splice(index, 1);
+            
+            const map = this.getCurrentMap();
+            map.content = content;
             this.notify();
+
+            this._saveContent(content);
         }
     }
 }

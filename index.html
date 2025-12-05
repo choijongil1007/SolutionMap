@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -13,6 +12,18 @@
     <!-- Marked.js -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
+    <!-- Firebase SDK Import Map -->
+    <script type="importmap">
+{
+  "imports": {
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
+    "firebase/analytics": "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
+  }
+}
+</script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -47,6 +58,12 @@
                 </button>
             </header>
 
+            <!-- Loading Indicator for Firebase -->
+            <div id="app-loading" class="hidden text-center py-10">
+                <div class="spinner border-slate-900 mx-auto mb-4"></div>
+                <p class="text-slate-500 text-sm">데이터를 불러오는 중...</p>
+            </div>
+
             <div id="customer-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Customer Cards Injected Here -->
             </div>
@@ -61,10 +78,8 @@
 
             <!-- Footer / Reset Area -->
             <div class="mt-16 pt-8 border-t border-slate-200 flex justify-center">
-                <button id="btn-reset-app" class="text-xs text-slate-400 hover:text-red-500 hover:underline transition-colors flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                    앱 데이터 초기화 (문제 발생 시 클릭)
-                </button>
+                <!-- Removed Reset Button as it is dangerous with Cloud DB -->
+                <p class="text-xs text-slate-400">Powered by Google Firebase</p>
             </div>
         </div>
 
@@ -89,8 +104,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Left: Solution Maps -->
                 <div class="flex flex-col gap-4">
-                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <span class="w-2 h-6 bg-slate-900 rounded-sm"></span>
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2 border-l-4 border-slate-900 pl-3 py-1 bg-white rounded-r-lg shadow-sm">
                         솔루션 맵
                     </h2>
                     <div id="ws-map-list" class="space-y-4">
@@ -103,8 +117,7 @@
 
                 <!-- Right: Competitive Reports -->
                 <div class="flex flex-col gap-4">
-                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <span class="w-2 h-6 bg-slate-900 rounded-sm"></span>
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2 border-l-4 border-slate-900 pl-3 py-1 bg-white rounded-r-lg shadow-sm">
                         경쟁 분석 보고서
                     </h2>
                     <div id="ws-report-list" class="space-y-4">

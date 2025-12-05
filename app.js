@@ -1,11 +1,11 @@
-
-
-import { loadData, saveData } from './utils/localstorage.js';
+import { loadData } from './utils/localstorage.js'; // Kept ONLY for migration
 import { store } from './modules/data_model.js';
 import { initTreeBuilder } from './modules/tree_builder.js';
 import { initTreemap } from './modules/treemap_renderer.js';
 import { initStrategyRenderer } from './modules/insight_renderer.js';
 import { showConfirmModal, showWarningModal } from './utils/modal.js';
+import { db } from './utils/firebase.js';
+import { collection, getDocs, doc, setDoc } from "firebase/firestore";
 
 // --- Router State ---
 const ROUTES = {
@@ -43,28 +43,87 @@ const modals = {
 
 // --- Initialization ---
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Init Components
+document.addEventListener('DOMContentLoaded', async () => {
+    // Show Loading
+    const loader = document.getElementById('app-loading');
+    if(loader) loader.classList.remove('hidden');
+
+    // 1. Check for Migration
+    await checkAndMigrateData();
+
+    // 2. Init Store (Firestore Listeners)
+    await store.init();
+
+    // 3. Init Components
     initTreeBuilder('tree-container');
     initTreemap('treemap-container');
-    // Also init treemap for detail view
     initTreemap('detail-treemap-area'); 
-    // Init Strategy Renderer
     initStrategyRenderer('strategy-container');
-
-    // 2. Load Data
-    const initialData = loadData();
-    store.init(initialData);
-
-    // 3. Auto-save
-    store.subscribe(() => saveData(store.getFullState()));
 
     // 4. Setup Global Events
     setupGlobalEvents();
 
+    if(loader) loader.classList.add('hidden');
+
     // 5. Start at Home
     navigateTo(ROUTES.HOME);
 });
+
+async function checkAndMigrateData() {
+    try {
+        // Check if Firestore has any customers
+        const snapshot = await getDocs(collection(db, "customers"));
+        if (!snapshot.empty) {
+            console.log("Firestore already has data. Skipping migration.");
+            return;
+        }
+
+        // Check LocalStorage
+        const localData = loadData();
+        if (!localData || !localData.customers || localData.customers.length === 0) {
+            console.log("No local data to migrate.");
+            return;
+        }
+
+        console.log("Migrating LocalStorage data to Firestore...");
+        
+        // Migrate Customers
+        for (const cust of localData.customers) {
+            // Use existing ID as Doc ID to preserve links
+            await setDoc(doc(db, "customers", cust.id), cust);
+        }
+
+        // Migrate Maps
+        if (localData.maps) {
+            for (const map of localData.maps) {
+                // Ensure map content is clean
+                const cleanMap = { ...map };
+                if (!cleanMap.content) cleanMap.content = {};
+                
+                // Clean system keys from content if present (legacy bug fix)
+                const systemKeys = ['customers', 'maps', 'reports'];
+                systemKeys.forEach(key => delete cleanMap.content[key]);
+
+                await setDoc(doc(db, "maps", map.id), cleanMap);
+            }
+        }
+
+        // Migrate Reports
+        if (localData.reports) {
+            for (const rep of localData.reports) {
+                await setDoc(doc(db, "reports", rep.id), rep);
+            }
+        }
+
+        console.log("Migration Complete.");
+        
+        // Optional: Clear local storage or keep as backup
+        // localStorage.removeItem("solution_map_v4_db"); 
+
+    } catch (e) {
+        console.error("Migration failed:", e);
+    }
+}
 
 // --- Navigation / Routing ---
 
@@ -89,8 +148,6 @@ function navigateTo(route, params = {}) {
                 break;
             case ROUTES.EDITOR:
                 if (params.mapId) {
-                    // Use requestAnimationFrame to ensure the DOM has updated (removed hidden class)
-                    // and layout metrics (clientWidth) are available for the Treemap renderer.
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
                              renderEditor(params.mapId);
@@ -172,7 +229,7 @@ function renderHome() {
             e.stopPropagation();
             showConfirmModal(`'${c.name}' 고객과 관련된 모든 맵과 보고서가 삭제됩니다. 계속하시겠습니까?`, () => {
                 store.deleteCustomer(c.id);
-                renderHome(); // Re-render
+                // No need to manually re-render, onSnapshot will trigger it
             });
         });
 
@@ -183,7 +240,7 @@ function renderHome() {
 function renderWorkspace(customerId) {
     const customer = store.getCurrentCustomer();
     if (!customer) {
-        navigateTo(ROUTES.HOME);
+        // navigateTo(ROUTES.HOME); // Avoid immediate redirect on refresh race condition
         return;
     }
 
@@ -226,7 +283,6 @@ function renderWorkspace(customerId) {
                 e.stopPropagation();
                 showConfirmModal("이 솔루션 맵을 삭제하시겠습니까?", () => {
                     store.deleteMap(map.id);
-                    renderWorkspace(customerId);
                 });
             };
 
@@ -272,7 +328,6 @@ function renderWorkspace(customerId) {
                 e.stopPropagation();
                 showConfirmModal("이 보고서를 삭제하시겠습니까?", () => {
                     store.deleteReport(rep.id);
-                    renderWorkspace(customerId);
                 });
             };
 
@@ -309,12 +364,6 @@ function renderReportDetail(reportId) {
 
 function renderStrategy(mapId) {
     store.setCurrentMap(mapId);
-    const map = store.getCurrentMap();
-    if(map) {
-        // Strategy view doesn't necessarily have a "title" element for the map name, 
-        // but we can set one if added to HTML.
-        // For now, it just uses current map context for generation.
-    }
 }
 
 // --- Global Events Setup ---
@@ -323,20 +372,12 @@ function setupGlobalEvents() {
     // 1. Home Actions
     document.getElementById('btn-new-customer').onclick = openCustomerModal;
     
-    // Reset Data Button
-    document.getElementById('btn-reset-app').onclick = () => {
-        showConfirmModal("정말 모든 데이터를 삭제하고 앱을 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.", () => {
-            localStorage.clear();
-            window.location.reload();
-        });
-    };
-
     // 2. Workspace Actions
     document.getElementById('ws-btn-back').onclick = () => navigateTo(ROUTES.HOME);
-    document.getElementById('ws-btn-create-map').onclick = () => {
+    document.getElementById('ws-btn-create-map').onclick = async () => {
         const customer = store.getCurrentCustomer();
         if(customer) {
-            const mapId = store.createMap(customer.id);
+            const mapId = await store.createMap(customer.id);
             navigateTo(ROUTES.EDITOR, { mapId });
         }
     };
@@ -347,7 +388,6 @@ function setupGlobalEvents() {
         navigateTo(ROUTES.WORKSPACE, { customerId: customer?.id });
     };
     
-    // Editor: Go to Map Button
     const btnGotoMap = document.getElementById('editor-btn-goto-map');
     if(btnGotoMap) {
         btnGotoMap.onclick = () => {
@@ -356,7 +396,6 @@ function setupGlobalEvents() {
         };
     }
     
-    // Save Button -> Open Name Modal
     document.getElementById('btn-manual-save').onclick = openSaveMapModal;
 
     // 4. Map Detail Actions
@@ -372,7 +411,6 @@ function setupGlobalEvents() {
         const map = store.getCurrentMap();
         if(map) navigateTo(ROUTES.STRATEGY, { mapId: map.id });
     };
-    // Add New Button Action
     const btnDetailWorkspace = document.getElementById('detail-btn-workspace');
     if(btnDetailWorkspace) {
         btnDetailWorkspace.onclick = () => {
@@ -396,7 +434,6 @@ function setupGlobalEvents() {
         if(map) navigateTo(ROUTES.MAP_DETAIL, { mapId: map.id });
     };
 
-    // New: Go to Map Button
     const btnStrategyMap = document.getElementById('strategy-btn-goto-map');
     if(btnStrategyMap) {
         btnStrategyMap.onclick = () => {
@@ -413,34 +450,32 @@ function setupModalEvents() {
     // Customer Modal
     modals.customer.btnCancel.onclick = closeCustomerModal;
     
-    const saveCustomer = () => {
+    const saveCustomer = async () => {
         const name = modals.customer.input.value.trim();
         if(name) {
-            store.addCustomer(name);
+            await store.addCustomer(name);
             closeCustomerModal();
-            renderHome();
+            // renderHome handled by snapshot
         }
     };
 
     modals.customer.btnSave.onclick = saveCustomer;
 
-    // Add Enter Key Support
     modals.customer.input.addEventListener('keydown', (e) => {
         if(e.key === 'Enter') {
-            e.preventDefault(); // Prevent default if necessary
-            modals.customer.btnSave.click(); // Click the button to trigger logic
+            e.preventDefault(); 
+            modals.customer.btnSave.click();
         }
     });
 
     // Save Map Modal
     modals.saveMap.btnCancel.onclick = closeSaveMapModal;
-    modals.saveMap.btnConfirm.onclick = () => {
+    modals.saveMap.btnConfirm.onclick = async () => {
         const name = modals.saveMap.input.value.trim();
         if(name) {
             const map = store.getCurrentMap();
             if(map) {
-                store.updateMapTitle(map.id, name);
-                store.notify(); // Save to storage
+                await store.updateMapTitle(map.id, name);
                 
                 // Show toast
                 const toast = document.getElementById('save-toast');
@@ -448,12 +483,8 @@ function setupModalEvents() {
                 toast.classList.add('toast-visible');
                 setTimeout(() => toast.classList.add('hidden'), 2500);
 
-                // Update UI title
                 document.getElementById('editor-map-title').textContent = name;
-                
                 closeSaveMapModal();
-
-                // Redirect to Map Detail after save
                 navigateTo(ROUTES.MAP_DETAIL, { mapId: map.id });
             }
         }
@@ -483,10 +514,8 @@ function openSaveMapModal() {
     const map = store.getCurrentMap();
     const customer = store.getCurrentCustomer();
     
-    // Suggest Name: Customer_Category_Map (Using Domain keys as proxy for Category/Type)
     let suggestedName = map.title;
     if (map.title === "새 솔루션 맵" && customer) {
-        // Find largest domain to hint category
         const domains = Object.keys(map.content || {});
         const mainCategory = domains.length > 0 ? domains[0] : "General";
         suggestedName = `${customer.name}_${mainCategory}_SolutionMap`;
