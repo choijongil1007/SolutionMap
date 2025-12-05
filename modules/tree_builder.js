@@ -1,3 +1,4 @@
+
 import { store } from './data_model.js';
 import { showWarningModal, showConfirmModal } from '../utils/modal.js';
 
@@ -305,14 +306,13 @@ async function fetchPainPoints() {
         
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzcdRKb5yBKr5bu9uvGt28KTQqUkPsAR80GwbURPzFeOmaRY2_i1lA4Kk_GsuNpBZuVRA/exec";
         
-        // Pass prompt to both 'q' and 'prompt' parameters
-        const url = `${GAS_URL}?q=${encodeURIComponent(prompt)}&prompt=${encodeURIComponent(prompt)}`;
-
-        const response = await fetch(url, {
-            method: 'GET',
-            mode: 'cors',
-            redirect: 'follow'
-            // removed headers to avoid CORS preflight error on GAS
+        // Switch to POST using URLSearchParams for "Simple Request" (No CORS preflight)
+        const response = await fetch(GAS_URL, {
+            method: 'POST',
+            body: new URLSearchParams({
+                'q': prompt,
+                'prompt': prompt
+            })
         });
 
         if (!response.ok) throw new Error(`API Request Failed: ${response.status}`);
