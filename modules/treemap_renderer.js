@@ -3,9 +3,8 @@
 import { store } from './data_model.js';
 import { showSolutionDetailModal } from '../utils/modal.js';
 
-let container = null;
-let resizeObserver = null;
-let tooltipEl = null; // Custom Tooltip Element
+// Tooltip is global/singleton
+let tooltipEl = null;
 
 // Palette: Custom User Palette
 const CHROMATIC_PALETTE = [
@@ -44,29 +43,29 @@ const CONFIG = {
 };
 
 export function initTreemap(containerId) {
-    container = document.getElementById(containerId);
+    const container = document.getElementById(containerId);
     tooltipEl = document.getElementById('custom-tooltip');
     
     if (!container) return;
 
     // Initial Render
-    render(store.getData());
+    render(container, store.getData());
 
     // Subscribe to data changes
     store.subscribe(() => {
-        // FIX: Only render the current map's content
-        render(store.getData());
+        // Render specifically for this container
+        render(container, store.getData());
     });
 
     // Handle Resize
     let lastWidth = container.clientWidth;
-    resizeObserver = new ResizeObserver((entries) => {
+    const resizeObserver = new ResizeObserver((entries) => {
         for (let entry of entries) {
             if (entry.contentRect.width !== lastWidth) {
                 lastWidth = entry.contentRect.width;
                 window.requestAnimationFrame(() => {
                     if (store.getData()) {
-                        render(store.getData());
+                        render(container, store.getData());
                     }
                 });
             }
@@ -75,7 +74,7 @@ export function initTreemap(containerId) {
     resizeObserver.observe(container);
 }
 
-function render(data) {
+function render(container, data) {
     if (!container) return;
     
     // Check width BEFORE clearing.
@@ -96,16 +95,23 @@ function render(data) {
     container.innerHTML = '';
     
     // Handle empty state
+    // Note: This logic assumes 'empty-state' ID is unique or handled externally. 
+    // If multiple maps exist on one page, this logic might need refinement, 
+    // but for now we only check if the current map has data.
     const domainEntries = Object.entries(data);
     const hasData = domainEntries.length > 0;
-    const emptyState = document.getElementById('empty-state');
     
-    if (emptyState) {
-        if (!hasData) {
-            emptyState.classList.remove('hidden');
-            return;
-        } else {
-            emptyState.classList.add('hidden');
+    // Only toggle empty state if we are rendering the main editor map (heuristic check)
+    // or if the logic is generic enough.
+    if (container.id === 'treemap-container') {
+        const emptyState = document.getElementById('empty-state');
+        if (emptyState) {
+            if (!hasData) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
         }
     }
 
