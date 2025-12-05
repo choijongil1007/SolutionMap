@@ -1,4 +1,5 @@
 
+
 import { loadData, saveData } from './utils/localstorage.js';
 import { store } from './modules/data_model.js';
 import { initTreeBuilder } from './modules/tree_builder.js';
@@ -203,7 +204,7 @@ function renderWorkspace(customerId) {
             el.className = "bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between hover:border-blue-400 hover:shadow-md transition-all cursor-pointer";
             el.innerHTML = `
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+                    <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                     </div>
                     <div>
@@ -248,7 +249,7 @@ function renderWorkspace(customerId) {
             el.className = "bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer";
             el.innerHTML = `
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
+                    <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                     </div>
                     <div>
