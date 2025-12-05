@@ -85,10 +85,12 @@ function renderUI() {
                     <div>
                         <label class="block text-sm font-semibold text-slate-600 mb-1.5">경쟁사 제품 (필수)</label>
                         <input type="text" id="insight-competitor" class="input-premium w-full" placeholder="예: ServiceNow ITOM">
+                        <p class="text-xs text-slate-400 mt-1">분석 대상(공격 대상) 경쟁 제품을 입력하세요.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-600 mb-1.5">자사 제품 (선택)</label>
                         <input type="text" id="insight-our-product" class="input-premium w-full" placeholder="예: Atlassian Jira">
+                        <p class="text-xs text-slate-400 mt-1">입력 시 자사 제품의 강점 위주로 비교 분석합니다.</p>
                     </div>
                 </div>
                 <div class="flex justify-end">
@@ -110,7 +112,7 @@ function renderUI() {
                 </div>
                 <div id="insight-loading" class="hidden absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-10">
                     <div class="spinner border-indigo-600 border-t-transparent w-10 h-10 mb-3"></div>
-                    <p class="text-indigo-600 font-bold animate-pulse">Gemini가 분석 보고서를 작성 중입니다...</p>
+                    <p class="text-indigo-600 font-bold animate-pulse">Gemini가 아키텍처 호환성 및 경쟁 우위를 분석 중입니다...</p>
                 </div>
                 <!-- Added 'report-content' class for custom styling -->
                 <div id="insight-content" class="hidden report-content"></div>
@@ -140,43 +142,72 @@ async function generateInsight() {
     resultArea.innerHTML = '';
 
     const currentMapContext = store.getSolutionContextString();
+    
+    // Construct Prompt based on scenario
+    let prompt = `
+You are an expert Solution Architect and Pre-sales Technology Consultant.
+I need a professional, strategic analysis report based on the customer's current environment.
 
-    try {
-        let prompt = `
-You are an expert Solution Architect and Technology Consultant.
-I need a professional, structured Competitive Analysis Report based on the context below.
-
-**Context: Current Solution Architecture (Existing Tech Stack):**
+**Context: Customer's Current Solution Architecture (Installed Base):**
 ${currentMapContext}
 
-**Analysis Target:**
 `;
 
-        if (ourProduct) {
-            prompt += `Compare the competitor product "**${competitor}**" against our product "**${ourProduct}**".`;
-        } else {
-            prompt += `Analyze the competitor product "**${competitor}**" focusing on its integration risks and weaknesses relative to the current architecture.`;
-        }
-
+    if (ourProduct) {
+        // Scenario 2: Competitor vs Our Product (Win-Back / Defense)
         prompt += `
+**Task: Competitive Analysis (Our Product vs Competitor)**
+**My Product (Us):** ${ourProduct}
+**Target Competitor Product:** ${competitor}
 
+**Objective:**
+Prove that "My Product" is the superior choice for this specific customer environment compared to the "Competitor Product".
+
+**Analysis Requirements:**
+1.  **Integration Synergy**: Analyze why "My Product" integrates better with the **Current Solution Architecture** (Context provided above) than the Competitor.
+2.  **Highlight Strengths**: Emphasize the unique strengths of "My Product" relevant to this stack.
+3.  **Expose Weaknesses**: Identify specific weaknesses, risks, or integration complexities of the "Competitor Product" in this specific environment.
+
+**Structure:**
+1.  **Executive Summary** (요약): Persuasive summary of why 'My Product' is better.
+2.  **Architectural Fit** (아키텍처 적합성): Why we fit better.
+3.  **Comparison Table** (비교표): Columns must be [평가 항목, ${ourProduct} (자사 강점), ${competitor} (경쟁사 약점), 비고].
+4.  **Key Selling Points** (핵심 제안 포인트): 3 bullet points to use in a meeting.
+`;
+    } else {
+        // Scenario 1: Competitor Risk Analysis (Attack)
+        prompt += `
+**Task: Competitor Weakness & Risk Analysis**
+**Target Competitor Product:** ${competitor}
+
+**Objective:**
+Analyze the "Competitor Product" to identify technical risks, integration issues, and weaknesses specifically regarding the **Current Solution Architecture**.
+
+**Analysis Requirements:**
+1.  **Integration Risks**: Identify how the competitor product might clash or fail to integrate smoothly with the existing tools listed in the context.
+2.  **Weakness Identification**: Find specific functional or architectural weaknesses of the competitor product in this environment.
+3.  **Technical Debt**: highlight potential overheads (cost, complexity) if the customer chooses this competitor.
+
+**Structure:**
+1.  **Executive Summary** (요약): Assessment of risks.
+2.  **Integration Risks** (통합 및 기술 리스크): Detail the problems.
+3.  **Comparison Table** (비교표): Columns must be [평가 항목, 현재 아키텍처 영향 (Impact), 경쟁사 리스크/약점 (${competitor}), 비고].
+4.  **Counter-Arguments** (대응 논리): Questions to ask the customer to expose these weaknesses.
+`;
+    }
+
+    prompt += `
 **Strict Output Requirements:**
-1.  **Language**: **Korean (한국어)**. The entire response, including table contents, headers, and descriptions, MUST be in Korean. Technical terms can remain in English if they are standard industry terms, but provide context in Korean.
+1.  **Language**: **Korean (한국어)**. The entire response MUST be in Korean.
 2.  **Formatting**: Valid Markdown.
 3.  **Table Formatting**:
     - Use a standard Markdown table.
     - **DO NOT** use excessive dashes for the separator line. Use short separators like \`| --- | --- |\`.
-    - Ensure there is a blank line before and after the table.
-    - Ensure the table syntax is correct (no double pipes \`||\` or missing pipes).
-4.  **Structure**:
-    - **Executive Summary** (요약): 2-3 sentences.
-    - **Compatibility Assessment** (호환성 평가): High/Medium/Low with reason.
-    - **Comparison Table** (비교표): Columns should be [항목, 기존/자사, 경쟁사, 비교/설명]. Content MUST be in Korean.
-    - **Key Analysis** (주요 분석): Bullet points.
-
-**Generate the report now in Korean.**
+    - Ensure the table syntax is correct (no double pipes \`||\`).
+4.  **Tone**: Professional, persuasive, and analytical.
 `;
 
+    try {
         // Switch to POST with JSON body (text/plain) to avoid GAS CORS preflight and form-data echoing issues
         const response = await fetch(GAS_URL, {
             method: 'POST',
