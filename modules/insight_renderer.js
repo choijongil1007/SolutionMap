@@ -1,5 +1,3 @@
-
-
 import { store } from './data_model.js';
 
 let container = null;
@@ -168,15 +166,13 @@ Language: Korean.
 `;
 
         // Use standard fetch to call GAS Proxy
+        // Important: headers removed to avoid CORS preflight error on GAS
         const url = `${GAS_URL}?q=${encodeURIComponent(prompt)}&prompt=${encodeURIComponent(prompt)}`;
 
         const response = await fetch(url, {
             method: 'GET',
             mode: 'cors',
-            redirect: 'follow',
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
-            }
+            redirect: 'follow'
         });
 
         if (!response.ok) {

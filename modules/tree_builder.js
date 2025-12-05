@@ -1,5 +1,3 @@
-
-
 import { store } from './data_model.js';
 import { showWarningModal, showConfirmModal } from '../utils/modal.js';
 
@@ -313,10 +311,8 @@ async function fetchPainPoints() {
         const response = await fetch(url, {
             method: 'GET',
             mode: 'cors',
-            redirect: 'follow',
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
-            }
+            redirect: 'follow'
+            // removed headers to avoid CORS preflight error on GAS
         });
 
         if (!response.ok) throw new Error(`API Request Failed: ${response.status}`);
