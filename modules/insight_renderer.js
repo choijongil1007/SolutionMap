@@ -169,6 +169,11 @@ async function generateInsight() {
 You are an expert Solution Architect.
 Perform a detailed competitive analysis comparing "**${ourProduct}**" (Our Product) and "**${competitor}**" (Competitor Product) within the context of the customer's current environment.
 
+**Analysis Context (CRITICAL):**
+All analysis must be strictly based on compatibility and integration with the solutions currently registered in the **Customer's Current Architecture** provided below. 
+For example, if 'RHEL' is registered in the OS area of the architecture, you must compare how well ${ourProduct} and ${competitor} integrate specifically with RHEL.
+If a category in the Solution Map is empty or no relevant solutions are listed, note that comparison is not applicable for that specific integration point.
+
 **Customer's Current Architecture:**
 ${currentMapContext}
 
@@ -177,15 +182,17 @@ ${categoryListString}
 
 **Requirements:**
 - Output specifically in **Korean**.
-- **Important**: In the HTML sections, **DO NOT** use Markdown bold syntax (like \`**text**\`). Use \`<b>\` tags or CSS classes instead.
-- **CRITICAL**: For HTML sections (2, 3, and 4), output **RAW HTML** directly. **DO NOT** wrap the HTML in markdown code blocks.
-- **CRITICAL**: Do NOT indent HTML tags. Start them at the beginning of the line.
-- **Important**: Font sizes for HTML content must be \`text-base\`.
+- **Tone**: For table cells and bullet points, use concise, short noun-ending phrases (e.g., "지원함", "연동 우수", "설치 필요", "미지원") instead of full sentences like "~합니다" or "~습니다".
+- **Formatting**:
+    - In HTML sections, **DO NOT** use Markdown bold syntax (like \`**text**\`). Use \`<b>\` tags or CSS classes instead.
+    - **CRITICAL**: For HTML sections (2, 3, and 4), output **RAW HTML** directly. **DO NOT** wrap the HTML in markdown code blocks (\`\`\`html ... \`\`\`).
+    - **CRITICAL**: Do NOT indent HTML tags. Start them at the beginning of the line to prevent them from being rendered as code blocks.
+    - Font sizes for HTML content must be \`text-base\`.
 
 **Report Structure:**
 
 1.  **## 1. 요약**
-    - Brief executive summary favoring Our Product.
+    - Brief executive summary favoring Our Product based on the customer's specific environment.
 
 2.  **## 2. 아키텍처 통합성**
     - **Format**: HTML Block.
@@ -193,29 +200,22 @@ ${categoryListString}
     - **Card 1 (${ourProduct})**: Blue theme (\`bg-blue-50/50 border-blue-200\`).
     - **Card 2 (${competitor})**: Slate theme (\`bg-slate-50/50 border-slate-200\`).
     - **Content Logic**: Bulleted list (\`<ul class="list-disc pl-5 space-y-1 text-base text-slate-700">\`).
-    - **CRITICAL**: The list items MUST correspond to the **Reference Categories** listed above (e.g., "Integration with [Category Name]").
-    - **Sub-section: 통합 편의성 요약**
-        - Create an HTML Table **immediately after the cards**.
-        - Style: \`w-full mt-6 text-base border-collapse text-center table-fixed\`.
-        - Title: \`<h4 class="text-lg font-bold text-slate-700 mb-3 text-center">통합 편의성 비교</h4>\`
-        - Headers: [구분 | ${ourProduct} | ${competitor}].
-        - Rows: **Generate a row for each category in [${categoryListString}]**.
-        - Cell Values: **O** (Good), **△** (Fair), **X** (Poor). Center align.
+    - **Items**: Compare integration with specific solutions found in the "Customer's Current Architecture" list.
 
 3.  **## 3. 상세 비교표**
     - **Format**: HTML Table.
     - **Layout**: Use \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden">\`.
-    - **Column Widths**: Use \`<colgroup><col style="width:10%"><col style="width:30%"><col style="width:30%"><col style="width:30%"></colgroup>\` to set strict widths.
+    - **Column Config**: **YOU MUST USE** \`<colgroup><col style="width:10%"><col style="width:30%"><col style="width:30%"><col style="width:30%"></colgroup>\` to strictly set column widths (10%, 30%, 30%, 30%).
     - **Headers**: \`<thead class="bg-slate-50 border-b border-slate-200"><tr><th class="p-3 border-r border-slate-200 text-slate-700 font-bold">구분</th><th class="p-3 border-r border-slate-200 text-blue-700 font-bold">${ourProduct} (자사)</th><th class="p-3 border-r border-slate-200 text-slate-600 font-bold">${competitor} (경쟁사)</th><th class="p-3 text-slate-600 font-bold">비고</th></tr></thead>\`.
-    - **Body Style**: \`<tbody class="text-slate-700 text-base">...</tbody>\`. Cells should have padding (\`p-3 border-b border-slate-200 border-r border-slate-200 last:border-r-0\`).
-    - **Content Tone**: **CRITICAL**: Use concise, noun-ending phrases (e.g., "지원함", "우수함", "설치 필요", "연동 불가") instead of polite sentences like "~합니다" or "~습니다".
-    - **Content**: Keep the "Remarks" (비고) column concise and short (reduce length by ~10%).
+    - **Body**: \`<tbody class="text-slate-700 text-base">...</tbody>\`. Cells padding: \`p-3 border-b border-slate-200 border-r border-slate-200 last:border-r-0\`.
     - **Rows**: 연동성, 기능 적합성, 성능, 리스크.
+    - **Content Style**: Use short noun phrases (e.g. "지원함", "우수함"). 
+    - **Remarks (비고)**: Keep content **extremely concise** (shorten by ~10% compared to normal).
 
 4.  **## 4. 핵심 차별화 요소**
     - **Format**: HTML Block.
     - **Layout**: Vertical Stack.
-    - Create 3 Cards.
+    - Create 3 Cards highlighting why Our Product is better for *this specific customer*.
     - Card Style: \`border border-indigo-100 bg-white shadow-sm rounded-xl p-5 hover:shadow-md transition-all\`.
     - Title Style: \`text-indigo-600 font-bold mb-2 text-base\`.
     - Text Style: \`text-base text-slate-700 leading-relaxed\`.
@@ -253,7 +253,8 @@ ${categoryListString}
         markdownText = markdownText.replace(/^```\w*\s*$/gm, "").replace(/```/g, "");
 
         // 2. Remove indentation for HTML lines (prevents marked.js from treating them as code blocks)
-        markdownText = markdownText.replace(/^\s+(<[a-z/])/gim, "$1");
+        // This regex looks for start of line, optional whitespace, then a < tag.
+        markdownText = markdownText.replace(/^[ \t]+(?=<)/gm, "");
 
         if (window.marked) {
             resultArea.innerHTML = window.marked.parse(markdownText);
