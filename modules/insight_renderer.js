@@ -57,25 +57,29 @@ function renderUI() {
             </div>
 
             <!-- Result Section -->
-            <div class="flex-1 flex flex-col min-h-[400px] border border-slate-100 rounded-xl bg-white shadow-inner overflow-hidden relative" id="insight-result-container">
-                <div class="absolute inset-0 overflow-y-auto p-8" id="insight-scroll-area">
-                    <div id="insight-placeholder" class="flex flex-col items-center justify-center h-full text-slate-400">
+            <!-- Changed: Removed fixed height constraints and overflow-hidden to allow natural page scrolling -->
+            <div class="flex flex-col min-h-[400px] border border-slate-100 rounded-xl bg-white shadow-inner relative" id="insight-result-container">
+                
+                <!-- Content Area: Static position to flow naturally. Added padding bottom for the action bar -->
+                <div class="p-8 pb-24" id="insight-scroll-area">
+                    <div id="insight-placeholder" class="flex flex-col items-center justify-center py-20 text-slate-400">
                         <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
                         </div>
                         <p class="font-medium text-slate-500">분석 결과가 여기에 표시됩니다</p>
                     </div>
                     
-                    <div id="insight-content" class="hidden report-content pb-20"></div>
+                    <div id="insight-content" class="hidden report-content"></div>
                 </div>
 
-                <div id="insight-loading" class="hidden absolute inset-0 bg-white/90 flex flex-col items-center justify-center z-10">
+                <!-- Loading Overlay: Absolute to cover the container -->
+                <div id="insight-loading" class="hidden absolute inset-0 bg-white/95 flex flex-col items-center justify-center z-20 rounded-xl">
                     <div class="spinner border-indigo-600 border-t-transparent w-10 h-10 mb-3"></div>
                     <p class="text-indigo-600 font-bold animate-pulse">Gemini가 아키텍처 호환성 및 경쟁 우위를 분석 중입니다...</p>
                 </div>
 
-                <!-- Save Button Overlay -->
-                <div id="insight-action-bar" class="hidden absolute bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-sm border-t border-slate-200 flex justify-end">
+                <!-- Save Button Overlay: Absolute bottom -->
+                <div id="insight-action-bar" class="hidden absolute bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-sm border-t border-slate-200 flex justify-end z-10 rounded-b-xl">
                     <button id="btn-save-as-report" class="flex items-center gap-2 px-5 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors shadow-lg font-bold text-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                         보고서로 저장
@@ -161,7 +165,7 @@ async function generateInsight() {
         ? categoryListArray.join(', ') 
         : "주요 시스템(DB, API, 보안 등)";
 
-    // Prompt (Same as before)
+    // Prompt
     let prompt = `
 You are an expert Solution Architect.
 Perform a detailed competitive analysis comparing "**${ourProduct}**" (Our Product) and "**${competitor}**" (Competitor Product) within the context of the customer's current environment.
@@ -175,6 +179,7 @@ ${categoryListString}
 **Requirements:**
 - Output specifically in **Korean**.
 - **Important**: In the HTML sections, **DO NOT** use Markdown bold syntax (like \`**text**\`). Use \`<b>\` tags or CSS classes instead.
+- **CRITICAL**: For HTML sections (2 and 4), output **RAW HTML** directly. **DO NOT** wrap the HTML in markdown code blocks (like \`\`\`html ... \`\`\`). This is vital for rendering.
 - **Important**: Font sizes for HTML content must be \`text-base\`.
 
 **Report Structure:**
@@ -237,6 +242,11 @@ ${categoryListString}
         } catch (e) {
             // Ignore
         }
+
+        // --- PRE-PROCESSING FIX ---
+        // Clean up any markdown code blocks that the LLM might have added around HTML content
+        // This regex removes ```html and ``` tokens but leaves the inner content
+        markdownText = markdownText.replace(/```html/gi, "").replace(/```/g, "");
 
         if (window.marked) {
             resultArea.innerHTML = window.marked.parse(markdownText);
