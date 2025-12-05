@@ -149,7 +149,9 @@ function render(container, data) {
         // Calculate dimensions
         const effectiveWidth = availableWidth; 
         const requiredArea = solutionCount * AREA_PER_SOLUTION;
-        let calculatedH = requiredArea / effectiveWidth;
+        
+        // FIX: Prevent division by zero if width is invalid, which would cause height to be Infinity
+        let calculatedH = effectiveWidth > 0 ? requiredArea / effectiveWidth : MIN_DOMAIN_HEIGHT;
         
         const categoryCount = Object.keys(categories).length;
         // Overhead calculation adjusted (domain header is now 0)
