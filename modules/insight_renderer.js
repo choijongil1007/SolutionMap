@@ -161,33 +161,37 @@ Provide a **concise**, visually appealing, and persuasive report that highlights
 
 **Report Structure & Formatting Requirements:**
 
-1.  **Executive Summary** (요약):
+1.  **## 1. 요약**
     - Very brief overview (2-3 sentences) and strategic recommendation.
+    - Use Markdown H2 (##) so it matches the style of other titles. Do NOT use English subtitles like "(Executive Summary)".
 
-2.  **아키텍처 통합성**:
-    - **CRITICAL**: Do NOT use plain text or bullet points.
+2.  **## 2. 아키텍처 통합성**
+    - **CRITICAL**: Do NOT use plain text paragraphs.
     - **Output this section strictly as HTML** using standard Tailwind CSS classes.
-    - Layout: **Vertical Stack** (One card below another). Do NOT put them side-by-side.
-    - Container: \`<div class="flex flex-col gap-4 w-full">\`
-    - **Card 1 (Top)**: Analysis for **${ourProduct}**. Style: \`border border-blue-200 bg-blue-50 rounded-xl p-5 w-full\`.
-    - **Card 2 (Bottom)**: Analysis for **${competitor}**. Style: \`border border-slate-200 bg-slate-50 rounded-xl p-5 w-full\`.
-    - Use \`<h4 class="font-bold mb-2 text-lg">Title</h4>\` inside cards.
+    - Layout: **Vertical Stack** (One card below another).
+    - Container: \`<div class="flex flex-col gap-6 w-full">\`
+    - **Card 1 (Top)**: Analysis for **${ourProduct}**. Style: \`border border-blue-200 bg-blue-50/50 rounded-xl p-5 w-full\`.
+    - **Card 2 (Bottom)**: Analysis for **${competitor}**. Style: \`border border-slate-200 bg-slate-50/50 rounded-xl p-5 w-full\`.
+    - Inside each card:
+        - Title: \`<h4 class="font-bold mb-3 text-lg text-slate-800">Title</h4>\`
+        - Content: Use an unordered list for points: \`<ul class="list-disc pl-5 space-y-1 text-sm text-slate-700"><li>Point 1</li><li>Point 2</li></ul>\`.
 
-3.  **상세 비교표**:
+3.  **## 3. 상세 비교표**
     - Standard Markdown Table.
     - Columns: [구분 | ${ourProduct} (자사) | ${competitor} (경쟁사) | 비고].
-    - Rows: Connectivity, Feature Fit, Performance, Risk.
+    - Rows: **연동성, 기능 적합성, 성능, 리스크** (Use strictly these Korean terms).
     - **Constraint**: Keep text in cells **extremely concise** (short phrases) to prevent the table from becoming too tall vertically. Minimize row height.
 
-4.  **핵심 차별화 요소**:
+4.  **## 4. 핵심 차별화 요소**
     - **CRITICAL**: Do NOT use plain text or bullet points.
     - **Output this section strictly as HTML** using Tailwind CSS classes.
-    - Layout: **Vertical Stack** (One card below another). Do NOT use columns.
+    - Layout: **Vertical Stack** (One card below another).
     - Container: \`<div class="flex flex-col gap-4 w-full">\`
     - Each card represents a key selling point (Winning Point).
     - Card Style: \`border border-indigo-100 bg-white shadow-sm rounded-xl p-4 hover:shadow-md transition-shadow w-full\`.
     - Inside Card:
-      - Title: \`<div class="text-indigo-600 font-bold mb-1 text-sm uppercase">Point N</div>\`
+      - **DO NOT** use text like "POINT 1", "POINT 2".
+      - Title: \`<div class="text-indigo-600 font-bold mb-1 text-sm uppercase tracking-wide">Key Benefit</div>\` (Or a relevant short title).
       - Content: Brief description.
 
 **Strict Output Rules:**
