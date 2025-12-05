@@ -345,6 +345,14 @@ function setupGlobalEvents() {
         const map = store.getCurrentMap();
         if(map) navigateTo(ROUTES.STRATEGY, { mapId: map.id });
     };
+    // Add New Button Action
+    const btnDetailWorkspace = document.getElementById('detail-btn-workspace');
+    if(btnDetailWorkspace) {
+        btnDetailWorkspace.onclick = () => {
+            const customer = store.getCurrentCustomer();
+            navigateTo(ROUTES.WORKSPACE, { customerId: customer?.id });
+        };
+    }
 
     // 5. Report Detail Actions
     document.getElementById('report-btn-back').onclick = () => {
