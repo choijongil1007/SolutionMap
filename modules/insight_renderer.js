@@ -1,4 +1,5 @@
 
+
 import { store } from './data_model.js';
 import { GoogleGenAI } from "@google/genai";
 
@@ -139,7 +140,7 @@ async function generateInsight() {
     try {
         const apiKey = process.env.API_KEY; // Using env variable as per strict instructions
         if (!apiKey) {
-           throw new Error("API Key is missing. Please configure process.env.API_KEY.");
+           throw new Error("API Key is missing. Please configure process.env.API_KEY in index.html.");
         }
 
         const ai = new GoogleGenAI({ apiKey: apiKey });
@@ -171,11 +172,9 @@ Do not include any introductory fluff. Start directly with the Report Title.
 Language: Korean.
 `;
 
-        // Using Basic Text Model as per guidelines for "Complex Text Tasks" (Reasoning) -> gemini-3-pro-preview
-        // or Basic Text Tasks -> gemini-2.5-flash.
-        // Let's use 2.5-flash for speed/efficiency as this is a dashboard tool.
+        // Upgraded to gemini-3-pro-preview for complex reasoning tasks (Architecture analysis)
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-pro-preview',
             contents: prompt,
         });
 
