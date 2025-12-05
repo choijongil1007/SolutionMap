@@ -222,7 +222,7 @@ function generateDomainInsights(domainName, categories) {
     // Insight Sub-Header: Insight
     const insightHeader = document.createElement('h3');
     insightHeader.className = "text-lg font-bold text-slate-700 mb-4 pl-1";
-    insightHeader.textContent = "Insight";
+    insightHeader.textContent = "고객 불만 사항";
     wrapper.appendChild(insightHeader);
     
     const grid = document.createElement('div');
