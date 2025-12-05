@@ -178,7 +178,7 @@ ${categoryListString}
 **Requirements:**
 - Output specifically in **Korean**.
 - **Important**: In the HTML sections, **DO NOT** use Markdown bold syntax (like \`**text**\`). Use \`<b>\` tags or CSS classes instead.
-- **CRITICAL**: For HTML sections (2 and 4), output **RAW HTML** directly. **DO NOT** wrap the HTML in markdown code blocks.
+- **CRITICAL**: For HTML sections (2, 3, and 4), output **RAW HTML** directly. **DO NOT** wrap the HTML in markdown code blocks.
 - **CRITICAL**: Do NOT indent HTML tags. Start them at the beginning of the line.
 - **Important**: Font sizes for HTML content must be \`text-base\`.
 
@@ -203,9 +203,14 @@ ${categoryListString}
         - Cell Values: **O** (Good), **△** (Fair), **X** (Poor). Center align.
 
 3.  **## 3. 상세 비교표**
-    - **Format**: Markdown Table.
-    - Columns: [구분 | ${ourProduct} (자사) | ${competitor} (경쟁사) | 비고].
-    - Rows: 연동성, 기능 적합성, 성능, 리스크.
+    - **Format**: HTML Table.
+    - **Layout**: Use \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden">\`.
+    - **Column Widths**: Use \`<colgroup><col style="width:10%"><col style="width:30%"><col style="width:30%"><col style="width:30%"></colgroup>\` to set strict widths.
+    - **Headers**: \`<thead class="bg-slate-50 border-b border-slate-200"><tr><th class="p-3 border-r border-slate-200 text-slate-700 font-bold">구분</th><th class="p-3 border-r border-slate-200 text-blue-700 font-bold">${ourProduct} (자사)</th><th class="p-3 border-r border-slate-200 text-slate-600 font-bold">${competitor} (경쟁사)</th><th class="p-3 text-slate-600 font-bold">비고</th></tr></thead>\`.
+    - **Body Style**: \`<tbody class="text-slate-700 text-base">...</tbody>\`. Cells should have padding (\`p-3 border-b border-slate-200 border-r border-slate-200 last:border-r-0\`).
+    - **Content Tone**: **CRITICAL**: Use concise, noun-ending phrases (e.g., "지원함", "우수함", "설치 필요", "연동 불가") instead of polite sentences like "~합니다" or "~습니다".
+    - **Content**: Keep the "Remarks" (비고) column concise and short (reduce length by ~10%).
+    - **Rows**: 연동성, 기능 적합성, 성능, 리스크.
 
 4.  **## 4. 핵심 차별화 요소**
     - **Format**: HTML Block.
