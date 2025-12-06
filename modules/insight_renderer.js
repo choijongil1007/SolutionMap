@@ -202,7 +202,7 @@ ${categoryListString}
     
     - **Left Column (${ourProduct})**: 
         \`<div class="border border-blue-200 bg-blue-50/30 rounded-xl overflow-hidden shadow-sm">\`
-        - Header: \`<div class="bg-blue-100/50 px-5 py-4 border-b border-blue-200"><h3 class="font-bold text-blue-800 text-lg">${ourProduct} (자사)</h3></div>\`
+        - Header: \`<div class="bg-blue-100/50 px-5 py-2.5 border-b border-blue-200"><h3 class="font-bold text-blue-800 text-lg">${ourProduct} (자사)</h3></div>\`
         - Body: \`<div class="p-5 space-y-3">\`
             - Integration Items (Create 3-4 key integration points based on customer's map):
               \`<div class="flex items-start gap-3 p-3 bg-white rounded-lg border border-blue-100 shadow-sm">\`
@@ -213,7 +213,7 @@ ${categoryListString}
     
     - **Right Column (${competitor})**: 
         \`<div class="border border-slate-200 bg-slate-50/30 rounded-xl overflow-hidden shadow-sm">\`
-        - Header: \`<div class="bg-slate-100/50 px-5 py-4 border-b border-slate-200"><h3 class="font-bold text-slate-700 text-lg">${competitor} (경쟁사)</h3></div>\`
+        - Header: \`<div class="bg-slate-100/50 px-5 py-2.5 border-b border-slate-200"><h3 class="font-bold text-slate-700 text-lg">${competitor} (경쟁사)</h3></div>\`
         - Body: \`<div class="p-5 space-y-3">\`
             - Integration Items:
               \`<div class="flex items-start gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm">\`
@@ -227,11 +227,14 @@ ${categoryListString}
     **HTML Content Only**:
     Wrap in \`<div class="mb-10">\`:
     - Table: \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden">\`
-    - Columns: **MUST INCLUDE** \`<colgroup><col style="width:10%"><col style="width:30%"><col style="width:30%"><col style="width:30%"></colgroup>\`
-    - Header: \`<thead class="bg-slate-50 border-b border-slate-200"><tr><th class="p-3 border-r border-slate-200 text-slate-700 font-bold">구분</th><th class="p-3 border-r border-slate-200 text-blue-700 font-bold">${ourProduct}</th><th class="p-3 border-r border-slate-200 text-slate-600 font-bold">${competitor}</th><th class="p-3 text-slate-600 font-bold">비고</th></tr></thead>\`
-    - Body: \`<tbody class="text-slate-700 text-base">...</tbody>\`
+    - Columns: **MUST INCLUDE** \`<colgroup><col style="width:15%"><col style="width:30%"><col style="width:30%"><col style="width:25%"></colgroup>\`
+    - Header: \`<thead class="bg-slate-50 border-b border-slate-200"><tr><th class="p-3 border-r border-slate-200 text-slate-700 font-bold text-center">구분</th><th class="p-3 border-r border-slate-200 text-blue-700 font-bold text-center">${ourProduct}</th><th class="p-3 border-r border-slate-200 text-slate-600 font-bold text-center">${competitor}</th><th class="p-3 text-slate-600 font-bold text-center">비고</th></tr></thead>\`
+    - Body: \`<tbody class="text-slate-700">\` (Do NOT add 'text-base')
     - Rows: 연동성, 기능 적합성, 성능, 리스크.
-    - Style: Cells \`p-3 border-b border-slate-200 border-r border-slate-200 last:border-r-0\`. Use concise noun-ending phrases.
+    - Style: 
+      - **First Column (Category)**: \`p-3 border-b border-slate-200 border-r border-slate-200 text-center font-bold bg-slate-50/50\`
+      - **Other Columns**: \`p-3 border-b border-slate-200 border-r border-slate-200 last:border-r-0\`
+      - Use concise noun-ending phrases.
     - Note: Keep "비고" (Remarks) column content extremely concise.
 
 4.  **## 4. 차별화 메시지**
@@ -240,8 +243,10 @@ ${categoryListString}
     Wrap in \`<div class="mb-10 flex flex-col gap-4">\`:
     - Create 3 Cards highlighting competitive advantages.
     - Card: \`<div class="border border-indigo-100 bg-white shadow-sm rounded-xl p-5 hover:shadow-md transition-all">\`
-    - Title: \`<div class="text-indigo-600 font-bold mb-2 text-base">...</div>\`
-    - Text: \`<div class="text-base text-slate-700 leading-relaxed">...</div>\`
+    - Title: \`<div class="text-indigo-600 font-bold mb-2 text-lg">...</div>\`
+    - Text: \`<div class="text-slate-700 leading-relaxed">\`
+      - **Content Format**: Use \`<ul class="list-disc pl-5 space-y-1">\` containing \`<li>...</li>\` items. Split sentences into bullet points.
+    - \`</div>\`
 `;
 
     try {
