@@ -33,7 +33,7 @@ const CONFIG = {
         padding: 0, 
         headerBg: '#171717', 
         headerText: '#ffffff', 
-        borderColor: '#ffffff', 
+        borderColor: 'transparent', 
         borderWidth: 1,
         margin: 1 
     },
@@ -699,5 +699,5 @@ function applySolutionStyle(el, node) {
         tooltipEl.classList.add('hidden');
     });
     
-    el.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,0.15)";
+    el.style.boxShadow = "none";
 }
