@@ -1,5 +1,4 @@
 
-
 import { store } from './data_model.js';
 import { showSolutionDetailModal } from '../utils/modal.js';
 
@@ -33,7 +32,7 @@ const CONFIG = {
         padding: 0, 
         headerBg: '#171717', 
         headerText: '#ffffff', 
-        borderColor: 'transparent', 
+        borderColor: '#000000', 
         borderWidth: 1,
         margin: 1 
     },
@@ -634,6 +633,9 @@ function applySolutionStyle(el, node) {
         el.style.color = '#ffffff'; 
     }
     
+    // Explicitly set border to black as requested
+    el.style.border = '1px solid #000000';
+
     el.style.textShadow = '0 1px 2px rgba(0,0,0,0.15)';
     // FIX: Reduced padding to p-[2px] to give more room. Kept items-center justify-center.
     el.className = "flex flex-col items-center justify-center text-center p-[2px] hover:brightness-110 transition-all cursor-pointer group";
