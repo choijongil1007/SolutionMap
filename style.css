@@ -186,26 +186,71 @@ body {
 
 /* 6. Print Styles */
 @media print {
-    body {
-        background-color: white;
-        padding: 0;
+    body, html {
+        background-color: white !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
     
-    .view-section {
+    /* Hide all top-level view sections and UI elements by default */
+    #app-container,
+    .view-section, 
+    header, 
+    button, 
+    .hidden-print,
+    #strategy-container, 
+    #ws-btn-back {
+        display: none !important;
+    }
+    
+    /* Only display the Report Detail view container */
+    #view-report-detail {
         display: block !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+
+    /* Inside the report detail, hide the header explicitly */
+    #view-report-detail header {
+        display: none !important;
+    }
+
+    /* Target the content body */
+    #report-content-body {
+        display: block !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 20px !important; /* Minimal padding for print */
+        background-color: white !important;
         box-shadow: none !important;
         border: none !important;
     }
     
-    header, button, .hidden-print {
-        display: none !important;
-    }
-    
-    #view-report-detail {
-        display: block !important;
-    }
-    
     .report-content {
         font-size: 11pt;
+    }
+    
+    /* Ensure page breaks are handled gracefully */
+    .report-content h1, 
+    .report-content h2 {
+        page-break-after: avoid;
+    }
+    
+    .report-content table, 
+    .report-content img,
+    .report-content tr {
+        page-break-inside: avoid;
     }
 }

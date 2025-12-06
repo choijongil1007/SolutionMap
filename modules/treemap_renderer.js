@@ -1,4 +1,5 @@
 
+
 import { store } from './data_model.js';
 import { showSolutionDetailModal } from '../utils/modal.js';
 
@@ -633,8 +634,7 @@ function applySolutionStyle(el, node) {
         el.style.color = '#ffffff'; 
     }
     
-    // Explicitly set border to black as requested
-    el.style.border = '1px solid #000000';
+    el.style.border = 'none';
 
     el.style.textShadow = '0 1px 2px rgba(0,0,0,0.15)';
     // FIX: Reduced padding to p-[2px] to give more room. Kept items-center justify-center.
