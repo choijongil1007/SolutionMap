@@ -275,7 +275,7 @@ ${requirementsString}
     
     - **Left Column (${ourProduct})**: 
         \`<div class="border border-blue-200 bg-blue-50/30 rounded-xl overflow-hidden shadow-sm">\`
-        - Header: \`<div class="bg-blue-100/50 px-5 py-2.5 border-b border-blue-200"><h3 class="font-bold text-blue-800 text-lg">${ourProduct} (자사)</h3></div>\`
+        - Header: \`<div class="bg-blue-100/50 px-4 py-2 border-b border-blue-200"><h3 class="font-bold text-blue-800 text-base">${ourProduct} (자사)</h3></div>\`
         - Body: \`<div class="p-5 space-y-3">\`
             - Integration Items (3-4 points based on architecture map):
               \`<div class="flex items-start gap-3 p-3 bg-white rounded-lg border border-blue-100 shadow-sm">\`
@@ -286,7 +286,7 @@ ${requirementsString}
     
     - **Right Column (${competitor})**: 
         \`<div class="border border-slate-200 bg-slate-50/30 rounded-xl overflow-hidden shadow-sm">\`
-        - Header: \`<div class="bg-slate-100/50 px-5 py-2.5 border-b border-slate-200"><h3 class="font-bold text-slate-700 text-lg">${competitor} (경쟁사)</h3></div>\`
+        - Header: \`<div class="bg-slate-100/50 px-4 py-2 border-b border-slate-200"><h3 class="font-bold text-slate-700 text-base">${competitor} (경쟁사)</h3></div>\`
         - Body: \`<div class="p-5 space-y-3">\`
             - Integration Items:
               \`<div class="flex items-start gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm">\`
