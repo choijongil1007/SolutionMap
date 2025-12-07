@@ -260,13 +260,17 @@ ${requirementsString}
     (Leave a blank line here)
     **HTML Content Only**:
     - Create a comparison table.
-    - **Columns**: 구분 (Requirement), ${ourProduct} (O/△/X), ${competitor} (O/△/X), 비고.
+    - **Columns**: 구분 (Requirement), ${ourProduct} (O/△/X), ${competitor} (O/△/X), 비고 (Remark).
     - Use symbols: ⭕ (Satisfied), ⚠️ (Partial), ❌ (Not Satisfied).
     - Bold the symbols using \`<b>\`.
+    - **Remark Column Formatting**:
+        - **Do NOT use semicolons (;)** to separate text.
+        - Use \`<br>\` to create line breaks between distinct points.
+        - Use a bullet point (•) at the start of each line for better readability.
     - Style: \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden mb-10">\`
     - Header Style: \`bg-slate-50 border-b border-slate-200 font-bold text-center\`
     - Row Style: \`border-b border-slate-100 hover:bg-slate-50/50\`
-    - Cell Style: \`p-3 border-r border-slate-200 last:border-r-0\`
+    - Cell Style: \`p-3 border-r border-slate-200 last:border-r-0 align-top\`
 
 3.  **## 3. 고객 환경과의 통합성**
     (Leave a blank line here)
@@ -304,16 +308,19 @@ ${requirementsString}
     - Title: \`<div class="text-indigo-700 font-bold mb-2 text-lg">Key Message #</div>\`
     - Text: \`<div class="text-slate-700 text-sm leading-relaxed">...</div>\`
 
-5.  **## 5. Action Item (TOWS Strategies)**
+5.  **## 5. 대응 방안**
     (Leave a blank line here)
     **HTML Content Only**:
-    - Analyze using TOWS matrix (SO, ST, WO, WT).
-    - Give higher weight to **Key Customer Requirements** in the strategy.
-    - Wrap in \`<div class="grid grid-cols-1 md:grid-cols-2 gap-4">\`
-    - **Card 1 (SO Strategy)**: \`<div class="border border-green-200 bg-green-50/30 p-4 rounded-xl"><div class="font-bold text-green-800 mb-2">SO 전략 (강점 활용)</div><ul class="list-disc pl-4 text-sm text-slate-700 space-y-1"><li>...</li></ul></div>\`
-    - **Card 2 (ST Strategy)**: \`<div class="border border-yellow-200 bg-yellow-50/30 p-4 rounded-xl"><div class="font-bold text-yellow-800 mb-2">ST 전략 (위협 회피)</div><ul class="list-disc pl-4 text-sm text-slate-700 space-y-1"><li>...</li></ul></div>\`
-    - **Card 3 (WO Strategy)**: \`<div class="border border-blue-200 bg-blue-50/30 p-4 rounded-xl"><div class="font-bold text-blue-800 mb-2">WO 전략 (약점 보완)</div><ul class="list-disc pl-4 text-sm text-slate-700 space-y-1"><li>...</li></ul></div>\`
-    - **Card 4 (WT Strategy)**: \`<div class="border border-red-200 bg-red-50/30 p-4 rounded-xl"><div class="font-bold text-red-800 mb-2">WT 전략 (방어)</div><ul class="list-disc pl-4 text-sm text-slate-700 space-y-1"><li>...</li></ul></div>\`
+    - Provide actionable strategies based on the analysis.
+    - Wrap in \`<div class="grid grid-cols-1 md:grid-cols-2 gap-6">\`
+    - **Card 1: 강점 강화 (Reinforce Strengths)**
+       - Style: \`<div class="border border-blue-200 bg-blue-50/30 p-5 rounded-xl">\`
+       - Header: \`<div class="font-bold text-blue-800 text-lg mb-3 border-b border-blue-200 pb-2">강점 강화</div>\`
+       - Content: Messages to emphasize where Our Product wins. Use \`<ul class="list-disc pl-4 text-sm text-slate-700 space-y-2">\`.
+    - **Card 2: 약점 보강 (Address Weaknesses)**
+       - Style: \`<div class="border border-red-200 bg-red-50/30 p-5 rounded-xl">\`
+       - Header: \`<div class="font-bold text-red-800 text-lg mb-3 border-b border-red-200 pb-2">약점 보강</div>\`
+       - Content: Activities, workarounds, or counter-messages to address gaps. Use \`<ul class="list-disc pl-4 text-sm text-slate-700 space-y-2">\`.
 `;
 
     try {
