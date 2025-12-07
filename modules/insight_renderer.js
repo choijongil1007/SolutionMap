@@ -268,10 +268,10 @@ ${requirementsString}
     - **Remark Column Formatting (STRICT)**:
         - **FORBIDDEN**: Do NOT use semicolons (;).
         - **REQUIRED**: Use \`<br>• \` (bullet) to separate multiple points.
-    - Table Style: \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden mb-10 min-w-[500px]">\`
-    - Header Style: \`bg-slate-50 border-b border-slate-200 font-bold text-center\`
+    - Table Style: \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden mb-10 min-w-[500px] text-xs">\`
+    - Header Style: \`bg-slate-50 border-b border-slate-200 font-bold text-center text-sm\`
     - Row Style: \`border-b border-slate-100 hover:bg-slate-50/50\`
-    - Cell Style: \`p-3 border-r border-slate-200 last:border-r-0 align-top break-words\`
+    - Cell Style: \`p-3 border-r border-slate-200 last:border-r-0 align-top break-words text-xs\`
 
 3.  **## 3. 고객 환경과의 통합성**
     (Leave a blank line here)
@@ -280,7 +280,7 @@ ${requirementsString}
     
     - **Left Column (${ourProduct})**: 
         \`<div class="border border-blue-200 bg-blue-50/30 rounded-xl overflow-hidden shadow-sm">\`
-        - Header: \`<div class="bg-blue-100/50 px-1.5 py-1 border-b border-blue-200"><h3 class="font-bold text-blue-800 text-base truncate text-center">${ourProduct} (자사)</h3></div>\`
+        - Header: \`<div class="bg-blue-100/50 px-1.5 py-1 border-b border-blue-200 flex justify-center items-center"><h3 class="font-bold text-blue-800 text-base truncate text-center">${ourProduct} (자사)</h3></div>\`
         - Body: \`<div class="p-4 space-y-2">\`
             - Integration Items:
               \`<div class="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-blue-100 shadow-sm">\`
@@ -291,7 +291,7 @@ ${requirementsString}
     
     - **Right Column (${competitor})**: 
         \`<div class="border border-slate-200 bg-slate-50/30 rounded-xl overflow-hidden shadow-sm">\`
-        - Header: \`<div class="bg-slate-100/50 px-1.5 py-1 border-b border-slate-200"><h3 class="font-bold text-slate-700 text-base truncate text-center">${competitor} (경쟁사)</h3></div>\`
+        - Header: \`<div class="bg-slate-100/50 px-1.5 py-1 border-b border-slate-200 flex justify-center items-center"><h3 class="font-bold text-slate-700 text-base truncate text-center">${competitor} (경쟁사)</h3></div>\`
         - Body: \`<div class="p-4 space-y-2">\`
             - Integration Items:
               \`<div class="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-slate-200 shadow-sm">\`
@@ -315,11 +315,11 @@ ${requirementsString}
     - **Card 1: 강점 강화 (Reinforce Strengths)**
        - Style: \`<div class="border border-blue-200 bg-blue-50/30 p-5 rounded-xl">\`
        - Header: \`<div class="font-bold text-blue-800 text-base mb-3 border-b border-blue-200 pb-2">강점 강화</div>\`
-       - Content: Messages to emphasize where Our Product wins. Use \`<ul class="list-disc pl-4 text-sm text-slate-700 space-y-2">\`.
+       - Content: Messages to emphasize where Our Product wins. Use \`<ul class="list-disc pl-4 text-xs text-slate-700 space-y-2">\`.
     - **Card 2: 약점 보강 (Address Weaknesses)**
        - Style: \`<div class="border border-red-200 bg-red-50/30 p-5 rounded-xl">\`
        - Header: \`<div class="font-bold text-red-800 text-base mb-3 border-b border-red-200 pb-2">약점 보강</div>\`
-       - Content: Activities, workarounds, or counter-messages to address gaps. Use \`<ul class="list-disc pl-4 text-sm text-slate-700 space-y-2">\`.
+       - Content: Activities, workarounds, or counter-messages to address gaps. Use \`<ul class="list-disc pl-4 text-xs text-slate-700 space-y-2">\`.
 `;
 
     try {
