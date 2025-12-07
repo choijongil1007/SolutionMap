@@ -51,12 +51,16 @@ function renderUI() {
 
                 <!-- Key Requirements -->
                 <div class="border-t border-slate-100 pt-5 mb-6">
-                    <label class="block text-sm font-bold text-slate-800 mb-2">핵심 고객 요구사항 (Top 3)</label>
-                    <p class="text-xs text-slate-400 mb-3">고객이 중요하게 생각하는 기능이나 요건을 입력하면 분석 결과에 반영됩니다.</p>
-                    <div class="space-y-2.5">
-                        <input type="text" id="insight-req-1" class="input-premium w-full" placeholder="요구사항 1 (예: 기존 사내 SSO 시스템 연동 필수)">
-                        <input type="text" id="insight-req-2" class="input-premium w-full" placeholder="요구사항 2 (예: 모바일 앱 지원)">
-                        <input type="text" id="insight-req-3" class="input-premium w-full" placeholder="요구사항 3">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-sm font-bold text-slate-800">핵심 고객 요구사항</label>
+                        <button id="btn-add-req" class="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-700 font-bold bg-blue-50 border border-blue-100 px-2.5 py-1.5 rounded-lg transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            추가
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-3">고객이 중요하게 생각하는 기능이나 요건을 입력하세요.</p>
+                    <div id="req-input-container" class="space-y-2.5">
+                        <!-- Inputs injected by JS -->
                     </div>
                 </div>
 
@@ -100,8 +104,42 @@ function renderUI() {
         </div>
     `;
 
+    // Initial Inputs (3 items)
+    addRequirementInput("요구사항 1 (예: 기존 사내 SSO 시스템 연동 필수)");
+    addRequirementInput("요구사항 2 (예: 모바일 앱 지원)");
+    addRequirementInput("요구사항 3");
+
+    // Event Listeners
+    document.getElementById('btn-add-req').addEventListener('click', () => {
+        const count = document.querySelectorAll('.req-input').length + 1;
+        addRequirementInput(`요구사항 ${count}`);
+    });
+
     document.getElementById('btn-generate-insight').addEventListener('click', generateInsight);
     document.getElementById('btn-save-as-report').addEventListener('click', openSaveReportModal);
+}
+
+function addRequirementInput(placeholderText) {
+    const container = document.getElementById('req-input-container');
+    const inputWrapper = document.createElement('div');
+    inputWrapper.className = "flex items-center gap-2";
+    
+    const input = document.createElement('input');
+    input.type = "text";
+    input.className = "input-premium w-full req-input";
+    input.placeholder = placeholderText || "추가 요구사항";
+    
+    // Delete button (only for 4th item onwards or just allow deleting any)
+    const btnDel = document.createElement('button');
+    btnDel.className = "p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors";
+    btnDel.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+    btnDel.onclick = () => {
+        inputWrapper.remove();
+    };
+
+    inputWrapper.appendChild(input);
+    inputWrapper.appendChild(btnDel);
+    container.appendChild(inputWrapper);
 }
 
 // --- Save Report Logic ---
@@ -148,11 +186,10 @@ async function generateInsight() {
     const competitor = document.getElementById('insight-competitor').value.trim();
     const ourProduct = document.getElementById('insight-our-product').value.trim();
     
-    // Get Requirements
-    const req1 = document.getElementById('insight-req-1').value.trim();
-    const req2 = document.getElementById('insight-req-2').value.trim();
-    const req3 = document.getElementById('insight-req-3').value.trim();
-    const requirements = [req1, req2, req3].filter(r => r);
+    // Get Requirements (Dynamic)
+    const reqInputs = document.querySelectorAll('.req-input');
+    const requirements = Array.from(reqInputs).map(input => input.value.trim()).filter(val => val !== "");
+    
     const requirementsString = requirements.length > 0 
         ? requirements.map((r, i) => `${i+1}. ${r}`).join('\n') 
         : "None specified.";
@@ -186,7 +223,7 @@ async function generateInsight() {
         ? categoryListArray.join(', ') 
         : "주요 시스템(DB, API, 보안 등)";
 
-    // Prompt
+    // Prompt - UPDATED STRUCTURE
     let prompt = `
 You are an expert Solution Architect.
 Perform a detailed competitive analysis comparing "**${ourProduct}**" (Our Product) and "**${competitor}**" (Competitor Product) within the context of the customer's current environment.
@@ -207,22 +244,31 @@ ${requirementsString}
 
 **Requirements:**
 - Output specifically in **Korean**.
-- **Tone**: For table cells and list items, use **concise, short noun-ending phrases** (e.g., "지원함", "연동 우수", "설치 필요", "미지원") instead of full sentences like "~합니다", "~습니다", or "~이다".
+- **Tone**: Concise, professional. Use short noun-ending phrases for tables/lists.
 - **Formatting**:
-    - **NO MARKDOWN BOLD**: Do NOT use \`**\` characters anywhere in the response. Use HTML \`<b>\` tags if emphasis is needed.
+    - **NO MARKDOWN BOLD**: Do NOT use \`**\` characters. Use HTML \`<b>\` tags for emphasis.
     - **NO CODE BLOCKS**: Do NOT wrap HTML in \`\`\`html ... \`\`\`.
-    - **DO NOT INDENT HTML**: Start every HTML tag at the very beginning of the line.
-    - **Headers**: Use Markdown (\`## Title\`) for the 4 main sections.
+    - **Headers**: Use Markdown (\`## Title\`) for the 5 main sections.
     - **Spacing**: Ensure a blank line separates the Markdown header from the HTML content below it.
-    - **Customer Requirements Eval**: If Customer Requirements are provided, you **MUST** evaluate them. In the 'Summary' or 'Feature Comparison', specifically mention these requirements and highlight the verdict (e.g., Satisfied/Not Satisfied) using \`<b>\` tags (e.g., \`<b>충족</b>\`, \`<b>미충족</b>\`, \`<b>부분 충족</b>\`).
 
-**Report Structure:**
+**Report Structure (5 Sections):**
 
 1.  **## 1. 요약**
-    - Brief executive summary favoring Our Product based on the customer's specific environment.
-    - **IF** 'Key Customer Requirements' were provided, explicitly list them here with a status check (e.g., "Requirement 1: <b>충족</b>").
+    - Brief executive summary favoring Our Product. Mention overall fit with the customer's environment.
 
-2.  **## 2. 고객이 사용 중인 솔루션과의 통합성**
+2.  **## 2. 핵심 요구사항 만족도**
+    (Leave a blank line here)
+    **HTML Content Only**:
+    - Create a comparison table.
+    - **Columns**: 구분 (Requirement), ${ourProduct} (O/△/X), ${competitor} (O/△/X), 비고.
+    - Use symbols: ⭕ (Satisfied), ⚠️ (Partial), ❌ (Not Satisfied).
+    - Bold the symbols using \`<b>\`.
+    - Style: \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden mb-10">\`
+    - Header Style: \`bg-slate-50 border-b border-slate-200 font-bold text-center\`
+    - Row Style: \`border-b border-slate-100 hover:bg-slate-50/50\`
+    - Cell Style: \`p-3 border-r border-slate-200 last:border-r-0\`
+
+3.  **## 3. 고객 환경과의 통합성**
     (Leave a blank line here)
     **HTML Content Only**:
     Wrap in \`<div class="mb-10 grid grid-cols-1 md:grid-cols-2 gap-6">\`:
@@ -231,10 +277,10 @@ ${requirementsString}
         \`<div class="border border-blue-200 bg-blue-50/30 rounded-xl overflow-hidden shadow-sm">\`
         - Header: \`<div class="bg-blue-100/50 px-5 py-2.5 border-b border-blue-200"><h3 class="font-bold text-blue-800 text-lg">${ourProduct} (자사)</h3></div>\`
         - Body: \`<div class="p-5 space-y-3">\`
-            - Integration Items (Create 3-4 key integration points based on customer's map):
+            - Integration Items (3-4 points based on architecture map):
               \`<div class="flex items-start gap-3 p-3 bg-white rounded-lg border border-blue-100 shadow-sm">\`
                 - Icon: \`<div class="shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 text-xs font-bold">✓</div>\`
-                - Text: \`<div><div class="font-bold text-slate-700 text-sm mb-0.5">[Target Solution] 연동</div><div class="text-sm text-slate-600 leading-snug">[Short description of benefit, e.g. Native API support provided]</div></div>\`
+                - Text: \`<div><div class="font-bold text-slate-700 text-sm mb-0.5">[Target Solution] 연동</div><div class="text-sm text-slate-600 leading-snug">[Benefit description]</div></div>\`
               \`</div>\`
         \`</div>\`
     
@@ -245,37 +291,29 @@ ${requirementsString}
             - Integration Items:
               \`<div class="flex items-start gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm">\`
                 - Icon: \`<div class="shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 text-xs font-bold">-</div>\`
-                - Text: \`<div><div class="font-bold text-slate-700 text-sm mb-0.5">[Target Solution] 연동</div><div class="text-sm text-slate-600 leading-snug">[Short description, e.g. Requires 3rd party plugin]</div></div>\`
+                - Text: \`<div><div class="font-bold text-slate-700 text-sm mb-0.5">[Target Solution] 연동</div><div class="text-sm text-slate-600 leading-snug">[Description]</div></div>\`
               \`</div>\`
         \`</div>\`
 
-3.  **## 3. 기능 상세 비교**
+4.  **## 4. 핵심 메시지**
     (Leave a blank line here)
     **HTML Content Only**:
-    Wrap in \`<div class="mb-10">\`:
-    - Table: \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden">\`
-    - Columns: **MUST INCLUDE** \`<colgroup><col style="width:15%"><col style="width:30%"><col style="width:30%"><col style="width:25%"></colgroup>\`
-    - Header: \`<thead class="bg-slate-50 border-b border-slate-200"><tr><th class="p-3 border-r border-slate-200 text-slate-700 font-bold text-center">구분</th><th class="p-3 border-r border-slate-200 text-blue-700 font-bold text-center">${ourProduct}</th><th class="p-3 border-r border-slate-200 text-slate-600 font-bold text-center">${competitor}</th><th class="p-3 text-slate-600 font-bold text-center">비고</th></tr></thead>\`
-    - Body: \`<tbody class="text-slate-700">\` (Do NOT add 'text-base')
-    - Rows: 
-      - **IF requirements provided**: Add rows for each Requirement first (e.g. "요구사항: SSO 연동").
-      - Then add: 연동성, 기능 적합성, 성능, 리스크.
-    - Style: 
-      - **First Column (Category)**: \`p-3 border-b border-slate-200 border-r border-slate-200 text-center font-bold bg-slate-50/50\`
-      - **Other Columns**: \`p-3 border-b border-slate-200 border-r border-slate-200 last:border-r-0\`
-      - Use concise noun-ending phrases.
-      - **IMPORTANT**: Bold the verdict in the table cells using \`<b>\` tags (e.g., \`<b>충족</b>\`).
+    - Create 3 Highlight Cards reflecting the Key Requirements Satisfaction and Integration results.
+    - Wrap in \`<div class="mb-10 grid grid-cols-1 md:grid-cols-3 gap-4">\`
+    - Card Style: \`<div class="border border-indigo-100 bg-indigo-50/30 p-5 rounded-xl">\`
+    - Title: \`<div class="text-indigo-700 font-bold mb-2 text-lg">Key Message #</div>\`
+    - Text: \`<div class="text-slate-700 text-sm leading-relaxed">...</div>\`
 
-4.  **## 4. 차별화 메시지**
+5.  **## 5. Action Item (TOWS Strategies)**
     (Leave a blank line here)
     **HTML Content Only**:
-    Wrap in \`<div class="mb-10 flex flex-col gap-4">\`:
-    - Create 3 Cards highlighting competitive advantages.
-    - Card: \`<div class="border border-indigo-100 bg-white shadow-sm rounded-xl p-5 hover:shadow-md transition-all">\`
-    - Title: \`<div class="text-indigo-600 font-bold mb-2 text-lg">...</div>\`
-    - Text: \`<div class="text-slate-700 leading-relaxed">\`
-      - **Content Format**: Use \`<ul class="list-disc pl-5 space-y-1">\` containing \`<li>...</li>\` items. Split sentences into bullet points.
-    - \`</div>\`
+    - Analyze using TOWS matrix (SO, ST, WO, WT).
+    - Give higher weight to **Key Customer Requirements** in the strategy.
+    - Wrap in \`<div class="grid grid-cols-1 md:grid-cols-2 gap-4">\`
+    - **Card 1 (SO Strategy)**: \`<div class="border border-green-200 bg-green-50/30 p-4 rounded-xl"><div class="font-bold text-green-800 mb-2">SO 전략 (강점 활용)</div><ul class="list-disc pl-4 text-sm text-slate-700 space-y-1"><li>...</li></ul></div>\`
+    - **Card 2 (ST Strategy)**: \`<div class="border border-yellow-200 bg-yellow-50/30 p-4 rounded-xl"><div class="font-bold text-yellow-800 mb-2">ST 전략 (위협 회피)</div><ul class="list-disc pl-4 text-sm text-slate-700 space-y-1"><li>...</li></ul></div>\`
+    - **Card 3 (WO Strategy)**: \`<div class="border border-blue-200 bg-blue-50/30 p-4 rounded-xl"><div class="font-bold text-blue-800 mb-2">WO 전략 (약점 보완)</div><ul class="list-disc pl-4 text-sm text-slate-700 space-y-1"><li>...</li></ul></div>\`
+    - **Card 4 (WT Strategy)**: \`<div class="border border-red-200 bg-red-50/30 p-4 rounded-xl"><div class="font-bold text-red-800 mb-2">WT 전략 (방어)</div><ul class="list-disc pl-4 text-sm text-slate-700 space-y-1"><li>...</li></ul></div>\`
 `;
 
     try {
