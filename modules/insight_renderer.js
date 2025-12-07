@@ -1,4 +1,5 @@
 
+
 import { store } from './data_model.js';
 import { showWarningModal } from '../utils/modal.js';
 
@@ -306,6 +307,7 @@ ${requirementsString}
     - Card Style: \`<div class="border border-indigo-100 bg-indigo-50/30 p-4 rounded-xl">\`
     - Title: \`<div class="text-indigo-700 font-bold mb-2 text-base">Key Message #</div>\`
     - Text: \`<div class="text-slate-700 leading-relaxed">...</div>\`
+    - **CONSTRAINT**: Do NOT include prefixes like '메시지 1:', 'Message 1:', or '핵심 메시지 1:' in the body text.
 
 5.  **## 5. 대응 방안**
     (Leave a blank line here)
