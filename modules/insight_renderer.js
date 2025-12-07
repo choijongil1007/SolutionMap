@@ -1,3 +1,4 @@
+
 import { store } from './data_model.js';
 import { showWarningModal } from '../utils/modal.js';
 
@@ -266,10 +267,10 @@ ${requirementsString}
     - **Remark Column Formatting (STRICT)**:
         - **FORBIDDEN**: Do NOT use semicolons (;).
         - **REQUIRED**: Use \`<br>• \` (bullet) to separate multiple points.
-    - Table Style: \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden mb-10 min-w-[500px] text-xs">\`
+    - Table Style: \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden mb-10 min-w-[500px]">\`
     - Header Style: \`bg-slate-50 border-b border-slate-200 font-bold text-center text-sm\`
     - Row Style: \`border-b border-slate-100 hover:bg-slate-50/50\`
-    - Cell Style: \`p-3 border-r border-slate-200 last:border-r-0 align-top break-words text-xs\`
+    - Cell Style: \`p-3 border-r border-slate-200 last:border-r-0 align-top break-words\`
 
 3.  **## 3. 고객 환경과의 통합성**
     (Leave a blank line here)
@@ -283,7 +284,7 @@ ${requirementsString}
             - Integration Items:
               \`<div class="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-blue-100 shadow-sm">\`
                 - Icon: \`<div class="shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 text-sm font-extrabold border border-blue-200 leading-none">O</div>\` (Choose O, △, X)
-                - Text: \`<div><div class="font-bold text-slate-700 text-xs mb-0.5">[Target Solution] 연동</div><div class="text-xs text-slate-600 leading-snug">[Benefit]</div></div>\`
+                - Text: \`<div><div class="font-bold text-slate-700 mb-0.5">[Target Solution] 연동</div><div class="text-slate-600">[Benefit]</div></div>\`
               \`</div>\`
         \`</div>\`
     
@@ -294,7 +295,7 @@ ${requirementsString}
             - Integration Items:
               \`<div class="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-slate-200 shadow-sm">\`
                 - Icon: \`<div class="shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-full bg-slate-50 text-slate-500 text-sm font-extrabold border border-slate-200 leading-none">X</div>\` (Choose O, △, X)
-                - Text: \`<div><div class="font-bold text-slate-700 text-xs mb-0.5">[Target Solution] 연동</div><div class="text-xs text-slate-600 leading-snug">[Desc]</div></div>\`
+                - Text: \`<div><div class="font-bold text-slate-700 mb-0.5">[Target Solution] 연동</div><div class="text-slate-600">[Desc]</div></div>\`
               \`</div>\`
         \`</div>\`
 
@@ -304,7 +305,7 @@ ${requirementsString}
     - Wrap in \`<div class="mb-10 grid grid-cols-1 md:grid-cols-3 gap-4 w-full">\`
     - Card Style: \`<div class="border border-indigo-100 bg-indigo-50/30 p-4 rounded-xl">\`
     - Title: \`<div class="text-indigo-700 font-bold mb-2 text-base">Key Message #</div>\`
-    - Text: \`<div class="text-slate-700 text-xs leading-relaxed">...</div>\`
+    - Text: \`<div class="text-slate-700 leading-relaxed">...</div>\`
 
 5.  **## 5. 대응 방안**
     (Leave a blank line here)
@@ -313,11 +314,11 @@ ${requirementsString}
     - **Card 1: 강점 강화 (Reinforce Strengths)**
        - Style: \`<div class="border border-blue-200 bg-blue-50/30 p-5 rounded-xl">\`
        - Header: \`<div class="font-bold text-blue-800 text-base mb-3 border-b border-blue-200 pb-2">강점 강화</div>\`
-       - Content: Messages to emphasize where Our Product wins. Use \`<ul class="list-disc pl-4 text-xs text-slate-700 space-y-2">\`.
+       - Content: Messages to emphasize where Our Product wins. Use \`<ul class="list-disc pl-4 text-slate-700 space-y-2">\`.
     - **Card 2: 약점 보강 (Address Weaknesses)**
        - Style: \`<div class="border border-red-200 bg-red-50/30 p-5 rounded-xl">\`
        - Header: \`<div class="font-bold text-red-800 text-base mb-3 border-b border-red-200 pb-2">약점 보강</div>\`
-       - Content: Activities, workarounds, or counter-messages to address gaps. Use \`<ul class="list-disc pl-4 text-xs text-slate-700 space-y-2">\`.
+       - Content: Activities, workarounds, or counter-messages to address gaps. Use \`<ul class="list-disc pl-4 text-slate-700 space-y-2">\`.
 `;
 
     try {
