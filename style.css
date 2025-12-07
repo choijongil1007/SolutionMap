@@ -148,7 +148,7 @@ body {
 .report-content table {
     display: table; 
     width: 100%;
-    overflow-x: auto;
+    /* overflow handling moved to wrapper div */
     border-collapse: collapse;
     margin: 1.5em 0; 
     font-size: 0.95rem; 
@@ -164,7 +164,7 @@ body {
     text-align: center; 
     padding: 10px 12px;
     border-bottom: 2px solid #e2e8f0;
-    white-space: nowrap; 
+    /* white-space: nowrap; REMOVED to allow wrapping */
 }
 
 .report-content td {

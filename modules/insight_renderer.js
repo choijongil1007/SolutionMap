@@ -32,7 +32,7 @@ export function initStrategyRenderer(containerId) {
 
 function renderUI() {
     insightContainer.innerHTML = `
-        <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-6 w-full max-w-full overflow-hidden">
             <!-- Input Section -->
             <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                 <h3 class="text-lg font-bold text-slate-800 mb-4">경쟁 분석 설정</h3>
@@ -73,10 +73,10 @@ function renderUI() {
             </div>
 
             <!-- Result Section -->
-            <div class="flex flex-col min-h-[400px] border border-slate-100 rounded-xl bg-white shadow-inner relative" id="insight-result-container">
+            <div class="flex flex-col min-h-[400px] border border-slate-100 rounded-xl bg-white shadow-inner relative w-full overflow-hidden" id="insight-result-container">
                 
                 <!-- Content Area: Static position to flow naturally. Added padding bottom for the action bar -->
-                <div class="p-8 pb-24" id="insight-scroll-area">
+                <div class="p-8 pb-24 w-full overflow-x-hidden" id="insight-scroll-area">
                     <div id="insight-placeholder" class="flex flex-col items-center justify-center py-20 text-slate-400">
                         <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
@@ -84,7 +84,7 @@ function renderUI() {
                         <p class="font-medium text-slate-500">분석 결과가 여기에 표시됩니다</p>
                     </div>
                     
-                    <div id="insight-content" class="hidden report-content"></div>
+                    <div id="insight-content" class="hidden report-content w-full"></div>
                 </div>
 
                 <!-- Loading Overlay: Absolute to cover the container -->
@@ -244,12 +244,13 @@ ${requirementsString}
 
 **Requirements:**
 - Output specifically in **Korean**.
-- **Tone**: Concise, professional. Use short noun-ending phrases for tables/lists.
+- **Tone**: Concise, professional. Use short noun-ending phrases.
 - **Formatting**:
     - **NO MARKDOWN BOLD**: Do NOT use \`**\` characters. Use HTML \`<b>\` tags for emphasis.
     - **NO CODE BLOCKS**: Do NOT wrap HTML in \`\`\`html ... \`\`\`.
     - **Headers**: Use Markdown (\`## Title\`) for the 5 main sections.
     - **Spacing**: Ensure a blank line separates the Markdown header from the HTML content below it.
+    - **Width Safety**: Ensure all container divs use \`w-full\`.
 
 **Report Structure (5 Sections):**
 
@@ -260,66 +261,64 @@ ${requirementsString}
     (Leave a blank line here)
     **HTML Content Only**:
     - Create a comparison table.
+    - **CRITICAL**: Wrap the table in a container to prevent overflow: \`<div class="w-full overflow-x-auto">\` ... \`</div>\`.
     - **Columns**: 구분 (Requirement), ${ourProduct} (O/△/X), ${competitor} (O/△/X), 비고 (Remark).
     - Use symbols: ⭕ (Satisfied), ⚠️ (Partial), ❌ (Not Satisfied).
     - Bold the symbols using \`<b>\`.
-    - **Remark Column Formatting**:
-        - **Do NOT use semicolons (;)** to separate text.
-        - Use \`<br>\` to create line breaks between distinct points.
-        - Use a bullet point (•) at the start of each line for better readability.
-    - Style: \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden mb-10">\`
+    - **Remark Column Formatting (STRICT)**:
+        - **FORBIDDEN**: Do NOT use semicolons (;).
+        - **REQUIRED**: Use \`<br>• \` (bullet) to separate multiple points.
+    - Table Style: \`<table class="w-full text-left border-collapse border border-slate-200 rounded-lg overflow-hidden mb-10 min-w-[500px]">\`
     - Header Style: \`bg-slate-50 border-b border-slate-200 font-bold text-center\`
     - Row Style: \`border-b border-slate-100 hover:bg-slate-50/50\`
-    - Cell Style: \`p-3 border-r border-slate-200 last:border-r-0 align-top\`
+    - Cell Style: \`p-3 border-r border-slate-200 last:border-r-0 align-top break-words\`
 
 3.  **## 3. 고객 환경과의 통합성**
     (Leave a blank line here)
     **HTML Content Only**:
-    Wrap in \`<div class="mb-10 grid grid-cols-1 md:grid-cols-2 gap-6">\`:
+    Wrap in \`<div class="mb-10 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">\`:
     
     - **Left Column (${ourProduct})**: 
         \`<div class="border border-blue-200 bg-blue-50/30 rounded-xl overflow-hidden shadow-sm">\`
-        - Header: \`<div class="bg-blue-100/50 px-4 py-2 border-b border-blue-200"><h3 class="font-bold text-blue-800 text-base">${ourProduct} (자사)</h3></div>\`
-        - Body: \`<div class="p-5 space-y-3">\`
-            - Integration Items (3-4 points based on architecture map):
-              \`<div class="flex items-start gap-3 p-3 bg-white rounded-lg border border-blue-100 shadow-sm">\`
-                - Icon: \`<div class="shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 text-xs font-bold">✓</div>\`
-                - Text: \`<div><div class="font-bold text-slate-700 text-sm mb-0.5">[Target Solution] 연동</div><div class="text-sm text-slate-600 leading-snug">[Benefit description]</div></div>\`
+        - Header: \`<div class="bg-blue-100/50 px-3 py-1.5 border-b border-blue-200"><h3 class="font-bold text-blue-800 text-sm truncate">${ourProduct} (자사)</h3></div>\`
+        - Body: \`<div class="p-4 space-y-2">\`
+            - Integration Items:
+              \`<div class="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-blue-100 shadow-sm">\`
+                - Icon: \`<div class="shrink-0 mt-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold">✓</div>\`
+                - Text: \`<div><div class="font-bold text-slate-700 text-xs mb-0.5">[Target Solution] 연동</div><div class="text-xs text-slate-600 leading-snug">[Benefit]</div></div>\`
               \`</div>\`
         \`</div>\`
     
     - **Right Column (${competitor})**: 
         \`<div class="border border-slate-200 bg-slate-50/30 rounded-xl overflow-hidden shadow-sm">\`
-        - Header: \`<div class="bg-slate-100/50 px-4 py-2 border-b border-slate-200"><h3 class="font-bold text-slate-700 text-base">${competitor} (경쟁사)</h3></div>\`
-        - Body: \`<div class="p-5 space-y-3">\`
+        - Header: \`<div class="bg-slate-100/50 px-3 py-1.5 border-b border-slate-200"><h3 class="font-bold text-slate-700 text-sm truncate">${competitor} (경쟁사)</h3></div>\`
+        - Body: \`<div class="p-4 space-y-2">\`
             - Integration Items:
-              \`<div class="flex items-start gap-3 p-3 bg-white rounded-lg border border-slate-200 shadow-sm">\`
-                - Icon: \`<div class="shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 text-xs font-bold">-</div>\`
-                - Text: \`<div><div class="font-bold text-slate-700 text-sm mb-0.5">[Target Solution] 연동</div><div class="text-sm text-slate-600 leading-snug">[Description]</div></div>\`
+              \`<div class="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-slate-200 shadow-sm">\`
+                - Icon: \`<div class="shrink-0 mt-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold">-</div>\`
+                - Text: \`<div><div class="font-bold text-slate-700 text-xs mb-0.5">[Target Solution] 연동</div><div class="text-xs text-slate-600 leading-snug">[Desc]</div></div>\`
               \`</div>\`
         \`</div>\`
 
 4.  **## 4. 핵심 메시지**
     (Leave a blank line here)
     **HTML Content Only**:
-    - Create 3 Highlight Cards reflecting the Key Requirements Satisfaction and Integration results.
-    - Wrap in \`<div class="mb-10 grid grid-cols-1 md:grid-cols-3 gap-4">\`
-    - Card Style: \`<div class="border border-indigo-100 bg-indigo-50/30 p-5 rounded-xl">\`
-    - Title: \`<div class="text-indigo-700 font-bold mb-2 text-lg">Key Message #</div>\`
-    - Text: \`<div class="text-slate-700 text-sm leading-relaxed">...</div>\`
+    - Wrap in \`<div class="mb-10 grid grid-cols-1 md:grid-cols-3 gap-4 w-full">\`
+    - Card Style: \`<div class="border border-indigo-100 bg-indigo-50/30 p-4 rounded-xl">\`
+    - Title: \`<div class="text-indigo-700 font-bold mb-2 text-base">Key Message #</div>\`
+    - Text: \`<div class="text-slate-700 text-xs leading-relaxed">...</div>\`
 
 5.  **## 5. 대응 방안**
     (Leave a blank line here)
     **HTML Content Only**:
-    - Provide actionable strategies based on the analysis.
-    - Wrap in \`<div class="grid grid-cols-1 md:grid-cols-2 gap-6">\`
+    - Wrap in \`<div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">\`
     - **Card 1: 강점 강화 (Reinforce Strengths)**
        - Style: \`<div class="border border-blue-200 bg-blue-50/30 p-5 rounded-xl">\`
-       - Header: \`<div class="font-bold text-blue-800 text-lg mb-3 border-b border-blue-200 pb-2">강점 강화</div>\`
+       - Header: \`<div class="font-bold text-blue-800 text-base mb-3 border-b border-blue-200 pb-2">강점 강화</div>\`
        - Content: Messages to emphasize where Our Product wins. Use \`<ul class="list-disc pl-4 text-sm text-slate-700 space-y-2">\`.
     - **Card 2: 약점 보강 (Address Weaknesses)**
        - Style: \`<div class="border border-red-200 bg-red-50/30 p-5 rounded-xl">\`
-       - Header: \`<div class="font-bold text-red-800 text-lg mb-3 border-b border-red-200 pb-2">약점 보강</div>\`
+       - Header: \`<div class="font-bold text-red-800 text-base mb-3 border-b border-red-200 pb-2">약점 보강</div>\`
        - Content: Activities, workarounds, or counter-messages to address gaps. Use \`<ul class="list-disc pl-4 text-sm text-slate-700 space-y-2">\`.
 `;
 
