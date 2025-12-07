@@ -1,5 +1,3 @@
-
-
 import { store } from './data_model.js';
 import { showWarningModal } from '../utils/modal.js';
 
@@ -284,7 +282,7 @@ ${requirementsString}
         - Body: \`<div class="p-4 space-y-2">\`
             - Integration Items:
               \`<div class="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-blue-100 shadow-sm">\`
-                - Icon: \`<div class="shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 text-sm font-extrabold border border-blue-200">O</div>\` (Choose O, △, X)
+                - Icon: \`<div class="shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 text-sm font-extrabold border border-blue-200 leading-none">O</div>\` (Choose O, △, X)
                 - Text: \`<div><div class="font-bold text-slate-700 text-xs mb-0.5">[Target Solution] 연동</div><div class="text-xs text-slate-600 leading-snug">[Benefit]</div></div>\`
               \`</div>\`
         \`</div>\`
@@ -295,7 +293,7 @@ ${requirementsString}
         - Body: \`<div class="p-4 space-y-2">\`
             - Integration Items:
               \`<div class="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-slate-200 shadow-sm">\`
-                - Icon: \`<div class="shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-full bg-slate-50 text-slate-500 text-sm font-extrabold border border-slate-200">X</div>\` (Choose O, △, X)
+                - Icon: \`<div class="shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-full bg-slate-50 text-slate-500 text-sm font-extrabold border border-slate-200 leading-none">X</div>\` (Choose O, △, X)
                 - Text: \`<div><div class="font-bold text-slate-700 text-xs mb-0.5">[Target Solution] 연동</div><div class="text-xs text-slate-600 leading-snug">[Desc]</div></div>\`
               \`</div>\`
         \`</div>\`
