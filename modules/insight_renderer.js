@@ -280,22 +280,22 @@ ${requirementsString}
     
     - **Left Column (${ourProduct})**: 
         \`<div class="border border-blue-200 bg-blue-50/30 rounded-xl overflow-hidden shadow-sm">\`
-        - Header: \`<div class="bg-blue-100/50 px-3 py-1.5 border-b border-blue-200"><h3 class="font-bold text-blue-800 text-sm truncate">${ourProduct} (자사)</h3></div>\`
+        - Header: \`<div class="bg-blue-100/50 px-1.5 py-1 border-b border-blue-200"><h3 class="font-bold text-blue-800 text-base truncate text-center">${ourProduct} (자사)</h3></div>\`
         - Body: \`<div class="p-4 space-y-2">\`
             - Integration Items:
               \`<div class="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-blue-100 shadow-sm">\`
-                - Icon: \`<div class="shrink-0 mt-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold">✓</div>\`
+                - Icon: \`<div class="shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 text-sm font-extrabold border border-blue-200">O</div>\` (Choose O, △, X)
                 - Text: \`<div><div class="font-bold text-slate-700 text-xs mb-0.5">[Target Solution] 연동</div><div class="text-xs text-slate-600 leading-snug">[Benefit]</div></div>\`
               \`</div>\`
         \`</div>\`
     
     - **Right Column (${competitor})**: 
         \`<div class="border border-slate-200 bg-slate-50/30 rounded-xl overflow-hidden shadow-sm">\`
-        - Header: \`<div class="bg-slate-100/50 px-3 py-1.5 border-b border-slate-200"><h3 class="font-bold text-slate-700 text-sm truncate">${competitor} (경쟁사)</h3></div>\`
+        - Header: \`<div class="bg-slate-100/50 px-1.5 py-1 border-b border-slate-200"><h3 class="font-bold text-slate-700 text-base truncate text-center">${competitor} (경쟁사)</h3></div>\`
         - Body: \`<div class="p-4 space-y-2">\`
             - Integration Items:
               \`<div class="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-slate-200 shadow-sm">\`
-                - Icon: \`<div class="shrink-0 mt-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold">-</div>\`
+                - Icon: \`<div class="shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-full bg-slate-50 text-slate-500 text-sm font-extrabold border border-slate-200">X</div>\` (Choose O, △, X)
                 - Text: \`<div><div class="font-bold text-slate-700 text-xs mb-0.5">[Target Solution] 연동</div><div class="text-xs text-slate-600 leading-snug">[Desc]</div></div>\`
               \`</div>\`
         \`</div>\`
