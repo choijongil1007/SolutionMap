@@ -35,19 +35,31 @@ function renderUI() {
         <div class="flex flex-col gap-6">
             <!-- Input Section -->
             <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                <h3 class="text-lg font-bold text-slate-800 mb-4">경쟁 제품</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">경쟁 분석 설정</h3>
+                
+                <!-- Products -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div>
                         <label class="block text-sm font-semibold text-slate-600 mb-1.5">자사 제품 (필수)</label>
                         <input type="text" id="insight-our-product" class="input-premium w-full" placeholder="예: Atlassian Jira">
-                        <p class="text-xs text-slate-400 mt-1">분석의 기준이 될 자사 솔루션을 입력하세요.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-600 mb-1.5">경쟁사 제품 (필수)</label>
                         <input type="text" id="insight-competitor" class="input-premium w-full" placeholder="예: ServiceNow ITOM">
-                        <p class="text-xs text-slate-400 mt-1">비교 분석할 경쟁 제품을 입력하세요.</p>
                     </div>
                 </div>
+
+                <!-- Key Requirements -->
+                <div class="border-t border-slate-100 pt-5 mb-6">
+                    <label class="block text-sm font-bold text-slate-800 mb-2">핵심 고객 요구사항 (Top 3)</label>
+                    <p class="text-xs text-slate-400 mb-3">고객이 중요하게 생각하는 기능이나 요건을 입력하면 분석 결과에 반영됩니다.</p>
+                    <div class="space-y-2.5">
+                        <input type="text" id="insight-req-1" class="input-premium w-full" placeholder="요구사항 1 (예: 기존 사내 SSO 시스템 연동 필수)">
+                        <input type="text" id="insight-req-2" class="input-premium w-full" placeholder="요구사항 2 (예: 모바일 앱 지원)">
+                        <input type="text" id="insight-req-3" class="input-premium w-full" placeholder="요구사항 3">
+                    </div>
+                </div>
+
                 <div class="flex justify-end">
                     <button id="btn-generate-insight" class="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all text-sm font-bold shadow-md shadow-indigo-500/20 active:scale-95">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
@@ -74,7 +86,7 @@ function renderUI() {
                 <!-- Loading Overlay: Absolute to cover the container -->
                 <div id="insight-loading" class="hidden absolute inset-0 bg-white/95 flex flex-col items-center justify-center z-20 rounded-xl">
                     <div class="spinner border-indigo-600 border-t-transparent w-10 h-10 mb-3"></div>
-                    <p class="text-indigo-600 font-bold animate-pulse">아키텍처 호환성 및 경쟁 우위를 분석 중...</p>
+                    <p class="text-indigo-600 font-bold animate-pulse">고객 요구사항 기반 경쟁 분석 중...</p>
                 </div>
 
                 <!-- Save Button Overlay: Absolute bottom -->
@@ -135,6 +147,16 @@ function closeSaveReportModal() {
 async function generateInsight() {
     const competitor = document.getElementById('insight-competitor').value.trim();
     const ourProduct = document.getElementById('insight-our-product').value.trim();
+    
+    // Get Requirements
+    const req1 = document.getElementById('insight-req-1').value.trim();
+    const req2 = document.getElementById('insight-req-2').value.trim();
+    const req3 = document.getElementById('insight-req-3').value.trim();
+    const requirements = [req1, req2, req3].filter(r => r);
+    const requirementsString = requirements.length > 0 
+        ? requirements.map((r, i) => `${i+1}. ${r}`).join('\n') 
+        : "None specified.";
+
     const resultArea = document.getElementById('insight-content');
     const placeholder = document.getElementById('insight-placeholder');
     const loading = document.getElementById('insight-loading');
@@ -180,6 +202,9 @@ ${currentMapContext}
 **Reference Categories for Analysis:**
 ${categoryListString}
 
+**Key Customer Requirements (TOP PRIORITY):**
+${requirementsString}
+
 **Requirements:**
 - Output specifically in **Korean**.
 - **Tone**: For table cells and list items, use **concise, short noun-ending phrases** (e.g., "지원함", "연동 우수", "설치 필요", "미지원") instead of full sentences like "~합니다", "~습니다", or "~이다".
@@ -189,11 +214,13 @@ ${categoryListString}
     - **DO NOT INDENT HTML**: Start every HTML tag at the very beginning of the line.
     - **Headers**: Use Markdown (\`## Title\`) for the 4 main sections.
     - **Spacing**: Ensure a blank line separates the Markdown header from the HTML content below it.
+    - **Customer Requirements Eval**: If Customer Requirements are provided, you **MUST** evaluate them. In the 'Summary' or 'Feature Comparison', specifically mention these requirements and highlight the verdict (e.g., Satisfied/Not Satisfied) using \`<b>\` tags (e.g., \`<b>충족</b>\`, \`<b>미충족</b>\`, \`<b>부분 충족</b>\`).
 
 **Report Structure:**
 
 1.  **## 1. 요약**
     - Brief executive summary favoring Our Product based on the customer's specific environment.
+    - **IF** 'Key Customer Requirements' were provided, explicitly list them here with a status check (e.g., "Requirement 1: <b>충족</b>").
 
 2.  **## 2. 고객이 사용 중인 솔루션과의 통합성**
     (Leave a blank line here)
@@ -230,12 +257,14 @@ ${categoryListString}
     - Columns: **MUST INCLUDE** \`<colgroup><col style="width:15%"><col style="width:30%"><col style="width:30%"><col style="width:25%"></colgroup>\`
     - Header: \`<thead class="bg-slate-50 border-b border-slate-200"><tr><th class="p-3 border-r border-slate-200 text-slate-700 font-bold text-center">구분</th><th class="p-3 border-r border-slate-200 text-blue-700 font-bold text-center">${ourProduct}</th><th class="p-3 border-r border-slate-200 text-slate-600 font-bold text-center">${competitor}</th><th class="p-3 text-slate-600 font-bold text-center">비고</th></tr></thead>\`
     - Body: \`<tbody class="text-slate-700">\` (Do NOT add 'text-base')
-    - Rows: 연동성, 기능 적합성, 성능, 리스크.
+    - Rows: 
+      - **IF requirements provided**: Add rows for each Requirement first (e.g. "요구사항: SSO 연동").
+      - Then add: 연동성, 기능 적합성, 성능, 리스크.
     - Style: 
       - **First Column (Category)**: \`p-3 border-b border-slate-200 border-r border-slate-200 text-center font-bold bg-slate-50/50\`
       - **Other Columns**: \`p-3 border-b border-slate-200 border-r border-slate-200 last:border-r-0\`
       - Use concise noun-ending phrases.
-    - Note: Keep "비고" (Remarks) column content extremely concise.
+      - **IMPORTANT**: Bold the verdict in the table cells using \`<b>\` tags (e.g., \`<b>충족</b>\`).
 
 4.  **## 4. 차별화 메시지**
     (Leave a blank line here)
